@@ -46,3 +46,26 @@ def test_legenda_ass_maiuscula_e_palavra_a_palavra(tmp_path):
     ass = legenda.gerar_ass(c, tmp_path / "a.ass").read_text(encoding="utf-8")
     assert ass.count("Dialogue:") == 3
     assert "OLÁ" in ass and "olá" not in ass and "Lato" in ass
+
+
+def test_saudacao_perde_para_conteudo():
+    from garimpo.modelos import Corte, Frase
+    from garimpo.cortes import _idf, _pontuar
+
+    abertura = fala(300.0, "bom dia a todos meu nome é Joel e quero agradecer a presença de todos.".split())
+    conteudo = fala(400.0, "a jornada de oito horas continua valendo e isso significa que o salário não pode cair.".split())
+    fs = [Frase(abertura), Frase(conteudo)]
+    idf = _idf(fs)
+    pa = _pontuar([fs[0]], idf, 3000.0, 0.0)
+    pc = _pontuar([fs[1]], idf, 3000.0, 0.0)
+    assert pc > pa
+
+
+def test_borda_da_gravacao_e_penalizada():
+    from garimpo.modelos import Frase
+    from garimpo.cortes import _idf, _pontuar
+
+    f = Frase(fala(10.0, "a jornada de oito horas continua valendo para todos os contratos.".split()))
+    g = Frase(fala(1000.0, "a jornada de oito horas continua valendo para todos os contratos.".split()))
+    idf = _idf([f, g])
+    assert _pontuar([g], idf, 3000.0, 0.0) > _pontuar([f], idf, 3000.0, 0.0)
