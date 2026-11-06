@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'" />
+    <title>ATTO Tools</title>
+  </head>
+  <body>
+    <main>
+      <div class="marca">ATTO <span>TOOLS</span></div>
+      <p class="rotulo" id="rotulo">Launcher</p>
+      <h1 id="titulo">Verificando…</h1>
+      <p class="sub" id="detalhe"></p>
+      <div class="barra" id="barra" hidden><div id="preenche"></div></div>
+      <p class="erro" id="erro" role="alert" hidden></p>
+      <div class="acoes">
+        <button class="btn" id="principal" disabled>Aguarde</button>
+        <button class="link" id="voltar" hidden>Voltar para a versão anterior</button>
+      </div>
+      <p class="rodape" id="rodape"></p>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
