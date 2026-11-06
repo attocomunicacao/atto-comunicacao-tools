@@ -187,12 +187,12 @@ def filtro(segmentos: list[Segmento], largura: int, altura: int) -> str:
             xa, xb = (_limite(c, cw_m, largura) for c in s.centros)
             partes.append(
                 f"[0:v]{corte},split=2[a{i}][b{i}];"
-                f"[a{i}]crop={cw_m}:{altura}:{xa}:0,scale={LARG}:{METADE}[t{i}];"
-                f"[b{i}]crop={cw_m}:{altura}:{xb}:0,scale={LARG}:{METADE}[u{i}];"
-                f"[t{i}][u{i}]vstack=inputs=2[s{i}]")
+                f"[a{i}]crop={cw_m}:{altura}:{xa}:0,scale={LARG}:{METADE},setsar=1[t{i}];"
+                f"[b{i}]crop={cw_m}:{altura}:{xb}:0,scale={LARG}:{METADE},setsar=1[u{i}];"
+                f"[t{i}][u{i}]vstack=inputs=2,setsar=1[s{i}]")
         else:
             x = _limite(s.centros[0] if s.centros else largura / 2, cw_u, largura)
-            partes.append(f"[0:v]{corte},crop={cw_u}:{altura}:{x}:0,scale={LARG}:{ALT}[s{i}]")
+            partes.append(f"[0:v]{corte},crop={cw_u}:{altura}:{x}:0,scale={LARG}:{ALT},setsar=1[s{i}]")
         saidas.append(f"[s{i}]")
     if len(saidas) == 1:
         partes.append(f"{saidas[0]}null[cv]")

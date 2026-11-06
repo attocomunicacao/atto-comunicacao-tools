@@ -45,3 +45,20 @@ def test_legenda_branca_48px_sem_traco_com_glow_e_entrada(tmp_path):
     assert "Lato,48,&H00FFFFFF" in ass and ",1,0,0,5," in ass  # sem contorno nem sombra, centralizada
     assert ass.count("Dialogue:") == 4  # glow + texto nítido por palavra
     assert r"\move(540,1300,540,1400,0,300)" in ass and r"\blur" in ass and "OLÁ" in ass
+
+
+def test_concat_de_modos_diferentes_com_pixel_nao_quadrado(tmp_path):
+    """Regressão: fonte com SAR 404:405 fazia o concat falhar ('Failed to configure output pad')."""
+    import subprocess
+    from garimpo import midia
+    v = tmp_path / "v.mp4"
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "testsrc=size=1920x1080:rate=30:duration=3",
+                    "-vf", "setsar=404/405", "-c:v", "libx264", "-pix_fmt", "yuv420p", str(v)], check=True)
+    segs = [e.Segmento(0, 1, "unico", [900]), e.Segmento(1, 2, "dividido", [500, 1300]),
+            e.Segmento(2, 3, "unico", [1500])]
+    comp = e.filtro(segs, 1920, 1080)
+    saida = tmp_path / "o.mp4"
+    midia._rodar(["ffmpeg", "-v", "error", "-y", "-i", str(v), "-filter_complex", comp, "-map", "[cv]", str(saida)])
+    r = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height,sample_aspect_ratio",
+                        "-of", "csv=p=0", str(saida)], capture_output=True, text=True)
+    assert r.stdout.strip().startswith("1080,1920,1:1")

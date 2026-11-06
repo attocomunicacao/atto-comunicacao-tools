@@ -2,6 +2,11 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões seguem `x.y.z`.
 
+## [0.2.1] - 2026-11-06
+
+### Corrigido
+- **Corte vertical**: falhava ("Failed to configure output pad") em vídeos com pixel não quadrado (SAR 404:405) quando o enquadramento alternava entre recorte único e tela dividida.
+
 ## [0.2.0] - 2026-11-06
 
 ### Alterado
