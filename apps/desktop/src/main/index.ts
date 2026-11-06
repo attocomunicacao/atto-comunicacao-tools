@@ -67,6 +67,7 @@ app.whenReady().then(() => {
   mkdirSync(pastaProjetos(), { recursive: true })
 
   ipcMain.handle('video:escolher', async () => {
+    if (process.env['ATTO_VIDEO_TESTE']) return process.env['ATTO_VIDEO_TESTE'] // autoteste, sem diálogo
     const r = await dialog.showOpenDialog({
       title: 'Escolha o vídeo',
       properties: ['openFile'],
