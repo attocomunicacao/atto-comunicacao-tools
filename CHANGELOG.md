@@ -14,4 +14,4 @@ Primeira versão de testes.
 - Site de apresentação e documentação do desenvolvimento em `docs/diario`.
 
 ### Conhecido
-- Pacote de cerca de 886 MB; o app não é assinado digitalmente (SmartScreen avisa); a escolha automática dos melhores trechos ainda pode trazer conversa de abertura.
+- Instalador do Launcher (`ATTO-Tools-Setup-0.1.0.exe`) anexado à release. Pacote de cerca de 886 MB; o app não é assinado digitalmente (SmartScreen avisa); a escolha automática dos melhores trechos ainda pode trazer conversa de abertura.
