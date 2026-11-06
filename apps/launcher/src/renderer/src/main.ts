@@ -106,3 +106,14 @@ window.launcher.aoProgresso((pct, etapa) => {
   $('detalhe').textContent = `${etapa}…`
 })
 atualizarTela().catch(mostrarErro)
+
+// Quem deixa o Launcher aberto também recebe versões novas: reconsulta ao voltar para a janela
+// e a cada 5 minutos, sem mexer na tela enquanto há baixando/instalando.
+let ultimaConsulta = Date.now()
+function reconsultar() {
+  if (principal.disabled || Date.now() - ultimaConsulta < 30_000) return
+  ultimaConsulta = Date.now()
+  atualizarTela().catch(() => {})
+}
+window.addEventListener('focus', reconsultar)
+setInterval(() => { ultimaConsulta = 0; reconsultar() }, 5 * 60_000)

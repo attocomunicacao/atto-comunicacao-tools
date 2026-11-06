@@ -5,6 +5,7 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). 
 ## [0.2.0] - 2026-11-06
 
 ### Alterado
+- **Launcher**: reconsulta novas versões ao voltar para a janela e a cada 5 minutos (antes só ao abrir).
 - **Corte vertical**: o vídeo original agora ocupa 100% da tela 1080×1920 (sem fundo desfocado), com recorte centrado em quem aparece/fala. Com dois rostos em quadro (câmera central), a tela é dividida ao meio (960 px cada; esquerda em cima, direita embaixo). Detecção de rostos local (YuNet, ONNX incluído).
 - **Legenda**: branca, sem traçado, 48 px, uma palavra por vez, centralizada, glow fixo e entrada suave (opacidade 0→100% e y de -100 px para 0).
 
