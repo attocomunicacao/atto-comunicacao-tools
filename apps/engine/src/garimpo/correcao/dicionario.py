@@ -35,6 +35,9 @@ class Dicionario:
     def adicionar_termo(self, termo: str) -> None:
         self.termos.setdefault(termo, [])
 
+    def remover_termo(self, termo: str) -> None:
+        self.termos.pop(termo, None)
+
     def aprender(self, original: str, termo: str) -> None:
         """Registra que `original` foi corrigido para `termo` (aprovação do usuário)."""
         variantes = self.termos.setdefault(termo, [])
