@@ -17,3 +17,9 @@ Instalação silenciosa (`/S`), atalhos, entrada no registro, launcher abrindo e
 1. **O Windows bloqueia o instalador sem assinatura.** Ao fim dos testes, a política de controle de aplicativos ("Smart App Control") passou a recusar a execução do `.exe` ("An Application Control policy has blocked this file"). Não foi contornado. **Assinatura de código é necessária** para distribuir o instalador (e o `ATTO Tools.exe` do pacote) a outros usuários.
 2. **Download sem clique (não explicado).** Em algumas execuções do launcher instalado, a interface pediu a instalação sozinha ~1 s após abrir (o registro mostrou "atualizar/instalar solicitado pela interface" sem clique) e começou a baixar o zip de 886 MB. Não reproduziu depois, nem com diagnóstico ligado. Medidas: o launcher agora **ignora cliques que não vêm de uma ação real do usuário** (`event.isTrusted`) e grava um registro em `%APPDATA%\atto-launcher\launcher.log` com o motivo de cada ação. Os testes e2e passaram a usar cliques reais do mouse (CDP). **Se acontecer de novo, o log mostra a causa.**
 3. O instalador final (com essas duas medidas) **não pôde ser executado** por causa do item 1; as medidas foram verificadas no build de desenvolvimento.
+
+## Decisão: distribuição interna, sem assinatura (2026-11-06)
+- O ATTO Tools será usado dentro da equipe, **sem certificado de código**. O README explica os avisos (SmartScreen, antivírus, Smart App Control).
+- Quem estiver com o **Smart App Control ligado** não consegue abrir o app sem desativá-lo (irreversível) ou sem usar outra máquina.
+- Para distribuir ao público no futuro: Azure Trusted Signing (se disponível para a Atto) ou certificado OV com assinatura na nuvem; depois, assinar no `npm run package` e no workflow de release.
+- O `ffmpeg.exe` embutido também não é assinado; testar em um computador com a política ligada.

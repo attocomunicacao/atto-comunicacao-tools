@@ -47,14 +47,24 @@ Você escolhe o vídeo de uma palestra ou podcast (de 30 minutos a 3 horas). O G
 
 ## 03 · Instalar
 
-> **Versão 0.1.0, em testes.** O instalador do Launcher ainda não foi lançado; o pacote do app já está publicado.
+> **Versão 0.1.0, em testes, para uso interno.** O app e o instalador **não têm assinatura digital** (certificado de código). O Windows pode mostrar avisos; veja "Avisos do Windows" abaixo.
 
 **Requisitos:** Windows 10/11 x64, 8 GB de RAM (16 GB recomendado), cerca de 3 GB livres. Placa de vídeo dedicada não é necessária: a transcrição roda no processador, então gravações longas demoram.
 
 **Instalação manual (por enquanto):**
 1. Em [Releases](https://github.com/attocomunicacao/atto-comunicacao-tools/releases/latest), baixe `ATTO-Tools-0.1.0-win-x64.zip` (cerca de 886 MB).
 2. Extraia em uma pasta e abra `ATTO Tools.exe`.
-3. O Windows SmartScreen pode avisar, porque o app ainda não é assinado: *Mais informações* → *Executar assim mesmo*.
+3. Se o Windows avisar, veja "Avisos do Windows" abaixo.
+
+**Avisos do Windows (app sem assinatura):**
+
+| Aviso | O que fazer |
+|---|---|
+| **SmartScreen** ("O Windows protegeu o computador") | Clique em *Mais informações* → *Executar assim mesmo*. |
+| **Antivírus** | Pode marcar o instalador por não ser assinado. Confira que o arquivo veio da página de Releases deste repositório e compare o SHA-256 do `.zip` com o do `manifest.json`. |
+| **Smart App Control** ("Uma política de controle de aplicativos bloqueou este arquivo") | O Windows 11 recém-instalado pode vir com esse recurso ligado e ele **não permite abrir** programas sem assinatura, sem opção de "executar assim mesmo". Em *Segurança do Windows → Controle de aplicativo e do navegador → Smart App Control* dá para desativar, mas **isso é irreversível** (só volta reinstalando o Windows). Decisão de cada pessoa ou do TI. |
+
+Quando o ATTO Tools for distribuído fora da Atto, o certo é assinar o código; veja [`docs/diario/015-instalador-do-launcher.md`](docs/diario/015-instalador-do-launcher.md).
 
 **Como o Launcher atualiza:**
 
