@@ -43,12 +43,31 @@ function criarJanela(): void {
   }
 }
 
+/** Empacotado: Python, FFmpeg, modelo e fontes vêm em resources/. Desenvolvimento: usa o uv do computador. */
+function comandoMotor(args: string[]): { exe: string; args: string[]; env: NodeJS.ProcessEnv } {
+  const base = { ...process.env, PYTHONIOENCODING: 'utf-8' }
+  if (!app.isPackaged) return { exe: 'uv', args: ['run', '--project', pastaMotor(), 'garimpo', ...args], env: base }
+  const r = process.resourcesPath
+  return {
+    exe: join(r, 'engine', 'python', 'python.exe'),
+    args: ['-s', '-m', 'garimpo.pipeline', ...args],
+    env: {
+      ...base,
+      PYTHONHOME: undefined,
+      PYTHONNOUSERSITE: '1',
+      PYTHONPATH: join(r, 'engine', 'site-packages'),
+      PATH: `${join(r, 'bin')};${process.env['PATH'] ?? ''}`,
+      ATTO_MODELOS: join(r, 'models'),
+      ATTO_FONTES: join(r, 'fonts'),
+      HF_HUB_OFFLINE: '1'
+    }
+  }
+}
+
 function executarMotor(args: string[], aoLinha: (linha: string) => void): Promise<{ codigo: number; erro: string }> {
   return new Promise((ok) => {
-    const proc = spawn('uv', ['run', '--project', pastaMotor(), 'garimpo', ...args], {
-      env: { ...process.env, PYTHONIOENCODING: 'utf-8' },
-      windowsHide: true
-    })
+    const c = comandoMotor(args)
+    const proc = spawn(c.exe, c.args, { env: c.env, windowsHide: true })
     let resto = ''
     let erro = ''
     proc.stdout.on('data', (d: Buffer) => {
@@ -58,7 +77,7 @@ function executarMotor(args: string[], aoLinha: (linha: string) => void): Promis
       linhas.forEach((l) => l.trim() && aoLinha(l))
     })
     proc.stderr.on('data', (d: Buffer) => (erro = (erro + d.toString('utf-8')).slice(-1500)))
-    proc.on('error', (e) => ok({ codigo: -1, erro: `Não foi possível iniciar o motor (uv): ${e.message}` }))
+    proc.on('error', (e) => ok({ codigo: -1, erro: `Não foi possível iniciar o motor: ${e.message}` }))
     proc.on('close', (c) => ok({ codigo: c ?? -1, erro }))
   })
 }

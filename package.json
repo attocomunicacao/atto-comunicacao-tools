@@ -9,7 +9,8 @@
     "dev:launcher": "npm run dev -w apps/launcher",
     "build": "npm run build --workspaces --if-present",
     "lint": "eslint .",
-    "test": "npm run test --workspaces --if-present"
+    "test": "npm run test --workspaces --if-present",
+    "package": "node scripts/package/empacotar.mjs"
   },
   "engines": { "node": ">=24" }
 }

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from pathlib import Path
 
@@ -52,7 +53,9 @@ def cortar_vertical(video: Path, ini: float, fim: float, ass: Path | None, saida
     frente = "[0:v]scale=1080:-2[fg]"
     comp = "[bg][fg]overlay=(W-w)/2:(H-h)/2"
     if ass is not None:
-        comp += f",ass='{_caminho_filtro(ass)}'"
+        fontes = os.environ.get("ATTO_FONTES")  # empacotado: a Lato vem junto, sem depender do Windows
+        extra = f":fontsdir='{_caminho_filtro(Path(fontes))}'" if fontes else ""
+        comp += f",ass='{_caminho_filtro(ass)}'{extra}"
     filtro = f"{fundo};{frente};{comp}[v]"
     _rodar(["ffmpeg", "-v", "error", "-y", "-ss", f"{ini:.3f}", "-to", f"{fim:.3f}", "-i", str(video),
             "-filter_complex", filtro, "-map", "[v]", "-map", "0:a:0",

@@ -2,14 +2,20 @@
 import { spawn } from 'node:child_process'
 import { writeFileSync } from 'node:fs'
 
-const [, , appDir, saida] = process.argv
+// Uso: e2e.mjs <apps/desktop> <pasta-de-capturas> [ATTO Tools.exe]
+// Com o 3º argumento testa o app EMPACOTADO em um ambiente limpo (sem uv, Python, FFmpeg nem variáveis do desenvolvedor).
+const [, , appDir, saida, exe] = process.argv
 const PORTA = 9333
+const envLimpo = exe
+  ? { SystemRoot: process.env.SystemRoot, PATH: `${process.env.SystemRoot}\\System32`, TEMP: process.env.TEMP, LOCALAPPDATA: process.env.LOCALAPPDATA,
+      USERPROFILE: process.env.USERPROFILE, APPDATA: process.env.ATTO_APPDATA_TESTE ?? process.env.APPDATA, ATTO_VIDEO_TESTE: process.env.ATTO_VIDEO_TESTE }
+  : process.env
 const esperar = (ms) => new Promise((r) => setTimeout(r, ms))
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a)
 
-const proc = spawn('npx', ['electron', '.', '--disable-gpu', `--remote-debugging-port=${PORTA}`], {
-  cwd: appDir, shell: true, stdio: 'ignore', env: process.env
-})
+const proc = exe
+  ? spawn(exe, ['--disable-gpu', `--remote-debugging-port=${PORTA}`], { stdio: 'ignore', env: envLimpo })
+  : spawn('npx', ['electron', '.', '--disable-gpu', `--remote-debugging-port=${PORTA}`], { cwd: appDir, shell: true, stdio: 'ignore', env: envLimpo })
 
 let alvo
 for (let i = 0; i < 60 && !alvo; i++) {
