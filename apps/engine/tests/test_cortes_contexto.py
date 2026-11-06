@@ -47,3 +47,28 @@ def test_limites_vao_para_o_silencio():
     wav = {"sr": sr, "x": x}
     ini, fim = cortes.ajustar_limites(1.05, 1.95, None, None, wav)   # tempos do Whisper meio errados (dentro da palavra)
     assert ini <= 1.0 - 0.0 and fim >= 2.0     # não corta a palavra
+
+
+def test_contagem_regressiva_e_bastidor():
+    assert cortes.tem_contagem("pronto derrubando em 5, 4, 3, 2... ola")
+    assert not cortes.tem_contagem("em 2020, 2021 e 2022 o setor cresceu")
+    assert cortes.e_ruido(frase("Pronto.", 0, 1))
+    assert cortes.e_ruido(frase("Derrubando em 5, 4, 3, 2...", 0, 3))
+    assert not cortes.e_ruido(frase("Pronto, agora a lei mudou para todo mundo.", 0, 4))
+
+
+def test_inicio_util_pula_o_bastidor_do_comeco():
+    fs = [frase("Pronto.", 0, 1), frase("Derrubando em 5, 4, 3, 2...", 1.5, 3), frase("Olá, estamos aqui hoje.", 5, 3),
+          frase("A reforma muda o custo do trabalho.", 9, 4)]
+    assert cortes.inicio_util(fs) > 4.4
+
+
+def test_gancho_de_abertura_vale_zero_e_pergunta_vale_mais():
+    assert cortes.nota_gancho([frase("Olá, estamos aqui inaugurando o podcast.", 0, 5)]) == 0
+    assert cortes.nota_gancho([frase("Quanto custa não cumprir a lei?", 0, 4)]) > cortes.nota_gancho([frase("Bom, eu acho que é isso.", 0, 4)])
+
+
+def test_juiz_interpreta_json():
+    from garimpo import juiz
+    r = juiz.interpretar('```json {"gancho": 8, "contexto": 7, "valor": 9, "fechamento": 6, "bastidor": false, "inicio": 2} ```', 5)
+    assert r.inicio == 1 and not r.bastidor and 7 < r.nota < 9

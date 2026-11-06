@@ -53,7 +53,8 @@ function criarJanela(): void {
 
 /** Empacotado: Python, FFmpeg, modelo e fontes vêm em resources/. Desenvolvimento: usa o uv do computador. */
 function comandoMotor(args: string[]): { exe: string; args: string[]; env: NodeJS.ProcessEnv } {
-  const base = { ...process.env, PYTHONIOENCODING: 'utf-8' }
+  // ATTO_CACHE: modelos grandes baixados na primeira vez (Whisper turbo, juiz LLM) ficam na pasta do usuário
+  const base = { ...process.env, PYTHONIOENCODING: 'utf-8', ATTO_CACHE: join(app.getPath('userData'), 'modelos') }
   if (!app.isPackaged) return { exe: 'uv', args: ['run', '--project', pastaMotor(), 'garimpo', ...args], env: base }
   const r = process.resourcesPath
   return {

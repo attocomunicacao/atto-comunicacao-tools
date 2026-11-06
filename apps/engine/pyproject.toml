@@ -6,6 +6,7 @@ requires-python = ">=3.12"
 dependencies = [
     "av>=14,<17",
     "faster-whisper>=1.2.1",
+    "llama-cpp-python>=0.3",
     "numpy>=2.5.4",
     "opencv-python-headless>=5.0.0.93",
 ]
@@ -16,6 +17,13 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/garimpo"]
+
+[tool.uv.sources]
+llama-cpp-python = { index = "llamacpp" }
+
+[[tool.uv.index]]
+name = "llamacpp"
+url = "https://abetlen.github.io/llama-cpp-python/whl/cpu"
 
 [dependency-groups]
 dev = [

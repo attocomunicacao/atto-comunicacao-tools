@@ -71,7 +71,7 @@ def transcrever(video: Path, pasta: Path, modelo: str) -> None:
     json_tr = pasta / "transcricao.json"
     if not json_tr.exists():
         _etapa(2, 3, "Transcrevendo (pode demorar em CPU)")
-        _log(f"Whisper '{modelo}' no processador (int8), idioma pt, tempo por palavra")
+        _log(f"Whisper '{modelo}' no processador (int8, beam 5), idioma pt, tempo por palavra")
         ultimo = [-10.0]
 
         def progresso(f: float, t: float, total: float, texto: str) -> None:
@@ -80,7 +80,10 @@ def transcrever(video: Path, pasta: Path, modelo: str) -> None:
                 ultimo[0] = t
                 _log(f"{int(t // 60)}:{int(t % 60):02d} de {int(total // 60)}:{int(total % 60):02d}  “{texto[:90]}”")
 
-        palavras = transcricao.transcrever(wav, fps, modelo, progresso)
+        termos = list(Dicionario.carregar().termos.keys())
+        if termos:
+            _log(f"Termos do seu dicionário como dica para o Whisper: {', '.join(termos[:12])}")
+        palavras = transcricao.transcrever(wav, fps, modelo, progresso, hotwords=termos, log=_log)
         transcricao.salvar(palavras, json_tr, fps)
         _log(f"Transcrição pronta: {len(palavras)} palavras")
     palavras, fps = _carregar_palavras(pasta)
@@ -123,7 +126,9 @@ def estruturar(video: Path, pasta: Path, aprovadas: list[int]) -> list[Corte]:
     ts = estrutura.temas(ps)
     _log(f"{len(fs)} frases, {len(ps)} parágrafos, {len(ts)} temas")
     _log("Pontuando trechos (vocabulário raro, gancho, exemplos), sem teste de som e com contexto completo")
-    cs = mod_cortes.sugerir(ts)
+    from . import juiz as mod_juiz
+    juiz = mod_juiz.carregar(_log)
+    cs = mod_cortes.sugerir(ts, juiz=juiz, log=_log)
     _log(f"{len(cs)} corte(s) escolhido(s)")
     exportar_md.frases(fs, pasta / "frases.md", fps)
     exportar_md.paragrafos(ps, pasta / "paragrafos.md", fps)
@@ -198,10 +203,10 @@ def main() -> None:
         p.add_argument("--pasta", type=Path, required=True)
         return p
 
-    com_video("transcrever", "etapas 1-2 e dúvidas de escrita").add_argument("--modelo", default="small")
+    com_video("transcrever", "etapas 1-2 e dúvidas de escrita").add_argument("--modelo", default=transcricao.MODELO_PADRAO)
     com_video("estruturar", "etapas 4-9").add_argument("--aprovadas", default="", help="ids de dúvidas, ex.: 0,2")
     a = com_video("analisar", "tudo até os cortes sugeridos")
-    a.add_argument("--modelo", default="small")
+    a.add_argument("--modelo", default=transcricao.MODELO_PADRAO)
     a.add_argument("--aceitar-todas", action="store_true")
     e = com_video("exportar", "corta e legenda os aprovados")
     e.add_argument("--aprovados", required=True)

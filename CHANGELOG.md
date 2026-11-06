@@ -2,6 +2,13 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões seguem `x.y.z`.
 
+## [0.4.0] - 2026-11-06
+
+### Alterado
+- **Transcrição reconstruída**: Whisper large-v3-turbo (beam 5, VAD, sem repetição em loop) com os termos do seu dicionário como dica. Mais lenta (~0,6x o tempo real), bem mais precisa, principalmente na pontuação. Baixada na primeira vez (1,6 GB); o small embutido fica como plano B sem internet.
+- **Seleção de cortes em 3 camadas**: filtros duros (contagem regressiva ou progressiva, "gravando", "derrubando", "pronto", abertura do programa, frase dependente ou fragmento no começo; tudo antes do bastidor inicial é ignorado), pontuação com peso alto para o **gancho dos 5 primeiros segundos**, e um **juiz LLM local** (Qwen3-4B, Apache-2.0, em CPU) que dá notas de gancho, contexto, valor e fechamento e pode adiantar o início para a frase mais forte. Baixado na primeira vez (2,5 GB).
+- **Legenda com motion**: entrada desfocada que assenta com easing exponencial (opacidade, y de -100 px a 0, escala 90% a 100%) e saída que desfoca e desce enquanto a próxima palavra entra, como no vídeo de referência. Desenhada a 60 quadros por segundo.
+
 ## [0.3.0] - 2026-11-06
 
 ### Adicionado

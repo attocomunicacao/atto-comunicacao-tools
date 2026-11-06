@@ -1,11 +1,15 @@
 """Etapas 7-8: escolhe os trechos mais relevantes (30 s a 1min30, sem cortar frases).
 
-A pontuação combina, sem LLM (rápido em CPU):
-- vocabulário raro na palestra inteira (TF-IDF), em vez de palavras comuns do tema;
-- gancho: a primeira frase abre com uma ideia, não com conjunção ("e", "então", "mas");
-- conteúdo concreto: números, exemplos, perguntas, marcadores de ênfase;
-- penalidade para saudações, agradecimentos, apresentações e passagem de palavra;
-- penalidade para o início e o fim da gravação (abertura e encerramento do evento).
+Seleção em 3 camadas (o mesmo desenho das ferramentas de corte automático: filtrar, pontuar, reordenar com LLM):
+
+1. Filtros duros. Nada de bastidor de gravação (contagem regressiva/progressiva, "gravando", "pronto, vai",
+   teste de som), nada de abertura/protocolo do programa ("olá, estamos aqui", "bem-vindos") e nunca começar numa
+   frase que depende da anterior. Tudo o que vem antes do último sinal de bastidor dos primeiros minutos é ignorado.
+2. Pontuação heurística (rápida, em todas as janelas): **gancho nos 5 primeiros segundos** (peso maior), vocabulário
+   raro (TF-IDF), conteúdo concreto (números, exemplos, perguntas, ênfase), duração perto de 1 min.
+3. Juiz LLM local (Qwen3-4B em CPU, ver `juiz.py`): relê os melhores candidatos e dá notas de gancho, contexto
+   próprio, valor e fechamento, além de poder adiantar o início para a frase mais forte. Sem o modelo, fica a
+   pontuação heurística.
 """
 from __future__ import annotations
 
@@ -38,15 +42,58 @@ DEPENDENTES = CONJUNCOES + (
     "desse ", "por isso", "por isso,", "tambem ", "alem disso", "ou seja", "dai ", "pois ", "porem ", "contudo",
     "entretanto", "inclusive", "aquilo ", "ele ", "ela ", "eles ", "elas ", "la ", "ali ", "assim ", "logo ",
     "portanto", "e a ", "e o ", "mas a ", "mas o ")
-# Ruído de gravação (teste de som, "gravando"): nunca entra em corte nos primeiros minutos e é penalizado depois.
+# Ruído de gravação (bastidor): nunca entra em corte.
 RUIDO_GRAVACAO = [
     "gravando", "estamos gravando", "to gravando", "ta gravando", "pode gravar", "podemos gravar", "vamos gravar",
     "testando", "teste de som", "teste de audio", "som ok", "audio ok", "microfone ok", "esta rolando", "ta rolando",
-    "pode comecar", "podemos comecar", "ja pode", "valendo", "camera", "luz ok", "cortar", "corta ai", "um dois tres",
-    "tres dois um", "1 2 3", "1, 2, 3", "3, 2, 1", "check", "som, som",
+    "pode comecar", "podemos comecar", "ja pode", "valendo", "luz ok", "corta ai", "derrubando", "rodando",
+    "gravou", "ta gravado", "ja ta", "pode falar", "vamos la", "contagem", "silencio por favor", "som, som",
 ]
-ZONA_RUIDO_S = 600.0  # 10 min iniciais: qualquer sinal de ruído exclui o trecho
-PAUSA_CONTEXTO_S = 1.6  # só junta a frase anterior se ela vier logo antes
+# Palavras de bastidor que só contam em frases curtas ("Pronto.", "Vai!"), para não pegar conteúdo.
+BASTIDOR_CURTO = ["pronto", "vai", "bora", "acao", "ok", "beleza", "ja", "foi", "agora", "pode", "certo"]
+# Abertura do programa: não é gancho e não pode estar nos primeiros segundos de um corte.
+ABERTURA = [
+    "ola", "oi pessoal", "fala pessoal", "fala galera", "bom dia", "boa tarde", "boa noite", "sejam bem",
+    "bem-vindo", "bem vindo", "estamos aqui", "inaugurando", "mais um episodio", "episodio de hoje", "no podcast",
+    "nosso podcast", "meu nome", "eu sou o", "eu sou a", "convidado de hoje", "convidada de hoje", "obrigado por",
+    "inscreva", "se inscreve", "deixa o like", "ate a proxima", "ate logo", "um abraco", "tchau",
+]
+# Bom gancho: pergunta, número, contraste, segunda pessoa, palavras de impacto.
+GANCHO_FORTE = [
+    "voce", "voces", "ninguem", "nunca", "sempre", "todo mundo", "o problema", "o erro", "a verdade", "o segredo",
+    "o maior", "o pior", "o melhor", "o mais", "por que", "porque", "como", "o que", "quanto custa", "custa",
+    "dinheiro", "milhoes", "bilhoes", "lei", "direito", "proibido", "obrigatorio", "risco", "perder", "ganhar",
+    "mudou", "muda", "acabou", "fim", "cuidado", "atencao", "importante", "imagina", "sabia", "ja pensou",
+]
+VICIOS_INICIO = ("ne ", "eh ", "e ", "entao ", "bom ", "olha ", "assim ", "tipo ", "ah ", "hum ", "e ai ", "enfim ")
+ZONA_BASTIDOR_S = 300.0  # o bastidor costuma estar nos 5 primeiros minutos
+JANELA_GANCHO_S = 5.0
+PAUSA_CONTEXTO_S = 1.6   # só junta a frase anterior se ela vier logo antes
+
+_NUMEROS = {"zero": 0, "um": 1, "uma": 1, "dois": 2, "duas": 2, "tres": 3, "quatro": 4, "cinco": 5, "seis": 6,
+            "sete": 7, "oito": 8, "nove": 9, "dez": 10}
+
+
+def _numeros(texto: str) -> list[int]:
+    saida = []
+    for tok in re.findall(r"\d+|[a-z]+", texto):
+        if tok.isdigit() and len(tok) <= 2:
+            saida.append(int(tok))
+        elif tok in _NUMEROS:
+            saida.append(_NUMEROS[tok])
+        else:
+            saida.append(-99)  # quebra a sequência
+    return saida
+
+
+def tem_contagem(texto: str) -> bool:
+    """3+ números seguidos em ordem (1, 2, 3 ou 5, 4, 3, 2): contagem de bastidor."""
+    ns = _numeros(texto)
+    for i in range(len(ns) - 2):
+        a, b, c = ns[i:i + 3]
+        if a >= 0 and ((b == a + 1 and c == b + 1) or (b == a - 1 and c == b - 1)):
+            return True
+    return False
 
 
 def _idf(fs: list[Frase]) -> dict[str, float]:
@@ -61,19 +108,70 @@ def _txt(f: Frase) -> str:
     return _norm(f.texto)
 
 
-_CONTAGEM = re.compile(r'(?<!\d)1\W{1,3}2\W{1,3}3(?!\d)|um\W{1,3}dois\W{1,3}tres')
+def _limpo(t: str) -> str:
+    """Só letras e números, separados por um espaço, com espaço nas pontas (para casar palavras inteiras)."""
+    return " " + " ".join(re.findall(r"[a-z0-9]+", _norm(t))) + " "
+
+
+def _contem(t: str, termos) -> bool:
+    lt = _limpo(t)
+    return any(f" {_limpo(m).strip()} " in lt for m in termos)
 
 
 def e_ruido(f: Frase) -> bool:
-    t = _txt(f) + " "
-    if _CONTAGEM.search(t):
+    """Bastidor de gravação: contagem, "gravando", "pronto, vai" etc."""
+    t = _txt(f)
+    if tem_contagem(t):
         return True
-    return any(m in t for m in RUIDO_GRAVACAO)
+    if _contem(t, RUIDO_GRAVACAO):
+        return True
+    palavras = re.findall(r"[a-z]+", t)
+    return 0 < len(palavras) <= 4 and all(p in BASTIDOR_CURTO or len(p) <= 2 for p in palavras)
+
+
+def e_abertura(texto_norm: str) -> bool:
+    return _contem(texto_norm, ABERTURA)
+
+
+def inicio_util(todas: list[Frase]) -> float:
+    """Instante a partir do qual a gravação vale: depois do último sinal de bastidor dos primeiros minutos."""
+    if not todas:
+        return 0.0
+    t0 = todas[0].ini
+    limite = t0
+    for f in todas:
+        if f.ini - t0 > ZONA_BASTIDOR_S:
+            break
+        if e_ruido(f):
+            limite = f.fim + 0.01
+    return limite
+
+
+def texto_inicial(fs: list[Frase], janela: float = JANELA_GANCHO_S) -> str:
+    """O que se ouve nos primeiros `janela` segundos do corte."""
+    ini = fs[0].ini
+    return " ".join(p.texto for f in fs for p in f.palavras if p.ini < ini + janela)
+
+
+def nota_gancho(fs: list[Frase]) -> float:
+    """0 a 1: quanto os 5 primeiros segundos prendem. Abertura/protocolo/ruído = 0."""
+    t = _norm(texto_inicial(fs))
+    if not t or e_abertura(t) or any(e_ruido(f) for f in fs if f.ini < fs[0].ini + JANELA_GANCHO_S):
+        return 0.0
+    nota = 0.35
+    nota += 0.25 * ("?" in t)
+    nota += 0.2 * bool(re.search(r"\d", t) or any(f" {n} " in f" {t} " for n in ("mil", "milhoes", "bilhoes")))
+    nota += 0.1 * min(sum(_contem(t, [m]) for m in GANCHO_FORTE), 3)
+    nota -= 0.25 * _limpo(t).lstrip().startswith(VICIOS_INICIO)
+    return max(0.0, min(1.0, nota))
 
 
 def e_dependente(f: Frase) -> bool:
-    """A frase só faz sentido com a anterior (começa em conjunção ou referência)."""
-    return (_txt(f) + " ").startswith(DEPENDENTES)
+    """A frase só faz sentido com a anterior: começa em conjunção/referência ou é um fragmento ("Eleitoral.")."""
+    lt = _limpo(f.texto).lstrip()
+    if lt.startswith(tuple(_limpo(d).lstrip() for d in DEPENDENTES)):
+        return True
+    return len(lt.split()) < 3 and "?" not in f.texto
 
 
 def _pontuar(fs: list[Frase], idf: dict[str, float], total_s: float, t0: float) -> float:
@@ -91,33 +189,40 @@ def _pontuar(fs: list[Frase], idf: dict[str, float], total_s: float, t0: float) 
         + 0.3 * texto.count("?") / (palavras / 50)
     )
     protocolo = sum(texto.count(m) for m in FORMULAS)
-    abertura = _norm(fs[0].texto)
-    gancho = 0.0 if abertura.startswith(CONJUNCOES) else 1.0
+    gancho = nota_gancho(fs)
     ritmo = max(1.0 - abs(dur - ALVO_S) / ALVO_S, 0.0)
     borda = 0.0
     rel_ini, rel_fim = ini - t0, total_s - (fim - t0)
     if rel_ini < BORDA_S or rel_fim < BORDA_S:
         borda = 1.0
-    nota = 1.0 * raro + 0.5 * min(concreto, 3.0) + 0.6 * gancho + 0.8 * ritmo
+    nota = 1.0 * raro + 0.5 * min(concreto, 3.0) + 2.5 * gancho + 0.8 * ritmo
     nota -= 2.5 * min(protocolo, 3) + 1.5 * borda
-    nota -= 3.0 * sum(e_ruido(f) for f in fs)           # teste de som e afins
+    nota -= 3.0 * sum(e_ruido(f) for f in fs)           # bastidor no meio
     nota -= 1.2 * e_dependente(fs[0])                    # começar sem contexto
     return nota
 
 
-def candidatos(tema: Tema, idf: dict[str, float], total_s: float, t0: float) -> list[Corte]:
+def admissivel(fs: list[Frase], inicio: float = 0.0) -> bool:
+    """Filtros duros: o corte só existe se começa limpo, com ideia própria e sem bastidor."""
+    if fs[0].ini < inicio or any(e_ruido(f) for f in fs):
+        return False
+    if e_dependente(fs[0]):
+        return False
+    return not e_abertura(_norm(texto_inicial(fs)))
+
+
+def candidatos(tema: Tema, idf: dict[str, float], total_s: float, t0: float, inicio: float | None = None) -> list[Corte]:
     fs = tema.frases
+    inicio = t0 if inicio is None else inicio
     saida: list[Corte] = []
     for i in range(len(fs)):
+        if fs[i].ini < inicio or e_ruido(fs[i]) or e_dependente(fs[i]):
+            continue
         for j in range(i, len(fs)):
             dur = fs[j].fim - fs[i].ini
-            if dur > MAX_S:
+            if dur > MAX_S or e_ruido(fs[j]):
                 break
-            if j > i and e_ruido(fs[j]) and fs[j].ini - t0 < ZONA_RUIDO_S:
-                break  # ruído de gravação no começo: o trecho acaba antes dele
-            if e_ruido(fs[i]) and fs[i].ini - t0 < ZONA_RUIDO_S:
-                break
-            if dur >= MIN_S:
+            if dur >= MIN_S and admissivel(fs[i:j + 1], inicio):
                 saida.append(Corte(tema.titulo, fs[i:j + 1], _pontuar(fs[i:j + 1], idf, total_s, t0)))
     return saida
 
@@ -215,29 +320,71 @@ def ajustar_limites(ini: float, fim: float, ant_fim: float | None, prox_ini: flo
     return max(novo_ini, 0.0), max(novo_fim, fim)
 
 
-def sugerir(temas: list[Tema], por_minutos: float = 7.0) -> list[Corte]:
-    """Melhores cortes sem sobreposição: 1 por tema e mais 1 a cada `por_minutos` de tema, em ordem cronológica."""
+def _sobrepoe(a: Corte, b: Corte, folga: float = 0.0) -> bool:
+    return not (a.fim <= b.ini + folga or a.ini >= b.fim - folga)
+
+
+def sugerir(temas: list[Tema], por_minutos: float = 7.0, juiz=None, log=None) -> list[Corte]:
+    """Escolhe os cortes: filtros duros -> heurística em todas as janelas -> juiz LLM nos melhores.
+
+    Quantidade: 1 por tema e mais 1 a cada `por_minutos` de tema; no máximo 2 do mesmo tema entre os finais."""
     todas = [f for t in temas for f in t.frases]
     if not todas:
         return []
     idf = _idf(todas)
     t0, total = todas[0].ini, todas[-1].fim - todas[0].ini
-    escolhidos: list[Corte] = []
+    inicio = inicio_util(todas)
+    if log and inicio > t0:
+        log(f"Bastidor de gravação detectado: ignorando tudo antes de {inicio - t0:.1f}s")
+    quota = sum(1 + int((t.fim - t.ini) // (por_minutos * 60)) for t in temas)
+
+    # 1-2: candidatos válidos e pontuados; melhores sem sobreposição (diversidade entre temas)
+    por_tema: dict[str, int] = {}
+    lista: list[Corte] = []
     for t in temas:
-        quota = 1 + int((t.fim - t.ini) // (por_minutos * 60))
-        cands = sorted(candidatos(t, idf, total, t0), key=lambda c: -c.pontuacao)
-        pegos: list[Corte] = []
-        for c in cands:
-            if len(pegos) >= quota:
-                break
-            if all(c.fim <= p.ini or c.ini >= p.fim for p in pegos):
-                pegos.append(c)
-        escolhidos += pegos
-    # contexto e fim em frase completa, sem invadir o corte anterior
-    saida: list[Corte] = []
-    for c in sorted(escolhidos, key=lambda c: c.ini):
-        c = completar_contexto(c, todas, limite_ini=saida[-1].fim if saida else 0.0)
-        if saida and c.ini < saida[-1].fim:
+        lista += [completar_contexto(c, todas, inicio) for c in candidatos(t, idf, total, t0, inicio)]
+    lista = [c for c in lista if admissivel(c.frases, inicio) and MIN_S <= c.duracao <= MAX_S + 15]
+    lista.sort(key=lambda c: -c.pontuacao)
+    curtos: list[Corte] = []
+    vaga = min(max(quota + 6, int(quota * 1.3)), 24) if juiz else quota  # ~15 s por finalista em CPU
+    for c in lista:
+        if len(curtos) >= vaga:
+            break
+        if por_tema.get(c.tema, 0) >= (3 if juiz else 2) or any(_sobrepoe(c, p) for p in curtos):
             continue
-        saida.append(c)
-    return saida
+        curtos.append(c)
+        por_tema[c.tema] = por_tema.get(c.tema, 0) + 1
+    if log:
+        log(f"{len(lista)} janelas válidas; {len(curtos)} finalistas para {quota} corte(s)")
+
+    # 3: juiz LLM reordena (e pode adiantar o início para a frase mais forte)
+    if juiz and curtos:
+        avaliados = []
+        for k, c in enumerate(curtos, 1):
+            r = juiz.avaliar(c)
+            if log:
+                log(f"  Juiz {k}/{len(curtos)}: nota {r.nota:.1f} (gancho {r.gancho}, contexto {r.contexto}, valor {r.valor}, fim {r.fechamento})"
+                    + (" [bastidor]" if r.bastidor else "") + f" — “{c.texto[:70]}…”")
+            if r.bastidor:
+                continue
+            novo = c
+            if 0 < r.inicio < len(c.frases):
+                cand = Corte(c.tema, c.frases[r.inicio:], c.pontuacao)
+                if cand.duracao >= MIN_S and admissivel(cand.frases, inicio):
+                    novo = cand
+                    if log:
+                        log(f"    início adiantado para a frase {r.inicio + 1}: “{cand.texto[:60]}…”")
+            novo.pontuacao = r.nota + 0.1 * c.pontuacao
+            avaliados.append(novo)
+        curtos = sorted(avaliados, key=lambda c: -c.pontuacao)
+
+    final: list[Corte] = []
+    contagem: dict[str, int] = {}
+    for c in curtos:
+        if len(final) >= quota:
+            break
+        if contagem.get(c.tema, 0) >= 2 or any(_sobrepoe(c, p) for p in final):
+            continue
+        final.append(c)
+        contagem[c.tema] = contagem.get(c.tema, 0) + 1
+    return sorted(final, key=lambda c: c.ini)

@@ -1,4 +1,10 @@
-"""Etapa 2: WAV -> palavras com tempo em segundos e em quadros (a linha do tempo é guardada desde o início)."""
+"""Etapa 2: WAV -> palavras com tempo em segundos e em quadros (a linha do tempo é guardada desde o início).
+
+Whisper large-v3-turbo (int8, CPU), beam 5: mais lento que o small, mas acerta muito mais palavras e,
+principalmente, a pontuação, que é a base para separar frases e escolher cortes que não começam no meio de
+uma ideia. Os termos do dicionário do usuário entram como `hotwords` (o modelo passa a favorecer essas grafias).
+Se o modelo grande não estiver disponível (sem internet na primeira vez), cai para o small embutido.
+"""
 from __future__ import annotations
 
 import json
@@ -7,15 +13,31 @@ from pathlib import Path
 
 from .modelos import Palavra
 
+MODELO_PADRAO = "large-v3-turbo"
 
-def transcrever(wav: Path, fps: float, modelo: str = "small", aoProgresso=None) -> list[Palavra]:
+
+def transcrever(wav: Path, fps: float, modelo: str = MODELO_PADRAO, aoProgresso=None, hotwords: list[str] | None = None,
+                log=None) -> list[Palavra]:
     from faster_whisper import WhisperModel
 
-    # Empacotado: o modelo vem junto (ATTO_MODELOS/<modelo>), funcionando sem internet.
-    local = Path(os.environ.get("ATTO_MODELOS", "")) / modelo
-    origem = str(local) if os.environ.get("ATTO_MODELOS") and (local / "model.bin").exists() else modelo
-    m = WhisperModel(origem, device="cpu", compute_type="int8", cpu_threads=8)
-    segs, info = m.transcribe(str(wav), language="pt", word_timestamps=True, vad_filter=True, beam_size=1)
+    from . import recursos
+
+    try:
+        origem = recursos.whisper(modelo, log)
+    except Exception as e:  # sem internet: usa o embutido
+        if log:
+            log(f"Não foi possível obter o Whisper {modelo} ({e}); usando o small embutido")
+        origem = recursos.whisper("small")
+    if log:
+        log(f"Carregando o Whisper ({Path(origem).name}) em {os.cpu_count()} núcleos")
+    m = WhisperModel(origem, device="cpu", compute_type="int8", cpu_threads=os.cpu_count() or 8)
+    dicas = " ".join(dict.fromkeys(hotwords or []))[:400] or None
+    segs, info = m.transcribe(
+        str(wav), language="pt", word_timestamps=True, beam_size=5,
+        vad_filter=True, vad_parameters={"min_silence_duration_ms": 500, "speech_pad_ms": 200},
+        condition_on_previous_text=False,     # evita repetições em loop em gravações longas
+        hotwords=dicas,
+    )
     palavras: list[Palavra] = []
     total = max(getattr(info, "duration", 0.0), 1.0)
     for s in segs:

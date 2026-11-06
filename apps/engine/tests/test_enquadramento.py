@@ -59,7 +59,9 @@ def test_legenda_64px_branca_sem_traco_com_glow_e_entrada_suave(tmp_path):
     assert "OLÁ" in ass and "MUNDO" in ass and "olá" not in ass
     # a entrada começa 100 px acima e termina em y=1400, em muitos quadros (easing), e a opacidade sobe
     ys = [float(x) for x in re.findall(r"[\\]pos\(540,([\d.]+)\)", ass)]
-    assert min(ys) < 1310 and max(ys) == 1400 and len(ys) > 30
+    assert min(ys) < 1310 and 1400.0 in ys and len(ys) > 30
+    # saída: a palavra que dá lugar à próxima desce um pouco, desfoca e some (motion da referência)
+    assert max(ys) > 1400
     ultimo = ass.splitlines()[-1]
     assert "blur" in ass and "&H00&" in ultimo  # no fim, totalmente visível
     # glow fixo: duas camadas desfocadas atrás da camada nítida (layer 2)
