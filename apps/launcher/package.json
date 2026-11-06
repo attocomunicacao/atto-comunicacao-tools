@@ -1,7 +1,7 @@
 {
   "name": "@atto/launcher",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Launcher do ATTO Tools: instala e atualiza o app",
   "main": "out/main/index.js",
   "scripts": {

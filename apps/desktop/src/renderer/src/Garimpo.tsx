@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Carregamento, LogoFinal, useAndamento } from './Carregamento'
 
 type Etapa = 'video' | 'transcricao' | 'duvidas' | 'estrutura' | 'cortes' | 'exportar'
 const PASSOS: { id: Etapa[]; nome: string }[] = [
@@ -14,34 +15,6 @@ interface Corte { n: number; tema: string; ini: number; fim: number; duracao: nu
 
 const nomeArquivo = (c: string) => c.split(/[\\/]/).pop() ?? c
 const tempo = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
-
-function useAndamento() {
-  const [pct, setPct] = useState<number | null>(null)
-  const [texto, setTexto] = useState('')
-  useEffect(
-    () =>
-      window.atto.aoLinha((l) => {
-        const m = l.match(/^ETAPA (\d+)\/(\d+) (.*)/)
-        if (m) {
-          setPct(((Number(m[1]) - 1) / Number(m[2])) * 100)
-          setTexto(m[3])
-        }
-      }),
-    []
-  )
-  return { pct, texto, zerar: () => { setPct(null); setTexto('') } }
-}
-
-function Progresso({ pct, texto }: { pct: number | null; texto: string }) {
-  return (
-    <>
-      <div className={'barra' + (pct === null ? ' indef' : '')} role="progressbar" aria-valuenow={pct ?? undefined}>
-        <div style={pct === null ? undefined : { width: `${Math.max(pct, 4)}%` }} />
-      </div>
-      <p className="estado">{texto || 'Iniciando...'}</p>
-    </>
-  )
-}
 
 export function Garimpo() {
   const [etapa, setEtapa] = useState<Etapa>('video')
@@ -143,14 +116,13 @@ export function Garimpo() {
               <button className="btn" onClick={comecar} disabled={!video}>Começar</button>
             </div>
             {video && <p className="caminho">{video}</p>}
+            <LogoFinal />
           </>
         )}
 
         {(etapa === 'transcricao' || etapa === 'estrutura') && (
           <>
-            <h2 style={{ margin: 0, fontWeight: 500 }}>{etapa === 'transcricao' ? 'Transcrevendo' : 'Analisando temas e cortes'}</h2>
-            <Progresso pct={andamento.pct} texto={andamento.texto} />
-            <p className="estado">Pode demorar vários minutos, dependendo do tamanho do vídeo.</p>
+            <Carregamento titulo={etapa === 'transcricao' ? 'Transcrevendo' : 'Analisando temas e cortes'} a={andamento} />
           </>
         )}
 
@@ -198,6 +170,7 @@ export function Garimpo() {
                 </div>
               ))}
             </div>
+            <LogoFinal />
             <div className="acoes">
               <button className="btn" onClick={exportar} disabled={escolhidos.size === 0}>Gerar {escolhidos.size || ''} {escolhidos.size === 1 ? 'corte' : 'cortes'}</button>
               <button className="btn sec" onClick={() => setEtapa('duvidas')}>Voltar</button>
@@ -207,8 +180,7 @@ export function Garimpo() {
 
         {etapa === 'exportar' && (
           <>
-            <h2 style={{ margin: 0, fontWeight: 500 }}>{ocupado ? 'Gerando vídeos' : 'Pronto'}</h2>
-            {ocupado && <Progresso pct={andamento.pct} texto={andamento.texto} />}
+            {ocupado ? <Carregamento titulo="Gerando vídeos" a={andamento} /> : <h2 style={{ margin: 0, fontWeight: 500 }}>Pronto</h2>}
             <div className="lista" style={{ marginTop: 18 }}>
               {gerados.map((g) => (
                 <div className="item" key={g}>

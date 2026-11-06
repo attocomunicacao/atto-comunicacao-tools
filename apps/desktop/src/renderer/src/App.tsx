@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Dicionario } from './Dicionario'
 import { Garimpo } from './Garimpo'
 
@@ -6,6 +6,8 @@ type Tela = 'garimpo' | 'dicionario'
 
 export function App() {
   const [tela, setTela] = useState<Tela>('garimpo')
+  const [versao, setVersao] = useState('')
+  useEffect(() => { window.atto.versao().then(setVersao).catch(() => {}) }, [])
   return (
     <div className="app">
       <aside className="side">
@@ -20,7 +22,7 @@ export function App() {
             Meu dicionário
           </button>
         </nav>
-        <div className="versao">v0.0.0 · em desenvolvimento</div>
+        <div className="versao">{versao ? `v${versao}` : ""}</div>
       </aside>
       <main className="main">
         {/* Garimpo fica montado para não perder o andamento ao trocar de tela */}

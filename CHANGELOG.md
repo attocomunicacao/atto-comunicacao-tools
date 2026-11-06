@@ -2,6 +2,19 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões seguem `x.y.z`.
 
+## [0.3.0] - 2026-11-06
+
+### Adicionado
+- **Logo no final dos cortes**: no app, "Anexar logo" (PNG/JPG/WebP, guardada no computador). Cada corte ganha 2,2 s finais com o último quadro escurecido e a logo entrando com fade e subida suave.
+- **Tela de carregamento detalhada**: progresso geral e por etapa, tempo decorrido, lista de etapas e "Ver detalhes do que está sendo feito" com o registro ao vivo do motor (transcrição, enquadramento, codificação).
+
+### Alterado
+- **Enquadramento estável**: o eixo do recorte fica fixo e só muda quando a câmera ou o falante mudam de fato (zona morta larga, mudança precisa durar ~2 s, filtro de maioria contra piscadas da detecção).
+- **Dissolução suave** (0,4 s) ao entrar e sair da tela dividida; o áudio não sofre desvio.
+- **Legenda**: 64 px, uma palavra por vez, branca, maiúscula, uma só fonte (Lato). Glow em duas camadas, mais suave; entrada com easing quadro a quadro (opacidade, y de -100 px a 0 e leve desfoque que some).
+- **Cortes**: ignoram teste de som e "gravando" no começo da gravação; frases que dependem da anterior ("isso", "mas", "então"...) puxam o contexto; fim sempre em frase completa; início e fim ajustados ao silêncio mais próximo, sem cortar palavras. Fade curto no áudio.
+- Versão do app mostrada no menu lateral (antes fixa em "v0.0.0 · em desenvolvimento").
+
 ## [0.2.1] - 2026-11-06
 
 ### Corrigido

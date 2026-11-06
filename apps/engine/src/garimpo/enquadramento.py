@@ -1,15 +1,17 @@
 """Enquadramento vertical inteligente: o vídeo original ocupa 100% da tela 1080x1920.
 
 - Um rosto em quadro (ou um falante ativo entre vários): recorte 9:16 de altura total centrado nele.
-- Dois ou mais rostos em quadro (câmera central): tela dividida ao meio, exatos 960 px para cada
-  pessoa; a da esquerda em cima e a da direita embaixo.
+- Dois rostos em quadro (câmera central): tela dividida ao meio, exatos 960 px para cada pessoa;
+  a da esquerda em cima e a da direita embaixo.
 
 A análise amostra o vídeo em poucos quadros por segundo, detecta rostos (YuNet, ONNX incluído) e
-gera segmentos de enquadramento fixo, sem tremida: troca só quando a mudança dura de verdade.
+gera segmentos de enquadramento FIXO: o eixo só muda quando a câmera ou o falante mudam de verdade
+(nada de acompanhar o tremor da detecção). Entre dois segmentos há uma dissolução suave.
 """
 from __future__ import annotations
 
 import subprocess
+from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -18,8 +20,10 @@ import numpy as np
 LARG, ALT = 1080, 1920
 METADE = ALT // 2
 FPS_AMOSTRA = 4          # quadros analisados por segundo
-MIN_AMOSTRAS = 3         # uma mudança precisa durar ~0,75 s para valer
-ZONA_MORTA = 0.12        # fração da largura do recorte tolerada antes de re-centralizar
+MIN_AMOSTRAS = 8         # uma mudança precisa durar ~2 s para valer
+JANELA_MODO = 9          # filtro de maioria do modo (único/dividido) para ignorar piscadas da detecção
+ZONA_MORTA = 0.45        # fração da largura do recorte que o rosto pode andar sem mexer no eixo
+TRANSICAO_S = 0.4        # dissolução entre enquadramentos
 _MODELO = Path(__file__).parent / "dados" / "yunet.onnx"
 
 
@@ -69,6 +73,21 @@ def _escolher(rostos: list[Rosto], largura: int) -> tuple[str, list[float]]:
     return "unico", [falando.cx]
 
 
+def _filtrar_modos(cheias: list[tuple[str, list[float]]]) -> list[tuple[str, list[float]]]:
+    """Maioria do modo numa janela: um rosto que some/aparece por 1-2 amostras não troca o layout."""
+    meio = JANELA_MODO // 2
+    saida = []
+    for i, dec in enumerate(cheias):
+        ini, fim = max(0, i - meio), min(len(cheias), i + meio + 1)
+        modo = Counter(d[0] for d in cheias[ini:fim]).most_common(1)[0][0]
+        if dec[0] != modo:
+            # pega a decisão vizinha mais próxima que já está no modo vencedor
+            viz = sorted((j for j in range(ini, fim) if cheias[j][0] == modo), key=lambda j: abs(j - i))
+            dec = cheias[viz[0]]
+        saida.append(dec)
+    return saida
+
+
 def segmentar(amostras: list[tuple[str, list[float]]], duracao: float, largura: int, altura: int,
               fps: float = FPS_AMOSTRA) -> list[Segmento]:
     """Transforma a sequência de decisões por amostra em segmentos de enquadramento estável."""
@@ -83,6 +102,7 @@ def segmentar(amostras: list[tuple[str, list[float]]], duracao: float, largura: 
         if cs:
             ultimo = (modo, cs)
         cheias.append(ultimo)
+    cheias = _filtrar_modos(cheias)
 
     def perto(a, b):
         """Mesma configuração (modo e nº de rostos) e posições dentro da zona morta."""
@@ -101,7 +121,8 @@ def segmentar(amostras: list[tuple[str, list[float]]], duracao: float, largura: 
         else:
             # candidato a mudança: só vale se se mantiver por MIN_AMOSTRAS amostras seguidas
             janela = cheias[i:i + MIN_AMOSTRAS]
-            if len(janela) == MIN_AMOSTRAS and all(perto(j, cheias[i]) for j in janela):
+            if len(janela) >= min(MIN_AMOSTRAS, len(cheias) - i) and len(janela) == MIN_AMOSTRAS \
+                    and all(perto(j, cheias[i]) for j in janela):
                 segs.append([i, cheias[i], list(janela)])
                 i += MIN_AMOSTRAS
             else:
@@ -116,13 +137,26 @@ def segmentar(amostras: list[tuple[str, list[float]]], duracao: float, largura: 
         n = len(decs[0][1])
         centros = [float(np.median([d[1][j] for d in decs if d[0] == modo and len(d[1]) == n])) for j in range(n)]
         saida.append(Segmento(0.0 if k == 0 else ini, fim, modo, centros))
+    return _unir_mesmo_eixo(saida, cw)
+
+
+def _unir_mesmo_eixo(segs: list[Segmento], cw: float) -> list[Segmento]:
+    """Segmentos vizinhos com o mesmo layout e eixo quase igual viram um só (sem corte à toa)."""
+    saida = [segs[0]]
+    for s in segs[1:]:
+        a = saida[-1]
+        if a.modo == s.modo and len(a.centros) == len(s.centros) \
+                and all(abs(x - y) <= ZONA_MORTA * cw for x, y in zip(a.centros, s.centros)):
+            a.fim = s.fim
+        else:
+            saida.append(s)
     return saida
 
 
 # ---------------------------------------------------------------- leitura do vídeo e detecção
 
 def _quadros(video: Path, ini: float, fim: float, largura: int, altura: int):
-    """Entrega quadros em cinza reduzidos (largura 640) à taxa FPS_AMOSTRA."""
+    """Entrega quadros reduzidos (largura 640) à taxa FPS_AMOSTRA."""
     w = 640
     h = int(round(altura * w / largura / 2) * 2)
     p = subprocess.Popen(
@@ -151,7 +185,7 @@ def _movimento_boca(anterior: np.ndarray, atual: np.ndarray, r: Rosto, escala: f
     return float(np.abs(a.astype(np.int16) - b.astype(np.int16)).mean())
 
 
-def analisar(video: Path, ini: float, fim: float, largura: int, altura: int) -> list[Segmento]:
+def analisar(video: Path, ini: float, fim: float, largura: int, altura: int, log=None) -> list[Segmento]:
     """Detecta rostos no trecho e devolve os segmentos de enquadramento."""
     import cv2
     # O modelo entra por buffer: o OpenCV não abre arquivos em caminhos com acento (ex.: "Comunicação").
@@ -159,6 +193,7 @@ def analisar(video: Path, ini: float, fim: float, largura: int, altura: int) -> 
     detector = cv2.FaceDetectorYN.create("onnx", modelo, np.empty(0, np.uint8), (640, 360), 0.6, 0.3, 5000)
     amostras: list[tuple[str, list[float]]] = []
     ant = None
+    sem_rosto = 0
     for quadro, escala in _quadros(video, ini, fim, largura, altura):
         h, w = quadro.shape[:2]
         detector.setInputSize((w, h))
@@ -170,32 +205,52 @@ def analisar(video: Path, ini: float, fim: float, largura: int, altura: int) -> 
             if ant is not None:
                 r.movimento = _movimento_boca(ant, quadro, r, escala)
             rostos.append(r)
+        sem_rosto += not rostos
         amostras.append(_escolher(rostos, largura))
         ant = quadro
-    return segmentar(amostras, fim - ini, largura, altura)
+    segs = segmentar(amostras, fim - ini, largura, altura)
+    if log:
+        log(f"Enquadramento: {len(amostras)} amostras, {sem_rosto} sem rosto, {len(segs)} segmento(s)")
+        for s in segs:
+            pos = " e ".join(f"x={c:.0f}" for c in s.centros) or "centro"
+            log(f"  {s.ini:5.1f}s a {s.fim:5.1f}s  {'tela dividida' if s.modo == 'dividido' else 'recorte único'}  ({pos})")
+    return segs
 
 
 # ---------------------------------------------------------------- filtro ffmpeg
 
-def filtro(segmentos: list[Segmento], largura: int, altura: int) -> str:
-    """Monta o trecho do filter_complex que produz [cv] (1080x1920) a partir de [0:v]."""
-    cw_u, cw_m = geometria(largura, altura)
-    partes, saidas = [], []
-    for i, s in enumerate(segmentos):
-        corte = f"trim=start={s.ini:.3f}:end={s.fim:.3f},setpts=PTS-STARTPTS"
-        if s.modo == "dividido" and len(s.centros) == 2:
-            xa, xb = (_limite(c, cw_m, largura) for c in s.centros)
-            partes.append(
-                f"[0:v]{corte},split=2[a{i}][b{i}];"
+def _layout(s: Segmento, i: int, cw_u: int, cw_m: int, largura: int, altura: int, fps: float, ate: float) -> str:
+    corte = f"trim=start={s.ini:.3f}:end={ate:.3f},setpts=PTS-STARTPTS,fps={fps:g}"
+    if s.modo == "dividido" and len(s.centros) == 2:
+        xa, xb = (_limite(c, cw_m, largura) for c in s.centros)
+        return (f"[0:v]{corte},split=2[a{i}][b{i}];"
                 f"[a{i}]crop={cw_m}:{altura}:{xa}:0,scale={LARG}:{METADE},setsar=1[t{i}];"
                 f"[b{i}]crop={cw_m}:{altura}:{xb}:0,scale={LARG}:{METADE},setsar=1[u{i}];"
-                f"[t{i}][u{i}]vstack=inputs=2,setsar=1[s{i}]")
-        else:
-            x = _limite(s.centros[0] if s.centros else largura / 2, cw_u, largura)
-            partes.append(f"[0:v]{corte},crop={cw_u}:{altura}:{x}:0,scale={LARG}:{ALT},setsar=1[s{i}]")
-        saidas.append(f"[s{i}]")
-    if len(saidas) == 1:
-        partes.append(f"{saidas[0]}null[cv]")
+                f"[t{i}][u{i}]vstack=inputs=2,setsar=1,format=yuv420p[s{i}]")
+    x = _limite(s.centros[0] if s.centros else largura / 2, cw_u, largura)
+    return f"[0:v]{corte},crop={cw_u}:{altura}:{x}:0,scale={LARG}:{ALT},setsar=1,format=yuv420p[s{i}]"
+
+
+def filtro(segmentos: list[Segmento], largura: int, altura: int, fps: float = 30.0) -> str:
+    """Monta o trecho do filter_complex que produz [cv] (1080x1920) a partir de [0:v].
+
+    Entre segmentos há uma dissolução (xfade). Cada segmento é estendido pela duração da dissolução para
+    que a duração total continue igual à do corte (o áudio é o original, sem desvio)."""
+    cw_u, cw_m = geometria(largura, altura)
+    n = len(segmentos)
+    d = TRANSICAO_S
+    if n > 1:
+        d = min(d, min(s.fim - s.ini for s in segmentos) / 3)
+    partes = []
+    for i, s in enumerate(segmentos):
+        ate = s.fim + (d if i < n - 1 else 0)
+        partes.append(_layout(s, i, cw_u, cw_m, largura, altura, fps, ate))
+    if n == 1:
+        partes.append("[s0]null[cv]")
     else:
-        partes.append(f"{''.join(saidas)}concat=n={len(saidas)}:v=1:a=0[cv]")
+        atual = "s0"
+        for i in range(1, n):
+            saida = "cv" if i == n - 1 else f"x{i}"
+            partes.append(f"[{atual}][s{i}]xfade=transition=fade:duration={d:.3f}:offset={segmentos[i].ini:.3f}[{saida}]")
+            atual = saida
     return ";".join(partes)

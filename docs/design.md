@@ -10,5 +10,5 @@
 | Linha | `#ffffff1a` / `#ffffff47` |
 | Raio | 10px |
 | Fonte da interface | Inter Tight |
-| Legenda dos vídeos | Lato 48 px, MAIÚSCULAS, branca, sem traçado, glow |
+| Legenda dos vídeos | Lato 64 px, MAIÚSCULAS, branca, sem traçado, glow |
 | Tom | Direto, frases curtas, português do Brasil |

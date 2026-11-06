@@ -39,6 +39,11 @@
     },
     lerJson: async (_p, nome) => (nome === 'duvidas.json' ? duvidas : cortes),
     lerBytes: async () => wav(),
+    versao: async () => '0.3.0',
+    logoAtual: async () => null,
+    logoBytes: async () => null,
+    escolherLogo: async () => null,
+    removerLogo: async () => {},
     mostrarNaPasta: async () => {}
   }
 })()

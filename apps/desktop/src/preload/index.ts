@@ -13,6 +13,11 @@ const api = {
   lerJson: <T = unknown>(pasta: string, nome: string): Promise<T> => ipcRenderer.invoke('arquivo:json', pasta, nome),
   lerBytes: (pasta: string, sub: string, nome: string): Promise<Uint8Array> =>
     ipcRenderer.invoke('arquivo:bytes', pasta, sub, nome),
+  versao: (): Promise<string> => ipcRenderer.invoke('app:versao'),
+  logoAtual: (): Promise<string | null> => ipcRenderer.invoke('logo:atual'),
+  logoBytes: (): Promise<Uint8Array | null> => ipcRenderer.invoke('logo:bytes'),
+  escolherLogo: (): Promise<string | null> => ipcRenderer.invoke('logo:escolher'),
+  removerLogo: (): Promise<void> => ipcRenderer.invoke('logo:remover'),
   mostrarNaPasta: (caminho: string): Promise<void> => ipcRenderer.invoke('pasta:mostrar', caminho)
 }
 

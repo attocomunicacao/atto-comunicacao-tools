@@ -1,12 +1,20 @@
 import { spawn } from 'node:child_process'
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { basename, join, resolve, sep } from 'node:path'
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { basename, extname, join, resolve, sep } from 'node:path'
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 
 const COMANDOS = new Set(['transcrever', 'estruturar', 'exportar', 'dicionario'])
 let janela: BrowserWindow | null = null
 
 const pastaProjetos = () => join(app.getPath('userData'), 'projetos')
+const pastaLogo = () => join(app.getPath('userData'), 'logo')
+/** Logo salva pelo usuário (uma só, usada no fim de todos os cortes). */
+function logoAtual(): string | null {
+  const dir = pastaLogo()
+  if (!existsSync(dir)) return null
+  const f = readdirSync(dir).find((n) => /^logo\.(png|jpe?g|webp)$/i.test(n))
+  return f ? join(dir, f) : null
+}
 const pastaMotor = () => resolve(app.getAppPath(), '..', 'engine') // desenvolvimento; o instalador embarcará o motor
 
 /** Só aceita caminhos dentro da pasta de projetos. */
@@ -106,7 +114,8 @@ app.whenReady().then(() => {
     if (!COMANDOS.has(cmd) || !args.every((a) => typeof a === 'string')) throw new Error('Comando inválido')
     const pastaIdx = args.indexOf('--pasta')
     if (pastaIdx >= 0) dentroDosProjetos(args[pastaIdx + 1])
-    return executarMotor([cmd, ...args], (linha) => janela?.webContents.send('motor:linha', linha))
+    const logo = cmd === 'exportar' ? logoAtual() : null
+    return executarMotor([cmd, ...args, ...(logo ? ['--logo', logo] : [])], (linha) => janela?.webContents.send('motor:linha', linha))
   })
 
   ipcMain.handle('arquivo:json', (_e, pasta: string, nome: string) =>
@@ -115,6 +124,31 @@ app.whenReady().then(() => {
   ipcMain.handle('arquivo:bytes', (_e, pasta: string, sub: string, nome: string) =>
     readFileSync(join(dentroDosProjetos(pasta), basename(sub), basename(nome)))
   )
+  ipcMain.handle('app:versao', () => app.getVersion())
+
+  ipcMain.handle('logo:atual', () => logoAtual())
+  ipcMain.handle('logo:bytes', () => {
+    const l = logoAtual()
+    return l ? readFileSync(l) : null
+  })
+  ipcMain.handle('logo:escolher', async () => {
+    const r = process.env['ATTO_LOGO_TESTE']
+      ? { canceled: false, filePaths: [process.env['ATTO_LOGO_TESTE']] } // autoteste, sem diálogo
+      : await dialog.showOpenDialog({
+          title: 'Escolha a logo (aparece no fim de todos os cortes)',
+          properties: ['openFile'],
+          filters: [{ name: 'Imagem', extensions: ['png', 'jpg', 'jpeg', 'webp'] }]
+        })
+    if (r.canceled || !r.filePaths[0]) return null
+    const dir = pastaLogo()
+    rmSync(dir, { recursive: true, force: true })
+    mkdirSync(dir, { recursive: true })
+    const destino = join(dir, `logo${extname(r.filePaths[0]).toLowerCase()}`)
+    copyFileSync(r.filePaths[0], destino)
+    return destino
+  })
+  ipcMain.handle('logo:remover', () => rmSync(pastaLogo(), { recursive: true, force: true }))
+
   ipcMain.handle('pasta:mostrar', (_e, caminho: string) => {
     shell.showItemInFolder(dentroDosProjetos(caminho))
   })

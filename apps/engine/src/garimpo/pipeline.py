@@ -20,6 +20,16 @@ from .modelos import Corte, Frase, Palavra
 
 def _etapa(n: int, total: int, texto: str) -> None:
     print(f"ETAPA {n}/{total} {texto}", flush=True)
+    print("PCT 0", flush=True)
+
+
+def _log(texto: str) -> None:
+    """Linha de detalhe para a tela de carregamento do app (aba "Ver detalhes")."""
+    print(f"LOG {texto}", flush=True)
+
+
+def _pct(f: float) -> None:
+    print(f"PCT {max(0, min(100, round(f * 100)))}", flush=True)
 
 
 def _aplicar(palavras: list[Palavra], escolhidas: list[Sugestao]) -> list[Palavra]:
@@ -49,20 +59,36 @@ def _carregar_palavras(pasta: Path) -> tuple[list[Palavra], float]:
 def transcrever(video: Path, pasta: Path, modelo: str) -> None:
     """Etapas 1-2 e levantamento das dúvidas de escrita (etapa 3)."""
     pasta.mkdir(parents=True, exist_ok=True)
-    fps = midia.informacoes(video)["fps"]
+    info = midia.informacoes(video)
+    fps = info["fps"]
+    _log(f"Vídeo: {video.name} ({info['largura']}x{info['altura']} a {fps:.2f} fps)")
     wav = pasta / "audio.wav"
     if not wav.exists():
         _etapa(1, 3, "Extraindo o áudio")
+        _log("FFmpeg: extraindo o áudio em WAV mono 16 kHz")
         midia.extrair_wav(video, wav)
+        _log(f"Áudio extraído ({wav.stat().st_size / 1e6:.0f} MB)")
     json_tr = pasta / "transcricao.json"
     if not json_tr.exists():
         _etapa(2, 3, "Transcrevendo (pode demorar em CPU)")
-        palavras = transcricao.transcrever(wav, fps, modelo)
+        _log(f"Whisper '{modelo}' no processador (int8), idioma pt, tempo por palavra")
+        ultimo = [-10.0]
+
+        def progresso(f: float, t: float, total: float, texto: str) -> None:
+            _pct(f)
+            if t - ultimo[0] >= 20:   # um detalhe a cada ~20 s de áudio
+                ultimo[0] = t
+                _log(f"{int(t // 60)}:{int(t % 60):02d} de {int(total // 60)}:{int(total % 60):02d}  “{texto[:90]}”")
+
+        palavras = transcricao.transcrever(wav, fps, modelo, progresso)
         transcricao.salvar(palavras, json_tr, fps)
+        _log(f"Transcrição pronta: {len(palavras)} palavras")
     palavras, fps = _carregar_palavras(pasta)
     _etapa(3, 3, "Procurando dúvidas de escrita")
     texto = " ".join(p.texto for p in palavras)
+    _log("Comparando com o seu dicionário (som e escrita)")
     sugestoes = corretor.sugerir(texto, Dicionario.carregar())
+    _log(f"{len(sugestoes)} dúvida(s) de escrita encontrada(s)")
     itens = []
     for i, s in enumerate(sugestoes):
         itens.append({"id": i, "original": s.original, "sugestao": s.sugestao, "confianca": s.confianca,
@@ -88,22 +114,37 @@ def estruturar(video: Path, pasta: Path, aprovadas: list[int]) -> list[Corte]:
                 dic.aprender(d["original"], d["sugestao"])
     dic.salvar()
     _etapa(1, 3, "Corrigindo a transcrição")
+    _log(f"Aplicando {len(escolhidas)} correção(ões) aprovada(s); o dicionário aprendeu as novas")
     palavras = _aplicar(palavras, escolhidas)
     exportar_md.transcricao(palavras, pasta / "transcricao.md")
     _etapa(2, 3, "Separando frases, parágrafos e temas")
     fs = estrutura.frases(palavras)
     ps = estrutura.paragrafos(fs)
     ts = estrutura.temas(ps)
+    _log(f"{len(fs)} frases, {len(ps)} parágrafos, {len(ts)} temas")
+    _log("Pontuando trechos (vocabulário raro, gancho, exemplos), sem teste de som e com contexto completo")
     cs = mod_cortes.sugerir(ts)
+    _log(f"{len(cs)} corte(s) escolhido(s)")
     exportar_md.frases(fs, pasta / "frases.md", fps)
     exportar_md.paragrafos(ps, pasta / "paragrafos.md", fps)
     exportar_md.temas(ts, pasta / "temas", cs, fps)
     exportar_md.cortes(cs, pasta / "cortes.md", fps)
-    _etapa(3, 3, "Gerando prévias de áudio")
+    _etapa(3, 3, "Ajustando os limites e gerando prévias de áudio")
+    wav = None
+    try:
+        wav = mod_cortes.carregar_wav(pasta / "audio.wav")
+    except Exception as e:  # sem o áudio de trabalho, usa só a folga fixa
+        _log(f"Sem análise de silêncio ({e}); usando folga fixa")
+    dados = []
     for i, c in enumerate(cs, 1):
-        midia.previa_wav(video, c.ini, c.fim, pasta / "previas" / f"corte-{i:02d}.wav")
-    dados = [{"n": i, "tema": c.tema, "ini": c.ini, "fim": c.fim, "duracao": c.duracao, "texto": c.texto,
-              "palavras": [vars(p) for f in c.frases for p in f.palavras]} for i, c in enumerate(cs, 1)]
+        ant = next((p.fim for p in reversed(palavras) if p.fim <= c.ini - 0.001), None)
+        prox = next((p.ini for p in palavras if p.ini >= c.fim + 0.001), None)
+        ini, fim = mod_cortes.ajustar_limites(c.ini, c.fim, ant, prox, wav)
+        _log(f"Corte {i:02d}: {c.ini:.2f}s-{c.fim:.2f}s  ->  {ini:.2f}s-{fim:.2f}s (silêncio mais próximo); abre com “{c.texto[:60]}…”")
+        midia.previa_wav(video, ini, fim, pasta / "previas" / f"corte-{i:02d}.wav")
+        _pct(i / len(cs))
+        dados.append({"n": i, "tema": c.tema, "ini": ini, "fim": fim, "duracao": fim - ini, "texto": c.texto,
+                      "palavras": [vars(p) for f in c.frases for p in f.palavras]})
     (pasta / "cortes.json").write_text(json.dumps(dados, ensure_ascii=False), encoding="utf-8")
     print(f"RESULTADO {len(ts)} temas {len(cs)} cortes", flush=True)
     return cs
@@ -115,14 +156,22 @@ def analisar(video: Path, pasta: Path, modelo: str, aceitar_todas: bool) -> None
     estruturar(video, pasta, [d["id"] for d in itens] if aceitar_todas else [])
 
 
-def exportar(video: Path, pasta: Path, aprovados: list[int]) -> None:
+def exportar(video: Path, pasta: Path, aprovados: list[int], logo: Path | None = None) -> None:
     dados = json.loads((pasta / "cortes.json").read_text(encoding="utf-8"))
     escolhidos = [d for d in dados if d["n"] in aprovados]
+    if logo is not None and not logo.exists():
+        _log(f"Logo não encontrada ({logo}); gerando sem ela")
+        logo = None
+    _log("Logo no final de cada corte: " + (logo.name if logo else "nenhuma"))
     for k, d in enumerate(escolhidos, 1):
         _etapa(k, len(escolhidos), f"Gerando o corte {d['n']:02d}")
+        _log(f"Corte {d['n']:02d}: {d['ini']:.2f}s a {d['fim']:.2f}s ({d['duracao']:.0f} s)")
         c = Corte(d["tema"], [Frase([Palavra(**p) for p in d["palavras"]])], 0.0)
-        ass = legenda.gerar_ass(c, pasta / "saida" / f"corte-{d['n']:02d}.ass")
-        mp4 = midia.cortar_vertical(video, d["ini"], d["fim"], ass, pasta / "saida" / f"corte-{d['n']:02d}.mp4")
+        ass = legenda.gerar_ass(c, pasta / "saida" / f"corte-{d['n']:02d}.ass", origem=d["ini"])
+        _log(f"Legenda: {len(c.frases[0].palavras)} palavras, uma por vez (64 px, branca, glow)")
+        mp4 = midia.cortar_vertical(video, d["ini"], d["fim"], ass, pasta / "saida" / f"corte-{d['n']:02d}.mp4",
+                                    logo=logo, log=_log, aoProgresso=_pct)
+        _log(f"Arquivo pronto: {mp4.name} ({mp4.stat().st_size / 1e6:.0f} MB)")
         print(f"ARQUIVO {mp4}", flush=True)
 
 
@@ -154,7 +203,9 @@ def main() -> None:
     a = com_video("analisar", "tudo até os cortes sugeridos")
     a.add_argument("--modelo", default="small")
     a.add_argument("--aceitar-todas", action="store_true")
-    com_video("exportar", "corta e legenda os aprovados").add_argument("--aprovados", required=True)
+    e = com_video("exportar", "corta e legenda os aprovados")
+    e.add_argument("--aprovados", required=True)
+    e.add_argument("--logo", type=Path, default=None, help="imagem para o fim de cada corte")
     d = sub.add_parser("dicionario", help="gerencia o dicionário pessoal")
     d.add_argument("acao", choices=["listar", "adicionar", "remover"])
     d.add_argument("termo", nargs="?")
@@ -168,7 +219,7 @@ def main() -> None:
     elif args.cmd == "analisar":
         analisar(args.video, args.pasta, args.modelo, args.aceitar_todas)
     elif args.cmd == "exportar":
-        exportar(args.video, args.pasta, ids(args.aprovados))
+        exportar(args.video, args.pasta, ids(args.aprovados), args.logo)
     else:
         dicionario(args.acao, args.termo)
 

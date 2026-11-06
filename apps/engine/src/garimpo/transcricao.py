@@ -8,16 +8,19 @@ from pathlib import Path
 from .modelos import Palavra
 
 
-def transcrever(wav: Path, fps: float, modelo: str = "small") -> list[Palavra]:
+def transcrever(wav: Path, fps: float, modelo: str = "small", aoProgresso=None) -> list[Palavra]:
     from faster_whisper import WhisperModel
 
     # Empacotado: o modelo vem junto (ATTO_MODELOS/<modelo>), funcionando sem internet.
     local = Path(os.environ.get("ATTO_MODELOS", "")) / modelo
     origem = str(local) if os.environ.get("ATTO_MODELOS") and (local / "model.bin").exists() else modelo
     m = WhisperModel(origem, device="cpu", compute_type="int8", cpu_threads=8)
-    segs, _ = m.transcribe(str(wav), language="pt", word_timestamps=True, vad_filter=True, beam_size=1)
+    segs, info = m.transcribe(str(wav), language="pt", word_timestamps=True, vad_filter=True, beam_size=1)
     palavras: list[Palavra] = []
+    total = max(getattr(info, "duration", 0.0), 1.0)
     for s in segs:
+        if aoProgresso:
+            aoProgresso(min(s.end / total, 1.0), s.end, total, s.text.strip())
         for w in s.words or []:
             t = w.word.strip()
             if t:

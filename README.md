@@ -32,7 +32,7 @@ Você escolhe o vídeo de uma palestra ou podcast (de 30 minutos a 3 horas). O G
 2. mostra as **dúvidas de escrita** (nomes de empresas, sindicatos) e aprende com o que você aprova, num **dicionário só seu**;
 3. separa o texto em **frases, parágrafos e temas** (um `.md` para cada nível);
 4. sugere o **trecho mais relevante de cada tema**, de 30 s a 1min30, sem cortar frases, com **prévia em áudio**;
-5. gera os cortes aprovados em **MP4 vertical 1080×1920**, alta qualidade, com **legenda palavra por palavra** (Lato, maiúscula, branca, com glow); o vídeo ocupa a tela toda, seguindo quem fala (dois rostos em quadro: tela dividida ao meio).
+5. gera os cortes aprovados em **MP4 vertical 1080×1920**, alta qualidade, com **legenda palavra por palavra** (Lato, maiúscula, 64 px, branca, com glow) e logo opcional no final; o vídeo ocupa a tela toda, seguindo quem fala (dois rostos em quadro: tela dividida ao meio).
 
 ![Cortes sugeridos](docs/assets/screenshots/03-cortes.png)
 
@@ -47,12 +47,12 @@ Você escolhe o vídeo de uma palestra ou podcast (de 30 minutos a 3 horas). O G
 
 ## 03 · Instalar
 
-> **Versão 0.2.0, em testes, para uso interno.** O app e o instalador **não têm assinatura digital** (certificado de código). O Windows pode mostrar avisos; veja "Avisos do Windows" abaixo.
+> **Versão 0.3.0, em testes, para uso interno.** O app e o instalador **não têm assinatura digital** (certificado de código). O Windows pode mostrar avisos; veja "Avisos do Windows" abaixo.
 
 **Requisitos:** Windows 10/11 x64, 8 GB de RAM (16 GB recomendado), cerca de 3 GB livres. Placa de vídeo dedicada não é necessária: a transcrição roda no processador, então gravações longas demoram.
 
 **Instalação (recomendada):**
-1. Em [Releases](https://github.com/attocomunicacao/atto-comunicacao-tools/releases/latest), baixe `ATTO-Tools-Setup-0.2.0.exe` (122 MB) e execute. Ele instala o Launcher só para o seu usuário, sem pedir administrador.
+1. Em [Releases](https://github.com/attocomunicacao/atto-comunicacao-tools/releases/latest), baixe `ATTO-Tools-Setup-0.3.0.exe` (122 MB) e execute. Ele instala o Launcher só para o seu usuário, sem pedir administrador.
 2. No Launcher, clique em **Baixar e instalar**. Ele baixa o app (886 MB), confere o SHA-256 e instala.
 3. Se o Windows avisar, veja "Avisos do Windows" abaixo.
 
@@ -103,7 +103,7 @@ docs/         Decisões, design, diário de desenvolvimento e capturas
 | Motor | Python 3.12 (uv), faster-whisper (`small`, int8, CPU), FFmpeg |
 | Correção | Dicionário pessoal + busca fonética (sem LLM, rápido em CPU) |
 | Temas e cortes | Pausas, vocabulário raro (TF-IDF) e regras de relevância |
-| Legenda | ASS, Lato maiúscula 48 px, branca, sem traçado, glow fixo, entrada com fade e y -100→0 |
+| Legenda | ASS, Lato maiúscula 64 px, branca, sem traçado, glow fixo, entrada com fade e y -100→0 |
 | Entrega | Launcher + GitHub Releases (zip + SHA-256) |
 
 ## 06 · Desenvolvimento
