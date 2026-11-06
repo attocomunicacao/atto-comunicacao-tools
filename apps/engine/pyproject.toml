@@ -3,7 +3,10 @@ name = "atto-engine"
 version = "0.0.0"
 description = "Motor do Garimpo: transcrição, análise e corte"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "av>=14,<17",
+    "faster-whisper>=1.2.1",
+]
 
 [build-system]
 requires = ["hatchling"]
