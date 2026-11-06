@@ -1,0 +1,10 @@
+{
+  "name": "@atto/desktop",
+  "private": true,
+  "version": "0.0.0",
+  "main": "dist/main/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json && electron ."
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "atto-comunicacao-tools",
+  "private": true,
+  "version": "0.0.0",
+  "description": "ATTO Tools: suíte desktop da Atto Comunicação",
+  "workspaces": ["apps/launcher", "apps/desktop"],
+  "scripts": {
+    "dev:desktop": "npm run dev -w apps/desktop",
+    "dev:launcher": "npm run dev -w apps/launcher",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "eslint .",
+    "test": "npm run test --workspaces --if-present"
+  },
+  "engines": { "node": ">=24" }
+}

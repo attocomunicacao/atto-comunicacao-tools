@@ -1,0 +1,1 @@
+"""Garimpo: motor de cortes."""
