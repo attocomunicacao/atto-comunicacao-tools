@@ -32,7 +32,7 @@ Você escolhe o vídeo de uma palestra ou podcast (de 30 minutos a 3 horas). O G
 2. mostra as **dúvidas de escrita** (nomes de empresas, sindicatos) e aprende com o que você aprova, num **dicionário só seu**;
 3. separa o texto em **frases, parágrafos e temas** (um `.md` para cada nível);
 4. sugere o **trecho mais relevante de cada tema**, de 30 s a 1min30, sem cortar frases, com **prévia em áudio**;
-5. gera os cortes aprovados em **MP4 vertical 1080×1920**, alta qualidade, com **legenda palavra por palavra** (Lato, maiúscula).
+5. gera os cortes aprovados em **MP4 vertical 1080×1920**, alta qualidade, com **legenda palavra por palavra** (Lato, maiúscula, branca, com glow); o vídeo ocupa a tela toda, seguindo quem fala (dois rostos em quadro: tela dividida ao meio).
 
 ![Cortes sugeridos](docs/assets/screenshots/03-cortes.png)
 
@@ -103,7 +103,7 @@ docs/         Decisões, design, diário de desenvolvimento e capturas
 | Motor | Python 3.12 (uv), faster-whisper (`small`, int8, CPU), FFmpeg |
 | Correção | Dicionário pessoal + busca fonética (sem LLM, rápido em CPU) |
 | Temas e cortes | Pausas, vocabulário raro (TF-IDF) e regras de relevância |
-| Legenda | ASS, Lato maiúscula, destaque `#2ee6c8` |
+| Legenda | ASS, Lato maiúscula 48 px, branca, sem traçado, glow fixo, entrada com fade e y -100→0 |
 | Entrega | Launcher + GitHub Releases (zip + SHA-256) |
 
 ## 06 · Desenvolvimento

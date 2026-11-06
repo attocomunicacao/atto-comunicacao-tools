@@ -44,7 +44,7 @@ def test_legenda_ass_maiuscula_e_palavra_a_palavra(tmp_path):
 
     c = Corte("t", [Frase(fala(10.0, ["olá", "mundo", "bonito"]))], 1.0)
     ass = legenda.gerar_ass(c, tmp_path / "a.ass").read_text(encoding="utf-8")
-    assert ass.count("Dialogue:") == 3
+    assert ass.count("Dialogue:") == 6  # uma palavra por vez, 2 camadas (glow + texto)
     assert "OLÁ" in ass and "olá" not in ass and "Lato" in ass
 
 

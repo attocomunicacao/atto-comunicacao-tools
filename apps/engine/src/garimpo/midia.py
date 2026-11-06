@@ -45,20 +45,23 @@ def _caminho_filtro(p: Path) -> str:
 
 
 def cortar_vertical(video: Path, ini: float, fim: float, ass: Path | None, saida: Path) -> Path:
-    """Etapas 10-11: corta o trecho em 1080x1920 (fundo desfocado + vídeo inteiro) e queima a legenda."""
+    """Etapas 10-11: corta o trecho em 1080x1920 com o vídeo original ocupando a tela toda.
+
+    O enquadramento segue o falante (ver `enquadramento`); com dois rostos em quadro a tela é dividida
+    ao meio. Depois queima a legenda."""
+    from . import enquadramento
     saida.parent.mkdir(parents=True, exist_ok=True)
-    # O fundo é desfocado em miniatura (1/10) e ampliado: visualmente igual (SSIM 0,994) e ~1,6x mais rápido.
-    fundo = ("[0:v]scale=108:192:force_original_aspect_ratio=increase,crop=108:192,boxblur=3:2,"
-             "scale=1080:1920:flags=bicubic[bg]")
-    frente = "[0:v]scale=1080:-2[fg]"
-    comp = "[bg][fg]overlay=(W-w)/2:(H-h)/2"
+    info = informacoes(video)
+    segmentos = enquadramento.analisar(video, ini, fim, info["largura"], info["altura"])
+    comp = enquadramento.filtro(segmentos, info["largura"], info["altura"])
+    ultimo = "[cv]"
     if ass is not None:
         fontes = os.environ.get("ATTO_FONTES")  # empacotado: a Lato vem junto, sem depender do Windows
         extra = f":fontsdir='{_caminho_filtro(Path(fontes))}'" if fontes else ""
-        comp += f",ass='{_caminho_filtro(ass)}'{extra}"
-    filtro = f"{fundo};{frente};{comp}[v]"
+        comp += f";[cv]ass='{_caminho_filtro(ass)}'{extra}[v]"
+        ultimo = "[v]"
     _rodar(["ffmpeg", "-v", "error", "-y", "-ss", f"{ini:.3f}", "-to", f"{fim:.3f}", "-i", str(video),
-            "-filter_complex", filtro, "-map", "[v]", "-map", "0:a:0",
+            "-filter_complex", comp, "-map", ultimo, "-map", "0:a:0",
             "-c:v", "libx264", "-preset", "faster", "-crf", "16", "-pix_fmt", "yuv420p",
             "-c:a", "aac", "-b:a", "256k", "-movflags", "+faststart", str(saida)])
     return saida
