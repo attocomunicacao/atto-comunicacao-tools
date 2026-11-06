@@ -1,4 +1,4 @@
-import { writeFileSync } from 'node:fs'
+import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { abrir, buscarManifest, compararVersoes, instalar, lerEstado, reverter, type Manifest } from './atualizador.ts'
@@ -10,6 +10,17 @@ const dev = !app.isPackaged
 const MANIFEST_URL = (dev && process.env['ATTO_MANIFEST_URL']) || `https://github.com/${REPO}/releases/latest/download/manifest.json`
 const PREFIXO = (dev && process.env['ATTO_PREFIXO']) || `https://github.com/${REPO}/releases/download/`
 const raiz = () => (dev && process.env['ATTO_RAIZ']) || join(process.env['LOCALAPPDATA'] ?? app.getPath('appData'), 'ATTO Tools')
+
+/** Registro simples (em %APPDATA%\atto-launcher\launcher.log) para ajudar a entender o que o launcher fez. */
+function registrar(msg: string): void {
+  try {
+    const dir = app.getPath('userData')
+    mkdirSync(dir, { recursive: true })
+    appendFileSync(join(dir, 'launcher.log'), `${new Date().toISOString()} [${process.pid}] ${msg}\n`)
+  } catch {
+    /* o registro nunca pode derrubar o launcher */
+  }
+}
 
 let janela: BrowserWindow | null = null
 let ultima: Manifest | null = null
@@ -26,6 +37,8 @@ async function consultar(): Promise<void> {
 }
 
 app.whenReady().then(() => {
+  registrar(`iniciado (versão do launcher ${app.getVersion()})`)
+  ipcMain.handle('launcher:log', (_e, msg: string) => registrar(`interface: ${msg}`))
   ipcMain.handle('launcher:estado', async () => {
     await consultar()
     const e = lerEstado(raiz())
@@ -37,6 +50,7 @@ app.whenReady().then(() => {
     }
   })
   ipcMain.handle('launcher:atualizar', async () => {
+    registrar('atualizar/instalar solicitado pela interface')
     if (!ultima) throw new Error('Não foi possível consultar a versão mais recente.')
     const atual = lerEstado(raiz()).atual
     if (atual && compararVersoes(ultima.versao, atual) <= 0) return
@@ -47,8 +61,14 @@ app.whenReady().then(() => {
       aoProgresso: (pct, etapa) => janela?.webContents.send('launcher:progresso', pct, etapa)
     })
   })
-  ipcMain.handle('launcher:abrir', () => abrir(raiz(), EXECUTAVEL))
-  ipcMain.handle('launcher:reverter', () => void reverter(raiz()))
+  ipcMain.handle('launcher:abrir', () => {
+    registrar('abrir solicitado')
+    abrir(raiz(), EXECUTAVEL)
+  })
+  ipcMain.handle('launcher:reverter', () => {
+    registrar('voltar à versão anterior solicitado')
+    reverter(raiz())
+  })
 
   janela = new BrowserWindow({
     width: 560,

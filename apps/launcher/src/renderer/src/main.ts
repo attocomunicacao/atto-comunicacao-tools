@@ -15,6 +15,7 @@ declare global {
       estado(): Promise<Estado>
       atualizar(): Promise<void>
       abrir(): Promise<void>
+      registrar(msg: string): Promise<void>
       reverter(): Promise<void>
       aoProgresso(fn: (pct: number, etapa: string) => void): void
     }
@@ -72,7 +73,13 @@ async function atualizarTela() {
   principal.disabled = false
 }
 
-principal.addEventListener('click', async () => {
+principal.addEventListener('click', async (ev) => {
+  // Só age com uma ação real da pessoa (mouse/teclado); cliques gerados por script são ignorados.
+  if (!ev.isTrusted) {
+    window.launcher.registrar('clique ignorado: não veio de uma ação real do usuário')
+    return
+  }
+  window.launcher.registrar(`clique em "${principal.textContent}" isTrusted=${ev.isTrusted} detail=${ev.detail} pointer=${(ev as PointerEvent).pointerType ?? '-'} foco=${document.hasFocus()} ativacao=${navigator.userActivation?.isActive}`)
   principal.disabled = true
   voltar.hidden = true
   try {
@@ -85,7 +92,8 @@ principal.addEventListener('click', async () => {
   }
   await atualizarTela().catch(mostrarErro)
 })
-voltar.addEventListener('click', async () => {
+voltar.addEventListener('click', async (ev) => {
+  if (!ev.isTrusted) return
   try {
     await window.launcher.reverter()
   } catch (e) {

@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
 contextBridge.exposeInMainWorld('launcher', {
+  registrar: (msg: string) => ipcRenderer.invoke('launcher:log', String(msg).slice(0, 300)),
   estado: () => ipcRenderer.invoke('launcher:estado'),
   atualizar: () => ipcRenderer.invoke('launcher:atualizar'),
   abrir: () => ipcRenderer.invoke('launcher:abrir'),

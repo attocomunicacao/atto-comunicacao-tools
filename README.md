@@ -110,6 +110,7 @@ npm run dev:desktop      # abre o ATTO Tools
 | `npm test` | testes do launcher |
 | `cd apps/engine && uv run pytest` | testes do motor |
 | `npm run capturas` | gera as capturas de tela (dados fictícios) |
+| `npm run instalador` | gera o instalador do Launcher: `dist/launcher/ATTO-Tools-Setup-<versão>.exe` |
 | `npm run package -- --versao 0.1.0` | gera `dist/ATTO-Tools-<versão>-win-x64.zip` e o `manifest.json` |
 
 **Publicar uma versão:** gere o pacote e crie uma Release `vX.Y.Z` com o `.zip` e o `manifest.json` (`gh release create`). O Launcher lê o `manifest.json` da última release.

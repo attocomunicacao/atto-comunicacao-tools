@@ -54,7 +54,12 @@ async function abrirApp(porta) {
   const texto = () => ev('document.body.innerText')
   const foto = async (n) => writeFileSync(`${saida}/${n}.png`, Buffer.from((await cdp('Page.captureScreenshot', { format: 'png' })).result.data, 'base64'))
   const ate = async (frag, s = 30) => { for (let i = 0; i < s * 2; i++) { const t = await texto(); if (t.toLowerCase().includes(frag.toLowerCase())) return t; await esperar(500) } await foto('timeout'); throw new Error('timeout: ' + frag + ' | ' + (await texto()).replace(/\n/g, ' / ')) }
-  const clicar = (r) => ev(`(()=>{const b=[...document.querySelectorAll('button')].find(x=>x.innerText.trim().startsWith(${JSON.stringify(r)})&&!x.disabled);if(b){b.click();return true}return false})()`)
+  const clicar = async (r) => {
+  const pos = await ev(`(()=>{const b=[...document.querySelectorAll('button')].find(x=>x.innerText.trim().startsWith(${JSON.stringify(r)})&&!x.disabled);if(!b)return null;const q=b.getBoundingClientRect();return {x:q.x+q.width/2,y:q.y+q.height/2}})()`)
+  if (!pos) return false
+  for (const type of ['mousePressed', 'mouseReleased']) await cdp('Input.dispatchMouseEvent', { type, x: pos.x, y: pos.y, button: 'left', clickCount: 1 })
+  return true
+}
   const fechar = () => { ws.close(); proc.kill(); spawn('taskkill', ['/F', '/IM', 'electron.exe', '/T'], { stdio: 'ignore' }) }
   return { ate, clicar, foto, texto, fechar }
 }
