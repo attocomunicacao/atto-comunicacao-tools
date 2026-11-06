@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ATTO Tools · Garimpo</title>
+  <meta name="description" content="ATTO Tools: ferramentas desktop para editores de vídeo, fotógrafos, designers e jornalistas. O Garimpo transforma palestras e podcasts em cortes verticais com legenda palavra por palavra." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;700&display=swap" />
+  <style>
+    :root {
+      --bg: #0e1014; --bg-raised: #15181d; --fg: #e1e1e1; --muted: #8a8d93;
+      --accent: #2ee6c8; --on-accent: #04201b; --line: #ffffff1a; --line-strong: #ffffff47;
+      --radius: 10px; --gutter: clamp(20px, 4vw, 44px);
+      --container: min(1108px, calc(100% - 2 * var(--gutter)));
+      --font: "Inter Tight", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font); line-height: 1.55; }
+    a { color: inherit; }
+    .skip { position: absolute; left: -999px; } .skip:focus { left: 12px; top: 12px; background: var(--accent); color: var(--on-accent); padding: 8px 12px; border-radius: var(--radius); z-index: 10; }
+    .wrap { width: var(--container); margin-inline: auto; }
+    header { position: sticky; top: 0; z-index: 5; background: #0e1014e6; backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+    header .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+    .marca { font-weight: 700; letter-spacing: .04em; text-decoration: none; font-size: 1.15rem; }
+    .marca span, .acc { color: var(--accent); }
+    nav { display: flex; gap: 22px; font-size: .95rem; color: var(--muted); }
+    nav a { text-decoration: none; } nav a:hover { color: var(--fg); }
+    .btn { display: inline-block; background: var(--accent); color: var(--on-accent); text-decoration: none; font-weight: 700; padding: 13px 22px; border-radius: var(--radius); }
+    .btn.sec { background: none; color: var(--fg); border: 1px solid var(--line-strong); font-weight: 500; }
+    .btn:hover { filter: brightness(1.08); }
+    a:focus-visible, .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+    .rotulo { color: var(--accent); font-size: .8rem; text-transform: uppercase; letter-spacing: .14em; margin: 0 0 14px; }
+    section { padding-block: clamp(72px, 10vw, 140px); }
+    h1 { font-size: clamp(2.4rem, 5vw, 4.4rem); line-height: 1.02; font-weight: 500; margin: 0 0 22px; letter-spacing: -.02em; }
+    h2 { font-size: clamp(1.8rem, 3.6vw, 3rem); line-height: 1.1; font-weight: 500; margin: 0 0 18px; letter-spacing: -.01em; }
+    h3 { margin: 0 0 8px; font-weight: 500; font-size: 1.15rem; }
+    .lead { color: var(--muted); font-size: clamp(1.05rem, 1.4vw, 1.25rem); max-width: 56ch; margin: 0 0 30px; }
+    .acoes { display: flex; gap: 12px; flex-wrap: wrap; }
+    .selos { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 28px; }
+    .selo { border: 1px solid var(--line-strong); border-radius: 999px; padding: 3px 12px; font-size: .85rem; color: var(--muted); }
+    .hero img, .tela img { width: 100%; height: auto; display: block; border: 1px solid var(--line-strong); border-radius: var(--radius); }
+    .hero .wrap { display: grid; gap: 48px; }
+    .passos { counter-reset: p; display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); padding: 0; list-style: none; margin: 36px 0 0; }
+    .passos li { counter-increment: p; background: var(--bg-raised); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+    .passos li::before { content: "0" counter(p); color: var(--accent); font-size: .85rem; letter-spacing: .1em; display: block; margin-bottom: 10px; }
+    .passos p, .card p { color: var(--muted); margin: 0; font-size: .95rem; }
+    .grade { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); margin-top: 36px; }
+    .card { background: var(--bg-raised); border: 1px solid var(--line); border-radius: var(--radius); padding: 26px; }
+    .telas { display: grid; gap: 28px; margin-top: 40px; }
+    .tela figcaption { color: var(--muted); font-size: .9rem; margin-top: 10px; }
+    .duas { display: grid; gap: 28px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); align-items: start; }
+    .tela img { aspect-ratio: 1280 / 820; object-fit: cover; object-position: top left; }
+    .aviso { color: var(--muted); font-size: .9rem; border-left: 2px solid var(--accent); padding-left: 14px; margin-top: 28px; max-width: 70ch; }
+    code { background: var(--bg-raised); border: 1px solid var(--line); border-radius: 6px; padding: 1px 7px; font-size: .9em; }
+    footer { border-top: 1px solid var(--line); padding-block: 40px; color: var(--muted); font-size: .9rem; }
+    footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+    @media (max-width: 720px) { nav { display: none; } }
+    @media (min-width: 960px) { .hero .wrap { grid-template-columns: 1.05fr 1fr; align-items: center; } }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#conteudo">Pular para o conteúdo</a>
+  <header>
+    <div class="wrap">
+      <a class="marca" href="#">ATTO <span>TOOLS</span></a>
+      <nav aria-label="Principal">
+        <a href="#como-funciona">Como funciona</a>
+        <a href="#telas">Telas</a>
+        <a href="#instalar">Instalar</a>
+        <a href="https://github.com/attocomunicacao/atto-comunicacao-tools">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="conteudo">
+    <section class="hero">
+      <div class="wrap">
+        <div>
+          <p class="rotulo">Garimpo · primeira ferramenta</p>
+          <h1>De uma palestra de 3 horas a cortes prontos para as redes.</h1>
+          <p class="lead">O Garimpo ouve a gravação, separa por temas, sugere os melhores trechos de 30 s a 1min30 e entrega vídeos verticais com legenda palavra por palavra. Tudo no seu computador.</p>
+          <div class="acoes">
+            <a class="btn" href="https://github.com/attocomunicacao/atto-comunicacao-tools/releases/latest">Ver a última versão</a>
+            <a class="btn sec" href="#como-funciona">Como funciona</a>
+          </div>
+          <div class="selos" aria-label="Características">
+            <span class="selo">Windows 10/11 x64</span><span class="selo">Local-first</span><span class="selo">Sem mensalidade de API</span><span class="selo">Atualização pelo Launcher</span>
+          </div>
+        </div>
+        <img src="assets/screenshots/03-cortes.png" alt="Tela do Garimpo com cortes sugeridos, prévia de áudio e caixas de aprovação (dados fictícios)" />
+      </div>
+    </section>
+
+    <section id="como-funciona">
+      <div class="wrap">
+        <p class="rotulo">Como funciona</p>
+        <h2>Do vídeo ao corte, em cinco passos.</h2>
+        <p class="lead">Você só decide o que importa: corrigir nomes e aprovar os cortes.</p>
+        <ol class="passos">
+          <li><h3>Vídeo</h3><p>MP4, MOV, MTS, MKV e outros. O áudio é extraído na hora.</p></li>
+          <li><h3>Transcrição</h3><p>Whisper local, com o tempo de cada palavra guardado em quadros.</p></li>
+          <li><h3>Dúvidas</h3><p>Nomes de empresas e sindicatos errados viram uma lista para você aprovar.</p></li>
+          <li><h3>Cortes</h3><p>Frases, parágrafos e temas. Trechos de 30 s a 1min30, sem cortar frase, com prévia em áudio.</p></li>
+          <li><h3>Exportar</h3><p>MP4 vertical 1080×1920 em alta qualidade, com legenda dinâmica em Lato maiúscula.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <p class="rotulo">Por que o Garimpo</p>
+        <h2>Feito para quem edita todo dia.</h2>
+        <div class="grade">
+          <div class="card"><h3>Dicionário só seu</h3><p>Aprova uma vez, o Garimpo aprende. Cada usuário tem o seu dicionário, guardado no próprio computador e nunca compartilhado.</p></div>
+          <div class="card"><h3>Roda sem internet</h3><p>O modelo de transcrição vem junto. Seus vídeos não saem da máquina e não há custo por uso.</p></div>
+          <div class="card"><h3>Nada é publicado sozinho</h3><p>Você ouve cada corte antes de aprovar. O app só gera os arquivos que você marcar.</p></div>
+          <div class="card"><h3>Atualização sem dor</h3><p>O Launcher baixa as novidades, confere a integridade do pacote e permite voltar para a versão anterior.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="telas">
+      <div class="wrap">
+        <p class="rotulo">Telas</p>
+        <h2>Simples de ler, rápido de aprovar.</h2>
+        <div class="duas telas">
+          <figure class="tela"><img src="assets/screenshots/02-duvidas.png" alt="Lista de dúvidas de escrita com sugestões de correção (dados fictícios)" loading="lazy" /><figcaption>Dúvidas de escrita: aprove as correções e o dicionário aprende.</figcaption></figure>
+          <figure class="tela"><img src="assets/screenshots/08-dicionario.png" alt="Tela Meu dicionário com termos e variantes (dados fictícios)" loading="lazy" /><figcaption>Meu dicionário: termos e variantes que o Garimpo já conhece.</figcaption></figure>
+          <figure class="tela"><img src="assets/screenshots/04-pronto.png" alt="Tela de conclusão com os vídeos gerados (dados fictícios)" loading="lazy" /><figcaption>Pronto: vídeos verticais gerados e prontos para postar.</figcaption></figure>
+          <figure class="tela"><img src="assets/screenshots/07-launcher-release-real.png" alt="Launcher oferecendo a instalação do ATTO Tools 0.1.0" loading="lazy" /><figcaption>Launcher: instala e atualiza o ATTO Tools.</figcaption></figure>
+        </div>
+        <p class="aviso">Os dados e textos das telas acima são fictícios, gerados por <code>npm run capturas</code>.</p>
+      </div>
+    </section>
+
+    <section id="instalar">
+      <div class="wrap">
+        <p class="rotulo">Instalar</p>
+        <h2>Versão 0.1.0 em testes.</h2>
+        <p class="lead">O ATTO Tools está em desenvolvimento. O pacote da versão 0.1.0 já está publicado; o instalador do Launcher ainda será lançado.</p>
+        <div class="acoes">
+          <a class="btn" href="https://github.com/attocomunicacao/atto-comunicacao-tools/releases/latest">Abrir a página de downloads</a>
+          <a class="btn sec" href="https://github.com/attocomunicacao/atto-comunicacao-tools#instalar">Passo a passo</a>
+        </div>
+        <p class="aviso">O app ainda não é assinado digitalmente, então o Windows SmartScreen pode mostrar um aviso. O pacote tem cerca de 886 MB porque leva junto o modelo de transcrição e o FFmpeg.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <span>© 2026 Atto Comunicação. Todos os direitos reservados.</span>
+      <span><a href="https://atto-comunicacao.netlify.app/">Atto Comunicação</a> · <a href="https://github.com/attocomunicacao/atto-comunicacao-tools">Código no GitHub</a> · <a href="#">Voltar ao topo</a></span>
+    </div>
+  </footer>
+</body>
+</html>
