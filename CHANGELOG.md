@@ -2,7 +2,7 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões seguem `x.y.z`.
 
-## [Não lançado]
+## [0.2.0] - 2026-11-06
 
 ### Alterado
 - **Corte vertical**: o vídeo original agora ocupa 100% da tela 1080×1920 (sem fundo desfocado), com recorte centrado em quem aparece/fala. Com dois rostos em quadro (câmera central), a tela é dividida ao meio (960 px cada; esquerda em cima, direita embaixo). Detecção de rostos local (YuNet, ONNX incluído).
