@@ -2,6 +2,20 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões seguem `x.y.z`.
 
+## [0.6.0] - 2026-11-09
+
+### Adicionado
+- **Estilo minimal premium**: legenda em linhas de até 5 palavras, palavra de sentido em Playfair Display itálico (escolhida pelo LLM local), demais em Inter; ilustrações sem cartão (linha + texto, gráfico com grade e bolinha, ícone com órbita, citação em tela cheia).
+- **Motor de presets da legenda**: 8 animações (cinematográfica, máquina de escrever, desliza pra cima/baixo/esquerda/direita, elástica, entrada com deslocamento) e 3 de gancho (impacto, revelação, glitch), escolhidas pelo contexto.
+- **Motor de transições**: flash cut com silhueta branca (MediaPipe Selfie Segmentation) no gancho e nas trocas de locutor; zoom 230% → 100% com desfoque de movimento, alternando com o flash.
+- **Mapa de espaço**: rostos detectados no vídeo montado; legenda e ilustrações vão para faixas livres e nunca cobrem o rosto (sem espaço, a cena vira corte em tela cheia).
+- **Imagens livres por frase com efeito 3D** (Pexels com chave do usuário, Wikimedia Commons PD/CC0, Openverse, Met) e profundidade por Depth Anything V2; cena **documento** estilo Vox (papel, manchete, marca-texto).
+- **Design de som**: whoosh, clique e impacto sutis; o usuário pode anexar os seus (ex.: Epidemic Sound) em "Sons da edição".
+- Skills `garimpo-legenda`, agentes `legendista` e `revisor-de-edicao`, docs `motor-edicao.md`, `legenda.md` e pesquisas em `docs/pesquisa/`.
+
+### Corrigido
+- Laço infinito ao resumir citações; respostas vazias do LLM com gramática JSON; imagens fora de contexto ou sensíveis.
+
 ## [0.5.0] - 2026-11-09
 
 ### Adicionado
