@@ -341,7 +341,7 @@ def cenas_por_regras(palavras: list[Palavra], origem: float) -> list[dict]:
 
 def _espacar(cenas: list[dict], duracao: float) -> list[dict]:
     """Prioriza número/comparação/destaque sobre ícones; respeita o intervalo mínimo e a duração do corte."""
-    ordem = {"citacao": 0, "imagem": 1, "destaque": 2, "comparacao": 3, "numero": 4, "icone": 5}
+    ordem = {"citacao": 0, "imagem": 1, "documento": 2, "destaque": 3, "comparacao": 4, "numero": 5, "icone": 6}
     escolhidas: list[dict] = []
     icones = 0
     for c in sorted(cenas, key=lambda c: (ordem.get(c["tipo"], 9), c.get("_fraca", False), c["ini"])):
@@ -353,11 +353,13 @@ def _espacar(cenas: list[dict], duracao: float) -> list[dict]:
             if icones >= 3:
                 continue
             icones += 1
+        if c["tipo"] == "documento" and sum(e["tipo"] == "documento" for e in escolhidas) >= 2:
+            continue
         escolhidas.append(c)
     escolhidas.sort(key=lambda c: c["ini"])
     for k, c in enumerate(escolhidas):
         prox = escolhidas[k + 1]["ini"] if k + 1 < len(escolhidas) else duracao
-        dur = {"numero": 3.4, "comparacao": 3.6, "citacao": 3.8, "pintura": 3.0, "imagem": 3.4}.get(c["tipo"], 2.8)
+        dur = {"numero": 3.4, "comparacao": 3.6, "citacao": 3.8, "pintura": 3.0, "imagem": 3.4, "documento": 4.0}.get(c["tipo"], 2.8)
         c["fim"] = round(min(c["ini"] + dur, prox - 0.3, duracao - 0.2), 3)
         c["ini"] = round(max(c["ini"] - 0.15, 0.0), 3)  # entra um tiquinho antes da palavra
         c.pop("_fraca", None)
@@ -375,7 +377,7 @@ Para cada imagem, escreva uma busca curta EM INGLÊS (3 a 5 palavras) que descre
 (objetos, lugares, pessoas trabalhando) — nada genérico, nada copiado de exemplo. Evite política partidária, protestos
 e pessoas famosas. Se nenhuma frase pedir imagem, deixe "imagens" vazio.
 IMPORTANTE: "titulo" e todo "texto" SEMPRE em português do Brasil; só "busca" é em inglês.
-Tipos: "numero" (valor numérico que aparece na fala), "comparacao" (antes -> depois), "icone" (ícone + rótulo curto), "destaque" (2 a 4 palavras de impacto), "citacao" (a frase mais forte, até 10 palavras, literal).
+Tipos: "numero" (valor numérico que aparece na fala), "comparacao" (antes -> depois), "icone" (ícone + rótulo curto), "destaque" (2 a 4 palavras de impacto), "citacao" (a frase mais forte, até 10 palavras, literal), "documento" (recorte de matéria/lei/decisão: "texto" = manchete de até 8 palavras, "destaque" = 1 a 3 palavras da manchete para marcar, "rotulo" = chapéu curto, ex.: "DECISÃO DO STF").
 Ícones permitidos: {icones}.
 Responda só JSON:
 {{"titulo": "2 a 4 palavras que resumem o gancho", "imagens": [{{"frase": n, "busca": "english query", "texto": "rótulo de 2 a 4 palavras"}}], "cenas": [{{"frase": número inteiro da frase, "tipo": "...", "texto": "rótulo de até 4 palavras", "valor": número ou null, "sufixo": "% | mi | bi | h | ''", "antes": "", "depois": "", "icone": "Nome"}}]}}"""
@@ -414,6 +416,9 @@ def cenas_por_llm(llm, frases: list[tuple[float, str]], n_imagens: int = 2) -> t
                 pass
             elif tipo == "citacao" and base["texto"]:
                 base["texto"] = str(c.get("texto"))[:80]
+            elif tipo == "documento" and base["texto"]:
+                base.update(texto=str(c.get("texto"))[:70], destaque=str(c.get("destaque") or "")[:30],
+                            rotulo=str(c.get("rotulo") or "")[:28])
             else:
                 continue
             cenas.append(base)
@@ -435,10 +440,10 @@ def trecho_citacao(ws: list[Palavra], maximo: int = 9) -> str:
         return " ".join(textos)
     centro = max(range(len(textos)), key=lambda i: _peso_chave(textos[i]))
     ini = max(0, min(centro - maximo // 2, len(textos) - maximo))
-    while ini > 0 and _norm(textos[ini]) in STOP:   # não começa em "da", "e"...
-        ini += 1 if ini + maximo < len(textos) else -1
-        if ini <= 0:
-            break
+    # não começa em "da", "e"...: anda para a frente (no máximo 3 passos), nunca para trás
+    for _ in range(3):
+        if ini > 0 and _norm(textos[ini]) in STOP and ini + maximo < len(textos):
+            ini += 1
     trecho = textos[ini:ini + maximo]
     while trecho and _norm(trecho[-1]) in STOP:
         trecho.pop()
@@ -521,6 +526,7 @@ def planejar(trechos: list[tuple[float, float, list[Palavra]]], llm=None, log=No
                        "texto": trecho_citacao(ws), "cobreLegenda": True}
         else:
             cenas += cenas_por_regras(ws, origem)
+            cenas += documentos_por_regras(ws, origem)
         atual: list[str] = []
         ini_frase = (ws[0].ini - origem) if ws else deslocamento
         for p in ws:
@@ -544,6 +550,7 @@ def planejar(trechos: list[tuple[float, float, list[Palavra]]], llm=None, log=No
     if citacao:
         inicio_corpo = transicoes[0] if transicoes else 0
         cenas = [c for c in cenas if c["ini"] > inicio_corpo + 1.0]
+    escolher_presets(grupos, fim_gancho=(transicoes[0] if transicoes else 4.5))
     escolhidas = _espacar(cenas, duracao)
     if pinturas:
         escolhidas = com_imagens(escolhidas, log)
@@ -558,3 +565,70 @@ def planejar(trechos: list[tuple[float, float, list[Palavra]]], llm=None, log=No
     if log:
         log(f"Motion: {len(escolhidas)} ilustração(ões), {len(zooms_finais)} zoom(s) de ênfase, {len(transicoes)} transição(ões)")
     return PlanoMotion(palavras_rel, grupos, escolhidas, zooms_finais[:6], transicoes)
+
+
+
+# ---------------------------------------------------------------- documento (estilo Vox) por regra
+
+DOC_GATILHOS = ("lei", "decisao", "pec", "stf", "supremo", "tst", "projeto", "norma", "portaria", "reforma",
+                "constituicao", "jurisprudencia", "sumula", "acordo", "convencao", "medida provisoria", "sentenca")
+
+
+def documentos_por_regras(palavras: list[Palavra], origem: float) -> list[dict]:
+    """Frases que citam lei/decisão/projeto viram um recorte de "matéria" (papel, manchete marcada)."""
+    saida: list[dict] = []
+    frase: list[Palavra] = []
+    for p in palavras:
+        frase.append(p)
+        if p.texto.endswith((".", "?", "!")) or len(frase) >= 18:
+            texto = " ".join(_limpa(x.texto) for x in frase if _limpa(x.texto))
+            n = _norm(texto)
+            gatilho = next((g for g in DOC_GATILHOS if f" {g} " in f" {n} "), None)
+            if gatilho and len(frase) >= 5:
+                manchete = trecho_citacao(frase, 8).strip("… ")
+                chave = next((_limpa(x.texto) for x in frase if _norm(_limpa(x.texto)) == gatilho), gatilho.upper())
+                saida.append({"tipo": "documento", "ini": frase[0].ini - origem + 0.2, "texto": manchete[:70],
+                              "destaque": chave, "rotulo": gatilho.upper()})
+            frase = []
+    return saida
+
+
+# ---------------------------------------------------------------- motor de presets da legenda
+
+PRESETS = ("cinematico", "maquina", "sobe", "desce", "esquerda", "direita", "elastico", "deslocamento")
+GANCHOS = ("impacto", "revelacao", "glitch")
+CONTRASTE = ("mas", "porem", "so que", "nao", "entretanto", "contudo", "ao contrario")
+RODIZIO = ("cinematico", "deslocamento", "sobe", "cinematico", "desce", "deslocamento")
+
+
+def escolher_presets(grupos: list[dict], fim_gancho: float = 4.5) -> None:
+    """Dá a cada linha uma animação (campo `preset`) conforme o contexto, sem repetir a anterior.
+
+    - até `fim_gancho` s: as 3 animações de gancho (impacto → revelação → glitch);
+    - pergunta: máquina de escrever; número: texto elástico; contraste ("mas", "não"): desliza esquerda/direita;
+    - palavra-chave forte: desliza pra cima; resto: rodízio cinematográfico/deslocamento/desce."""
+    anterior, lado, giro, g_idx = "", 0, 0, 0
+    for g in grupos:
+        texto = " ".join(w["t"] for w in g["palavras"])
+        n = _norm(texto)
+        chave = next((w["t"] for w in g["palavras"] if w["chave"]), "")
+        if g["ini"] < fim_gancho and g_idx < len(GANCHOS):
+            p = GANCHOS[g_idx]
+            g_idx += 1
+        elif "?" in texto:
+            p = "maquina"
+        elif re.search(r"\d", texto):
+            p = "elastico"
+        elif any(n.startswith(c + " ") or n == c for c in CONTRASTE):
+            p = ("esquerda", "direita")[lado % 2]
+            lado += 1
+        elif chave and _peso_chave(chave) >= 2.5:
+            p = "sobe"
+        else:
+            p = RODIZIO[giro % len(RODIZIO)]
+            giro += 1
+        if p == anterior and p not in GANCHOS:
+            p = RODIZIO[giro % len(RODIZIO)] if RODIZIO[giro % len(RODIZIO)] != anterior else "cinematico"
+            giro += 1
+        g["preset"] = p
+        anterior = p

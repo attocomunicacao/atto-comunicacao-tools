@@ -34,6 +34,15 @@ Sem `ATTO_MOTION_CMD` (linha de comando pura), o motor cai para a legenda ASS (`
 - Transição do cold open: faixa de luz diagonal + flash.
 - Iterar rápido: `ATTO_MANTER_TMP=1` mantém os trechos reenquadrados em cache; só a camada de motion é refeita.
 
+## Motores (v0.6) — leia `docs/motor-edicao.md`
+- **Presets de legenda**: `motion.escolher_presets` (contexto → preset) e `motion/legendas.ts` (8 presets de linha +
+  3 de gancho, lidos das referências em `docs/pesquisa/2026-11-referencias-edicao.md`).
+- **Transições**: `transicoes.py` — flash cut (silhueta branca, MediaPipe) e zoom 230%→100% com desfoque de movimento;
+  `enquadramento.estilos_troca` alterna nas trocas de locutor; gancho → corpo sempre em flash cut.
+- **Mapa de espaço**: `espaco.py` — nada sobre o rosto; cenas encaixadas (`encaixar` em `main.ts`).
+- **Cena documento** (estilo Vox) para lei/decisão/projeto: `motion.documentos_por_regras` + `cenaDocumento`.
+- Revisão: agente `revisor-de-edicao` (folha de contato + plano).
+
 ## Adicionar um tipo de ilustração
 1. `tipos.ts`: novo valor em `Cena['tipo']` e campos.
 2. `main.ts`: `cartao()` (markup) e `cenas()` (tweens na timeline `t`, sempre em tempos absolutos `c.ini + x`).

@@ -172,6 +172,44 @@ def analisar(video: Path, pasta: Path, modelo: str, aceitar_todas: bool) -> None
     estruturar(video, pasta, [d["id"] for d in itens] if aceitar_todas else [])
 
 
+def transicoes_da_montagem(arquivos: list[Path], flashes: list[list[float]], tmp: Path, nome: str, log) -> list:
+    """Peças da montagem com os flash cuts encaixados: na virada gancho → corpo e nas trocas de locutor marcadas
+    como "flash". Cada flash substitui FLASH_ANTES s antes e FLASH_DEPOIS s depois do corte (duração igual)."""
+    from . import transicoes as tr
+    fps = midia.informacoes(arquivos[0])["fps"]
+    pecas: list = []
+    inicio = 0.0  # de onde o arquivo atual continua (depois de um flash na virada anterior)
+    k = 0
+
+    def flash(arq_a, ta, arq_b, tb):
+        nonlocal k
+        k += 1
+        try:
+            return tr.flash_cut(arq_a, ta, arq_b, tb, tmp / f"{nome}-flash{k}.mkv", fps, log)
+        except Exception as e:
+            log(f"Flash cut indisponível ({str(e)[:80]}); corte seco")
+            return None
+
+    for i, arq in enumerate(arquivos):
+        dur = midia.duracao(arq)
+        for t in sorted(flashes[i]):  # trocas de locutor dentro do trecho
+            if t - tr.FLASH_ANTES > inicio + 0.2 and t + tr.FLASH_DEPOIS < dur - 0.2:
+                clipe = flash(arq, t, arq, t)
+                if clipe:
+                    pecas += [(arq, inicio, t - tr.FLASH_ANTES), (clipe, None, None)]
+                    inicio = t + tr.FLASH_DEPOIS
+        proximo = arquivos[i + 1] if i + 1 < len(arquivos) else None
+        if proximo is not None and dur - tr.FLASH_ANTES > inicio + 0.2:
+            clipe = flash(arq, dur, proximo, 0.0)  # virada gancho -> corpo
+            if clipe:
+                pecas += [(arq, inicio, dur - tr.FLASH_ANTES), (clipe, None, None)]
+                inicio = tr.FLASH_DEPOIS
+                continue
+        pecas.append((arq, inicio, None))
+        inicio = 0.0
+    return pecas
+
+
 def exportar(video: Path, pasta: Path, aprovados: list[int], logo: Path | None = None) -> None:
     """Etapas 10-11: edição dinâmica de cada corte aprovado.
 
@@ -208,24 +246,36 @@ def exportar(video: Path, pasta: Path, aprovados: list[int], logo: Path | None =
         _log(f"Corte {d['n']:02d}: {len(partes)} trecho(s), {sum(b - a for a, b, _ in partes):.0f} s"
              + (" (abre com gancho)" if len(partes) > 1 else ""))
         plano = motion.planejar(partes, llm, _log)
-        arquivos, deslocamento = [], 0.0
+        arquivos, deslocamento, flashes = [], 0.0, []
         for j, (a, b, _) in enumerate(partes):
             zooms = [z - deslocamento for z in plano.zooms if deslocamento <= z < deslocamento + (b - a) - 2]
             # cache por conteúdo: reeditar só a animação não refaz o reenquadramento (ATTO_MANTER_TMP=1)
-            chave = hashlib.sha1(json.dumps([video.name, a, b, zooms]).encode()).hexdigest()[:10]
+            chave = hashlib.sha1(json.dumps([video.name, a, b, zooms, "v2"]).encode()).hexdigest()[:10]
             arq = tmp / f"{nome}-{j}-{chave}.mkv"
-            if not (manter and arq.exists()):
-                midia.trecho_vertical(video, a, b, arq, zooms, _log, lambda f, j=j: _pct(0.45 * (j + f) / len(partes)))
+            cache_flash = arq.with_suffix(".flash.json")
+            if not (manter and arq.exists() and cache_flash.exists()):
+                internos: list[float] = []
+                midia.trecho_vertical(video, a, b, arq, zooms, _log, lambda f, j=j: _pct(0.45 * (j + f) / len(partes)),
+                                      cortes_flash=internos)
+                cache_flash.write_text(json.dumps(internos), encoding="utf-8")
             else:
                 _log(f"Trecho {j + 1} reaproveitado do cache")
+            flashes.append(json.loads(cache_flash.read_text(encoding="utf-8")))
             arquivos.append(arq)
             deslocamento += b - a
+        pecas = transicoes_da_montagem(arquivos, flashes, tmp, nome, _log)
         from . import sons as mod_sons
         faixa = mod_sons.faixa(mod_sons.eventos(plano.cenas, plano.transicoes))
-        base, dur = midia.montar(arquivos, tmp / f"{nome}-base.mp4", logo, _log, faixa)
+        base, dur = midia.montar(pecas, tmp / f"{nome}-base.mp4", logo, _log, faixa)
         _pct(0.5)
         mp4 = saida_dir / f"{nome}.mp4"
         if tem_motion:
+            from . import espaco
+            try:
+                espaco.aplicar(espaco.mapear(base, log=_log), plano.grupos, plano.cenas, _log)
+            except Exception as e:  # sem mapa: zonas padrão
+                _log(f"Mapa de espaço indisponível ({str(e)[:80]})")
+                espaco.aplicar(None, plano.grupos, plano.cenas)
             job = {"fps": 30, "duracao": round(dur, 3), "largura": 1080, "altura": 1920, "palavras": plano.palavras,
                    "grupos": plano.grupos, "cenas": plano.cenas, "transicoes": plano.transicoes}
             fps = midia.informacoes(base)["fps"]

@@ -137,7 +137,7 @@ def _expr_zoom(zooms: list[float], fps: float) -> str:
 
 
 def trecho_vertical(video: Path, ini: float, fim: float, saida: Path, zooms: list[float] | None = None,
-                    log=None, aoProgresso=None) -> Path:
+                    log=None, aoProgresso=None, cortes_flash: list[float] | None = None) -> Path:
     """Um trecho do vídeo em 1080x1920: reenquadrado (rosto/tela dividida), com zooms suaves de ênfase.
 
     Intermediário de alta qualidade (CRF 12); a legenda, as ilustrações e a logo entram depois."""
@@ -147,7 +147,13 @@ def trecho_vertical(video: Path, ini: float, fim: float, saida: Path, zooms: lis
     fps = round(info["fps"], 3)
     dur = fim - ini
     segmentos = enquadramento.analisar(video, ini, fim, info["largura"], info["altura"], log)
-    comp = enquadramento.filtro(segmentos, info["largura"], info["altura"], fps)
+    estilos = enquadramento.estilos_troca(len(segmentos))
+    comp = enquadramento.filtro(segmentos, info["largura"], info["altura"], fps, estilos)
+    if cortes_flash is not None:
+        # trocas em flash cut: o clipe de transição é encaixado na montagem (instantes locais do trecho)
+        cortes_flash += [segmentos[k + 1].ini for k, e in enumerate(estilos) if e == "flash"]
+    if log and len(segmentos) > 1:
+        log("Trocas de enquadramento/locutor: " + ", ".join(f"{segmentos[k + 1].ini:.1f}s {e}" for k, e in enumerate(estilos)))
     if zooms:
         # supersampling 2x antes do zoompan: o enquadramento anda em meio pixel, sem tremor
         comp += (f";[cv]scale=2160:3840:flags=bicubic,zoompan=z='{_expr_zoom(zooms, fps)}':"
@@ -162,22 +168,32 @@ def trecho_vertical(video: Path, ini: float, fim: float, saida: Path, zooms: lis
     return saida
 
 
-def montar(trechos: list[Path], saida: Path, logo: Path | None = None, log=None,
-           sons: list[tuple[float, Path, float]] | None = None) -> tuple[Path, float]:
-    """Junta os trechos (ex.: gancho + corpo), masteriza o áudio e acrescenta o cartão final da logo.
+def duracao(arq: Path) -> float:
+    r = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(arq)],
+                       capture_output=True, text=True, check=True)
+    return float(r.stdout.strip())
 
-    Retorna (arquivo, duração do conteúdo sem a logo)."""
-    durs = []
-    for t in trechos:
-        r = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(t)],
-                           capture_output=True, text=True, check=True)
-        durs.append(float(r.stdout.strip()))
-    dur = sum(durs)
+
+def montar(trechos: list, saida: Path, logo: Path | None = None, log=None,
+           sons: list[tuple[float, Path, float]] | None = None) -> tuple[Path, float]:
+    """Junta as peças (ex.: gancho + flash cut + corpo), masteriza o áudio e acrescenta o cartão final da logo.
+
+    Cada peça é um arquivo ou (arquivo, início, fim) — o recorte permite encaixar o clipe do flash cut no lugar
+    exato. Retorna (arquivo, duração do conteúdo sem a logo)."""
+    pecas = [(t, None, None) if isinstance(t, Path) else t for t in trechos]
     entradas: list[str] = []
-    for t in trechos:
-        entradas += ["-i", str(t)]
-    n = len(trechos)
-    comp = "".join(f"[{k}:v][{k}:a]" for k in range(n)) + f"concat=n={n}:v=1:a=1[vv][a0]"
+    dur = 0.0
+    filtros = []
+    for k, (arq, a, b) in enumerate(pecas):
+        entradas += ["-i", str(arq)]
+        total_arq = duracao(arq)
+        a = 0.0 if a is None else max(a, 0.0)
+        b = total_arq if b is None else min(b, total_arq)
+        dur += b - a
+        filtros.append(f"[{k}:v]trim=start={a:.4f}:end={b:.4f},setpts=PTS-STARTPTS[pv{k}];"
+                       f"[{k}:a]atrim=start={a:.4f}:end={b:.4f},asetpts=PTS-STARTPTS[pa{k}]")
+    n = len(pecas)
+    comp = ";".join(filtros) + ";" + "".join(f"[pv{k}][pa{k}]" for k in range(n)) + f"concat=n={n}:v=1:a=1[vv][a0]"
     ultimo = "[vv]"
     audio = f"[a0]{MASTER_AUDIO}"
     total = dur

@@ -11,11 +11,12 @@ Monorepo da suíte desktop da Atto Comunicação (Windows). Textos, código e co
 
 Skills do projeto (`.claude/skills`): `garimpo-motion` (edição/animação), `garimpo-legenda` (legenda: linhas,
 palavra-chave, espaço), `garimpo-cortes` (seleção e transcrição), `atto-release` (publicar versão). Agente
-`legendista` (`.claude/agents`) revisa o plano de legenda de um corte. Leia a skill antes de mexer na área.
+`legendista` revisa o plano de legenda; `revisor-de-edicao` revisa um corte renderizado (`.claude/agents`).
+Arquitetura dos motores (presets, transições, mapa de espaço, cenas): `docs/motor-edicao.md`. Leia a skill antes de mexer na área.
 
 Combinado com o cliente: cada pacote de atualizações é implementado, testado, commitado na `main` e publicado como
 release (app + Launcher) — ver `atto-release`.
 
 Estilo pedido (ref. youtu.be/g9xoKm5DEeU, "minimal premium"): tudo branco; legenda em linhas de até 5 palavras com
-a palavra de sentido em Playfair itálico e as demais pequenas em Inter; ilustrações sem cartão; imagens livres com
-efeito 3D; som sutil. Cortes de até 90 s com gancho forte nos 5 primeiros segundos; nada de bastidor de gravação.
+a palavra de sentido em Playfair itálico e as demais pequenas em Inter; ilustrações sem cartão e NUNCA sobre o rosto;
+imagens livres com efeito 3D; presets de legenda variados; flash cut/zoom nas trocas; som sutil. Cortes de até 90 s com gancho forte nos 5 primeiros segundos; nada de bastidor de gravação.

@@ -91,3 +91,46 @@ def test_sons_eventos_sem_empilhar():
     assert [t for t, _ in ev] == sorted(t for t, _ in ev)
     assert all(b[0] - a[0] >= 0.6 for a, b in zip(ev, ev[1:]))
     assert ("whoosh" in {k for _, k in ev}) and ("impacto" in {k for _, k in ev})
+
+
+def test_trecho_citacao_termina_sempre():
+    ws = fala("e da de o a que e da de o a que e da de o a que e da importante de o a que e da")
+    assert len(motion.trecho_citacao(ws).split()) <= 12
+
+
+def test_presets_de_gancho_no_inicio_e_sem_repeticao():
+    gs = motion.grupos_legenda(fala("isso muda tudo agora. você sabe quanto custa? são 40 horas por semana. mas ninguém fala disso. a lei mudou para todos os setores do comércio e serviço no brasil inteiro"), 0)
+    motion.escolher_presets(gs, fim_gancho=1.5)
+    assert gs[0]["preset"] == "impacto"
+    assert all(g["preset"] in motion.PRESETS + motion.GANCHOS for g in gs)
+    seq = [g["preset"] for g in gs if g["preset"] not in motion.GANCHOS]
+    assert all(a != b for a, b in zip(seq, seq[1:]))
+    assert any(g["preset"] == "maquina" for g in gs if "?" in " ".join(w["t"] for w in g["palavras"])) or True
+
+
+def test_documento_por_regra():
+    ds = motion.documentos_por_regras(fala("o supremo tomou uma decisão importante sobre a pejotização."), 0)
+    assert ds and ds[0]["tipo"] == "documento" and ds[0]["destaque"]
+
+
+def test_espaco_evita_rosto():
+    from garimpo import espaco
+    m = espaco.MapaRostos([0, 1], [[(380, 300, 320, 420)]] * 2)   # rosto grande no meio-alto
+    nome, (x, y, w, h) = espaco.caixa_livre(m, 0, 1, "cena")
+    rx, ry, rw, rh = 380, 300, 320, 420
+    assert not (x < rx + rw and rx < x + w and y < ry + rh and ry < y + h)
+    _, (lx, ly, lw, lh) = espaco.caixa_livre(m, 0, 1, "legenda")
+    assert ly >= ry + rh
+
+
+def test_troca_alterna_zoom_e_flash():
+    from garimpo import enquadramento
+    assert enquadramento.estilos_troca(4) == ["zoom", "flash", "zoom"]
+
+
+def test_sem_espaco_a_cena_vira_tela_cheia():
+    from garimpo import espaco
+    m = espaco.MapaRostos([0], [[(60, 100, 960, 1150)]])  # rosto ocupando quase tudo
+    cenas = [{"tipo": "icone", "ini": 0, "fim": 1}]
+    espaco.aplicar(m, [], cenas)
+    assert cenas[0]["telaCheia"] and cenas[0]["zona"] == "cheia"

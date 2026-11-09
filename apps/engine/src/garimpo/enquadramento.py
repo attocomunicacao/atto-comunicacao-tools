@@ -231,12 +231,38 @@ def _layout(s: Segmento, i: int, cw_u: int, cw_m: int, largura: int, altura: int
     return f"[0:v]{corte},crop={cw_u}:{altura}:{x}:0,scale={LARG}:{ALT},setsar=1,format=yuv420p[s{i}]"
 
 
-def filtro(segmentos: list[Segmento], largura: int, altura: int, fps: float = 30.0) -> str:
+def estilos_troca(n_segmentos: int) -> list[str]:
+    """Estilo de cada troca de enquadramento/locutor: alterna zoom e flash cut (a 1ª é zoom)."""
+    return ["zoom" if k % 2 == 0 else "flash" for k in range(max(n_segmentos - 1, 0))]
+
+
+def filtro(segmentos: list[Segmento], largura: int, altura: int, fps: float = 30.0,
+           estilos: list[str] | None = None) -> str:
     """Monta o trecho do filter_complex que produz [cv] (1080x1920) a partir de [0:v].
 
-    Entre segmentos há uma dissolução (xfade). Cada segmento é estendido pela duração da dissolução para
-    que a duração total continue igual à do corte (o áudio é o original, sem desvio)."""
+    Com `estilos` (um por troca): "zoom" = o plano que entra começa ampliado e com desfoque de movimento e assenta
+    (transicoes.expr_zoom_entrada); "flash" = corte seco aqui, e o flash cut é encaixado depois na montagem.
+    Sem `estilos`: dissolução (xfade), comportamento antigo. A duração total nunca muda."""
     cw_u, cw_m = geometria(largura, altura)
+    if estilos is not None and len(segmentos) > 1:
+        from .transicoes import ZOOM_DURACAO, expr_zoom_entrada
+        partes = [_layout(s, i, cw_u, cw_m, largura, altura, fps, s.fim) for i, s in enumerate(segmentos)]
+        rotulos = []
+        for i in range(len(segmentos)):
+            if i > 0 and estilos[i - 1] == "zoom" and segmentos[i].fim - segmentos[i].ini > ZOOM_DURACAO + 0.3:
+                d = ZOOM_DURACAO
+                partes.append(
+                    f"[s{i}]split=2[h{i}][r{i}];"
+                    f"[h{i}]trim=end={d:.3f},setpts=PTS-STARTPTS,scale=2160:3840:flags=bicubic,"
+                    f"zoompan=z='{expr_zoom_entrada(fps)}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s={LARG}x{ALT}:fps={fps:g},"
+                    f"tmix=frames=4,setsar=1,format=yuv420p[hz{i}];"
+                    f"[r{i}]trim=start={d:.3f},setpts=PTS-STARTPTS[rr{i}];"
+                    f"[hz{i}][rr{i}]concat=n=2:v=1:a=0[z{i}]")
+                rotulos.append(f"[z{i}]")
+            else:
+                rotulos.append(f"[s{i}]")
+        partes.append(f"{''.join(rotulos)}concat=n={len(rotulos)}:v=1:a=0[cv]")
+        return ";".join(partes)
     n = len(segmentos)
     d = TRANSICAO_S
     if n > 1:

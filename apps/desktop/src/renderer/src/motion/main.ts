@@ -15,7 +15,8 @@ import gsap from 'gsap'
 import * as icones from 'lucide-static'
 import './motion.css'
 import { cenaImagem3D } from './imagem3d'
-import type { Cena, Grupo, JobMotion } from './tipos'
+import { legenda } from './legendas'
+import type { Cena, JobMotion } from './tipos'
 
 declare global {
   interface Window {
@@ -55,77 +56,6 @@ function tracos(raiz: Element): Element[] {
 function icone(nome: string | undefined): string {
   const mapa = icones as unknown as Record<string, string>
   return mapa[nome ?? ''] ?? mapa['Sparkles']
-}
-
-// ---------------------------------------------------------------- legenda (texto cinematográfico)
-
-function tamanhoChave(t: string): number {
-  // cabe em ~940 px: Playfair itálico ~0,5 em por letra
-  return Math.max(84, Math.min(150, 940 / Math.max(t.length * 0.52, 1)))
-}
-
-function legenda(job: JobMotion, t: gsap.core.Timeline) {
-  const cobertos = job.cenas.filter((c) => c.cobreLegenda)
-  job.grupos.forEach((g: Grupo, gi) => {
-    if (cobertos.some((c) => g.ini >= c.ini - 0.05 && g.ini < c.fim)) return
-    const ki = g.palavras.findIndex((p) => p.chave)
-    const bloco = el('div', 'grupo')
-    if (ki < 0) {
-      // linha sem destaque: tudo pequeno, na mesma linha, surgindo no tempo da fala
-      const linha = el('div', 'linha-peq linha-solta')
-      const ss = g.palavras.map((p) => {
-        const s = el('span', 'peq', p.t)
-        linha.append(s, document.createTextNode(' '))
-        return [s, p.ini] as [HTMLElement, number]
-      })
-      bloco.append(linha)
-      palco.appendChild(bloco)
-      gsap.set(ss.map(([s]) => s), { opacity: 0 })
-      for (const [s, ini] of ss) {
-        t.fromTo(s, { opacity: 0, y: 14, filter: 'blur(8px)' },
-          { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.45, ease: 'power3.out', immediateRender: false }, ini - 0.04)
-      }
-      const prox = job.grupos[gi + 1]
-      const sai = Math.min(g.fim, prox ? prox.ini : g.fim) - 0.28
-      t.to(bloco, { opacity: 0, y: '-=18', filter: 'blur(10px)', duration: 0.3, ease: 'power2.in' }, Math.max(sai, g.ini + 0.3))
-      return
-    }
-    const antes = el('div', 'linha-peq')
-    const depois = el('div', 'linha-peq')
-    const pal = g.palavras[ki]
-    const numerica = /\d/.test(pal.t)
-    const chave = el('div', numerica ? 'chave chave-sans' : 'chave', pal.t)
-    chave.style.fontSize = `${numerica ? tamanhoChave(pal.t) * 0.9 : tamanhoChave(pal.t)}px`
-    const pequenas: [HTMLElement, number][] = []
-    g.palavras.forEach((p, i) => {
-      if (i === ki) return
-      const s = el('span', 'peq', p.t)
-      ;(i < ki ? antes : depois).append(s, document.createTextNode(' '))
-      pequenas.push([s, p.ini])
-    })
-    if (antes.childNodes.length) bloco.append(antes)
-    bloco.append(chave)
-    if (depois.childNodes.length) bloco.append(depois)
-    palco.appendChild(bloco)
-    gsap.set(bloco, { opacity: 1 })
-    gsap.set([chave, ...pequenas.map(([s]) => s)], { opacity: 0 })
-    // palavras pequenas surgem no tempo em que são faladas
-    for (const [s, ini] of pequenas) {
-      t.fromTo(s, { opacity: 0, y: 14, filter: 'blur(8px)' },
-        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.45, ease: 'power3.out', immediateRender: false }, Math.max(ini - 0.04, g.ini - 0.04))
-    }
-    // palavra-chave: revelação cinematográfica (desfoque longo, assenta devagar, letras se aproximam)
-    t.fromTo(chave, { opacity: 0, y: -60, scale: 1.1, letterSpacing: '0.08em', filter: 'blur(18px)' },
-      { opacity: 1, y: 0, scale: 1, letterSpacing: '0em', filter: 'blur(0px)', duration: 0.85, ease: 'expo.out', immediateRender: false },
-      pal.ini - 0.06)
-    // respiração lenta do bloco enquanto está na tela
-    const dur = Math.max(g.fim - g.ini, 0.4)
-    t.fromTo(bloco, { y: 0 }, { y: -10, duration: dur, ease: 'sine.inOut', immediateRender: false }, g.ini)
-    // saída: a linha inteira se desfaz em desfoque, subindo um pouco
-    const prox = job.grupos[gi + 1]
-    const sai = Math.min(g.fim, prox ? prox.ini : g.fim) - 0.28
-    t.to(bloco, { opacity: 0, y: '-=22', filter: 'blur(12px)', duration: 0.3, ease: 'power2.in' }, Math.max(sai, pal.ini + 0.3))
-  })
 }
 
 // ---------------------------------------------------------------- cenas (sem cartão, flutuando sobre o vídeo)
@@ -304,14 +234,97 @@ function cenaPintura(t: gsap.core.Timeline, c: Cena) {
   t.to(caixa, { opacity: 0, x: -200, filter: 'blur(20px)', duration: 0.5, ease: 'power2.in' }, c.fim - 0.5)
 }
 
+/** Tamanho de projeto de cada cena (px); ela é reduzida para caber na caixa livre de rostos. */
+const PROJETO: Record<string, [number, number]> = {
+  destaque: [1080, 600], numero: [820, 700], comparacao: [820, 700], icone: [1080, 640], documento: [860, 640]
+}
+
+/** Coloca o elemento da cena dentro da caixa livre (sem cobrir rosto), mantendo a proporção. */
+function encaixar(raiz: HTMLElement, c: Cena) {
+  const [dw, dh] = PROJETO[c.tipo] ?? [1080, 600]
+  const [x, y, w, h] = c.caixa ?? [60, 150, 960, 520]
+  const s = Math.min(w / dw, h / dh, c.telaCheia ? 1.25 : 1)
+  const env = el('div', 'encaixe')
+  Object.assign(env.style, {
+    left: `${x + (w - dw * s) / 2}px`, top: `${y + (h - dh * s) / 2}px`, width: `${dw}px`, height: `${dh}px`,
+    transform: `scale(${s})`
+  })
+  raiz.replaceWith(env)
+  env.appendChild(raiz)
+  Object.assign(raiz.style, { left: '0px', top: '0px', right: 'auto' })
+}
+
+/** Documento (estilo Vox): recorte de matéria em papel que flutua, câmera aproxima e marca-texto na manchete. */
+function cenaDocumento(t: gsap.core.Timeline, c: Cena) {
+  vinheta(t, c, true)
+  const caixa = el('div', 'cena-documento')
+  const papel = el('div', 'doc-papel')
+  const chapeu = el('div', 'doc-chapeu', (c.rotulo ?? '').toUpperCase())
+  const manchete = el('div', 'doc-manchete')
+  const alvo = (c.destaque ?? '').toLowerCase().split(/\s+/).filter(Boolean)
+  const marcas: HTMLElement[] = []
+  ;(c.texto ?? '').split(/\s+/).forEach((p) => {
+    const limpo = p.toLowerCase().replace(/[.,;:!?…]/g, '')
+    if (alvo.includes(limpo)) {
+      const m = el('span', 'doc-marca')
+      const fundo = el('span', 'doc-marca-fundo')
+      m.append(fundo, document.createTextNode(p))
+      manchete.append(m, document.createTextNode(' '))
+      marcas.push(fundo)
+    } else manchete.append(document.createTextNode(p + ' '))
+  })
+  const corpo = el('div', 'doc-corpo')
+  for (let i = 0; i < 6; i++) {
+    const l = el('div', 'doc-linha')
+    l.style.width = `${[96, 100, 88, 100, 92, 64][i]}%`
+    corpo.append(l)
+  }
+  papel.append(chapeu, el('div', 'doc-fio'), manchete, corpo, el('div', 'papel'))
+  caixa.append(papel)
+  palco.appendChild(caixa)
+  const d = c.fim - c.ini
+  gsap.set(caixa, { opacity: 0 })
+  // entra flutuando (leve rotação e perspectiva), a câmera aproxima devagar, o marca-texto passa na manchete
+  t.fromTo(caixa, { opacity: 0, y: 90, rotate: -7, rotateX: 18, scale: 0.9, filter: 'blur(14px)' },
+    { opacity: 1, y: 0, rotate: -2.5, rotateX: 0, scale: 0.96, filter: 'blur(0px)', duration: 0.9, ease: 'expo.out', immediateRender: false }, c.ini)
+  t.to(caixa, { rotate: -1, scale: 1.05, y: -14, duration: Math.max(d - 1.3, 0.5), ease: 'sine.inOut' }, c.ini + 0.9)
+  gsap.set(marcas, { scaleX: 0, transformOrigin: 'left center' })
+  t.to(marcas, { scaleX: 1, duration: 0.55, ease: 'power2.inOut', stagger: 0.12 }, c.ini + 0.8)
+  t.fromTo(corpo.children, { opacity: 0 }, { opacity: 1, duration: 0.3, stagger: 0.05, immediateRender: false }, c.ini + 0.35)
+  t.to(caixa, { opacity: 0, y: -40, rotate: 1.5, filter: 'blur(14px)', duration: 0.45, ease: 'power2.in' }, c.fim - 0.45)
+}
+
+/** Fundo de "corte" em tela cheia (escuro com textura de papel) para cenas que não cabem em volta do rosto. */
+function fundoCheio(t: gsap.core.Timeline, c: Cena) {
+  const f = el('div', 'fundo-cheio')
+  palco.appendChild(f)
+  gsap.set(f, { opacity: 0 })
+  t.fromTo(f, { opacity: 0, scale: 1.08, filter: 'blur(20px)' }, { opacity: 1, scale: 1, filter: 'blur(0px)', duration: 0.5, ease: 'power3.out', immediateRender: false }, c.ini - 0.1)
+  t.to(f, { opacity: 0, filter: 'blur(16px)', duration: 0.45, ease: 'power2.in' }, c.fim - 0.4)
+}
+
 async function cenas(job: JobMotion, t: gsap.core.Timeline) {
   for (const c of job.cenas) {
+    if (c.telaCheia) fundoCheio(t, c)
+    const antes = new Set(palco.children)
     if (c.tipo === 'imagem' && c.img) await cenaImagem3D(palco, t, c, desenhos)
     else if (c.tipo === 'citacao') cenaCitacao(t, c)
     else if (c.tipo === 'pintura' && c.img) cenaPintura(t, c)
     else if (c.tipo === 'numero' || c.tipo === 'comparacao') cenaGrafico(t, c)
     else if (c.tipo === 'icone') cenaIcone(t, c)
+    else if (c.tipo === 'documento') cenaDocumento(t, c)
     else cenaLinha(t, c)
+    // cenas que não são tela cheia vão para a caixa livre de rostos (mapa de espaço)
+    if (c.caixa && !['imagem', 'pintura', 'citacao'].includes(c.tipo)) {
+      for (const novo of [...palco.children].filter((x) => !antes.has(x)) as HTMLElement[]) {
+        if (novo.classList.contains('fundo-cheio')) continue
+        if (novo.classList.contains('vinheta')) {
+          if (c.telaCheia) { novo.remove(); continue }
+          const [x, y, w, h] = c.caixa
+          novo.style.background = `radial-gradient(ellipse ${w * 0.75}px ${h * 0.9}px at ${x + w / 2}px ${y + h / 2}px, rgba(0,0,0,0.6), rgba(0,0,0,0) 100%)`
+        } else encaixar(novo, c)
+      }
+    }
   }
 }
 
@@ -336,8 +349,7 @@ window.__montar = async (job: JobMotion) => {
   desenhos.length = 0
   tl = gsap.timeline({ paused: true })
   await cenas(job, tl)
-  legenda(job, tl)
-  transicoes(job, tl)
+  legenda(palco, job, tl)
   tl.set({}, {}, job.duracao)
   await document.fonts.ready
 }

@@ -10,6 +10,12 @@ Regras completas: `docs/legenda.md`. Resumo do que o cliente pediu:
 - as linhas formam frases **na ordem da fala** (acima → chave → abaixo);
 - os espaços têm lógica: rosto livre, ilustrações em cima (230–900 px), legenda no terço inferior (1270–1600 px).
 
+## Presets (motor)
+Cada linha recebe `preset` em `motion.escolher_presets`: gancho (impacto, revelacao, glitch), maquina (pergunta),
+elastico (número), esquerda/direita (contraste), sobe (chave forte), rodízio cinematico/deslocamento/desce.
+Implementação visual: `apps/desktop/src/renderer/src/motion/legendas.ts`. A posição vem de `caixa` (mapa de espaço).
+Para criar um preset: função em `legendas.ts` + registro em `PRESETS` + regra em `escolher_presets` + teste.
+
 ## Onde mexer
 | O quê | Arquivo / função |
 |---|---|
