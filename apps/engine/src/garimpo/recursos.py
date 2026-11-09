@@ -7,6 +7,7 @@ O pacote do app tem limite de 2 GB por arquivo no GitHub, então os modelos gran
 from __future__ import annotations
 
 import os
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -81,3 +82,59 @@ def llm(log=None, progresso=None) -> Path:
     if os.environ.get("ATTO_MODELOS") and embutido.exists():
         return embutido
     return _hf_local(repo, arquivo) or baixar(repo, arquivo, pasta_cache() / "llm" / arquivo, log, progresso)
+
+
+# ---------------------------------------------------------------- pinturas em domínio público (Met Museum, CC0)
+
+MET = "https://collectionapi.metmuseum.org/public/collection"
+
+
+def _json(url: str):
+    import json as _j
+    req = urllib.request.Request(url, headers={"User-Agent": "atto-tools"})
+    with urllib.request.urlopen(req, timeout=20) as r:
+        return _j.loads(r.read().decode("utf-8"))
+
+
+titulos_usados: set[str] = set()  # a mesma obra não se repete na mesma exportação
+
+
+def pintura(consulta: str, evitar: set[int] | None = None, log=None) -> tuple[Path, str] | None:
+    """Uma pintura em domínio público do Metropolitan Museum (Open Access, CC0) para o tema. Cache por obra.
+
+    Retorna (arquivo .jpg, crédito "Título — Artista") ou None (sem internet/sem resultado)."""
+    evitar = evitar or set()
+    pasta = pasta_cache() / "pinturas"
+    try:
+        ids = _json(f"{MET}/v1.1/search?q={urllib.parse.quote(consulta)}&hasImages=true&medium=Paintings&limit=12").get("objectIDs") or []
+        for oid in ids:
+            if oid in evitar:
+                continue
+            o = _json(f"{MET}/v1/objects/{oid}")
+            url = o.get("primaryImageSmall") or o.get("primaryImage")
+            if not o.get("isPublicDomain") or not url or o.get("title") in titulos_usados:
+                continue
+            arq = pasta / f"met-{oid}.jpg"
+            if not arq.exists():
+                baixar_url(url, arq)
+            credito = " — ".join(x for x in (o.get("title"), o.get("artistDisplayName")) if x)
+            evitar.add(oid)
+            titulos_usados.add(o.get("title"))
+            break
+        else:
+            return None
+    except Exception as e:
+        if log:
+            log(f"Sem pintura para “{consulta}” ({e})")
+        return None
+    if log:
+        log(f"Pintura para “{consulta}”: {credito} (Met Museum, domínio público)")
+    return arq, credito
+
+
+def baixar_url(url: str, destino: Path) -> Path:
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    req = urllib.request.Request(url, headers={"User-Agent": "atto-tools"})
+    with urllib.request.urlopen(req, timeout=60) as r:
+        destino.write_bytes(r.read())
+    return destino

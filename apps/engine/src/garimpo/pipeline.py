@@ -6,7 +6,9 @@ Fluxo do app: `transcrever` (etapas 1-2 e dúvidas) -> usuário aprova -> `estru
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -194,6 +196,7 @@ def exportar(video: Path, pasta: Path, aprovados: list[int], logo: Path | None =
         llm = j.llm if j else None
     saida_dir = pasta / "saida"
     tmp = saida_dir / "tmp"
+    manter = os.environ.get("ATTO_MANTER_TMP") == "1"
     for k, d in enumerate(escolhidos, 1):
         nome = f"corte-{d['n']:02d}"
         _etapa(k, len(escolhidos), f"Gerando o corte {d['n']:02d}")
@@ -208,8 +211,13 @@ def exportar(video: Path, pasta: Path, aprovados: list[int], logo: Path | None =
         arquivos, deslocamento = [], 0.0
         for j, (a, b, _) in enumerate(partes):
             zooms = [z - deslocamento for z in plano.zooms if deslocamento <= z < deslocamento + (b - a) - 2]
-            arq = midia.trecho_vertical(video, a, b, tmp / f"{nome}-{j}.mkv", zooms, _log,
-                                        lambda f, j=j: _pct(0.45 * (j + f) / len(partes)))
+            # cache por conteúdo: reeditar só a animação não refaz o reenquadramento (ATTO_MANTER_TMP=1)
+            chave = hashlib.sha1(json.dumps([video.name, a, b, zooms]).encode()).hexdigest()[:10]
+            arq = tmp / f"{nome}-{j}-{chave}.mkv"
+            if not (manter and arq.exists()):
+                midia.trecho_vertical(video, a, b, arq, zooms, _log, lambda f, j=j: _pct(0.45 * (j + f) / len(partes)))
+            else:
+                _log(f"Trecho {j + 1} reaproveitado do cache")
             arquivos.append(arq)
             deslocamento += b - a
         base, dur = midia.montar(arquivos, tmp / f"{nome}-base.mp4", logo, _log)
@@ -217,7 +225,7 @@ def exportar(video: Path, pasta: Path, aprovados: list[int], logo: Path | None =
         mp4 = saida_dir / f"{nome}.mp4"
         if tem_motion:
             job = {"fps": 30, "duracao": round(dur, 3), "largura": 1080, "altura": 1920, "palavras": plano.palavras,
-                   "cenas": plano.cenas, "transicoes": plano.transicoes}
+                   "grupos": plano.grupos, "cenas": plano.cenas, "transicoes": plano.transicoes}
             fps = midia.informacoes(base)["fps"]
             job["fps"] = round(fps, 3)
             (saida_dir / f"{nome}.plano.json").write_text(json.dumps(job, ensure_ascii=False, indent=1), encoding="utf-8")
@@ -226,8 +234,9 @@ def exportar(video: Path, pasta: Path, aprovados: list[int], logo: Path | None =
             c = Corte(d["tema"], [Frase([Palavra(**p) for p in d["palavras"]])], 0.0)
             ass = legenda.gerar_ass(c, saida_dir / f"{nome}.ass", origem=d["ini"] - (deslocamento - (d["fim"] - d["ini"])))
             midia.queimar_legenda(base, ass, mp4)
-        for arq in arquivos + [base]:
-            arq.unlink(missing_ok=True)
+        if not manter:
+            for arq in arquivos + [base]:
+                arq.unlink(missing_ok=True)
         _log(f"Arquivo pronto: {mp4.name} ({mp4.stat().st_size / 1e6:.0f} MB)")
         print(f"ARQUIVO {mp4}", flush=True)
 

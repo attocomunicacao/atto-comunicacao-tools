@@ -1,47 +1,91 @@
-/* ATTO Motion: tudo branco, uma família (Lato), glow suave. Tela 1080x1920, fundo transparente. */
+/* ATTO Motion — minimal premium. 1080x1920, fundo transparente, tudo branco.
+   Inter: texto corrido (pequeno, minúsculo). Playfair Display itálico: palavra-chave. */
 html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: transparent; }
-#palco { position: relative; width: 1080px; height: 1920px; font-family: "AttoLato", "Lato", sans-serif; color: #fff; }
+#palco { position: relative; width: 1080px; height: 1920px; color: #fff; font-family: "Inter", sans-serif; }
+.serif { font-family: "Playfair Display", serif; font-style: italic; font-weight: 700; }
+.sans { font-family: "Inter", sans-serif; font-weight: 500; }
+.ponto { fill: #fff; filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.9)); }
 
-/* Legenda */
-.legenda { position: absolute; left: 0; right: 0; top: 1400px; height: 0; }
-.palavra {
-  position: absolute; left: 50%; top: 0; transform: translate(-50%, -50%);
-  font-size: 64px; font-weight: 900; letter-spacing: 0.01em; text-transform: uppercase; white-space: nowrap;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.55), 0 0 28px rgba(255, 255, 255, 0.32), 0 0 60px rgba(255, 255, 255, 0.16),
-    0 2px 6px rgba(0, 0, 0, 0.35);
-  will-change: transform, filter, opacity;
-}
-.palavra.enfase {
-  text-shadow: 0 0 14px rgba(255, 255, 255, 0.8), 0 0 40px rgba(255, 255, 255, 0.45), 0 0 90px rgba(255, 255, 255, 0.25),
-    0 2px 6px rgba(0, 0, 0, 0.35);
-}
+/* ---------- legenda ---------- */
+.grupo { position: absolute; left: 60px; right: 60px; top: 1270px; display: flex; flex-direction: column; align-items: center;
+  text-align: center; gap: 2px; z-index: 20; will-change: transform, filter, opacity; }
+.linha-peq { font-size: 46px; font-weight: 500; line-height: 1.15; letter-spacing: -0.01em;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.55), 0 0 22px rgba(255, 255, 255, 0.18); }
+.peq { display: inline-block; }
+.chave { font-family: "Playfair Display", serif; font-style: italic; font-weight: 700; line-height: 1.02; white-space: nowrap;
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.45), 0 0 34px rgba(255, 255, 255, 0.35), 0 0 80px rgba(255, 255, 255, 0.16);
+  will-change: transform, filter, opacity, letter-spacing; }
+.chave-sans { font-family: "Inter", sans-serif; font-style: normal; font-weight: 800; letter-spacing: -0.03em; }
 
-/* Cenas ilustrativas: faixa inferior, abaixo da legenda */
-.cena {
-  position: absolute; left: 90px; right: 90px; top: 1500px; min-height: 230px; box-sizing: border-box;
-  padding: 30px 40px; border-radius: 34px; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 12px; text-align: center;
-  background: linear-gradient(180deg, rgba(14, 16, 22, 0.62), rgba(6, 8, 12, 0.72));
-  border: 1.5px solid rgba(255, 255, 255, 0.22);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45), 0 0 40px rgba(255, 255, 255, 0.06) inset;
-  will-change: transform, filter, opacity;
-}
-.rotulo { font-size: 36px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; opacity: 0.92; }
-.traco { width: 60%; height: 4px; border-radius: 2px; background: #fff; transform-origin: left center;
-  box-shadow: 0 0 18px rgba(255, 255, 255, 0.7); }
+/* ---------- vinhetas (leitura sem caixa) ---------- */
+.vinheta { position: absolute; inset: 0; z-index: 5;
+  background: radial-gradient(ellipse 85% 38% at 50% 30%, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0) 70%); }
+.vinheta.forte { background: radial-gradient(ellipse 95% 42% at 50% 30%, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0) 72%); }
 
-.numero { font-size: 132px; line-height: 1; font-weight: 900; font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 24px rgba(255, 255, 255, 0.5), 0 0 70px rgba(255, 255, 255, 0.25); }
+/* ---------- linha + texto ---------- */
+.cena-linha { position: absolute; left: 0; top: 260px; width: 1080px; height: 600px; z-index: 10; }
+.linha-svg { position: absolute; inset: 0; overflow: visible; }
+.linha-svg path { fill: none; stroke: #fff; stroke-width: 2.5; filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.7)); }
+.linha-texto { font-size: 52px; position: absolute; left: 300px; width: 480px; top: 300px; transform: translateY(-50%); text-align: center;
+  line-height: 1.05; text-shadow: 0 0 30px rgba(255, 255, 255, 0.3); }
+.linha-texto .sans { font-size: 52px; }
+.linha-texto .serif { font-size: 96px; }
+.linha-texto span { display: inline-block; }
 
-.comparacao { display: flex; align-items: center; gap: 34px; font-size: 96px; font-weight: 900; line-height: 1; }
-.comparacao .antes { opacity: 0.55; text-decoration: line-through; text-decoration-thickness: 5px; }
-.comparacao .depois { text-shadow: 0 0 24px rgba(255, 255, 255, 0.55), 0 0 70px rgba(255, 255, 255, 0.25); }
-.seta svg { width: 84px; height: 84px; stroke-width: 2.2; }
+/* ---------- citação ---------- */
+.citacao-fundo { position: absolute; inset: 0; z-index: 30; background: rgba(6, 7, 9, 0.78);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' seed='7'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.09 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+.cena-citacao { position: absolute; left: 90px; right: 90px; top: 560px; height: 800px; z-index: 31; display: flex;
+  flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.aspas { font-family: "Playfair Display", serif; font-style: italic; font-weight: 700; font-size: 260px; line-height: 0.6; opacity: 0.9;
+  text-shadow: 0 0 40px rgba(255, 255, 255, 0.35); align-self: flex-start; }
+.aspas.fecha { align-self: flex-end; }
+.citacao-texto { margin: 40px 0; line-height: 1.12; font-size: 58px; }
+.citacao-texto span { display: inline-block; }
+.citacao-texto .sans { font-size: 58px; }
+.citacao-texto .serif { font-size: 92px; text-shadow: 0 0 34px rgba(255, 255, 255, 0.35); }
 
-.icone svg { width: 150px; height: 150px; stroke-width: 1.6; filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.55)); }
+/* ---------- gráfico ---------- */
+.cena-grafico { position: absolute; left: 130px; width: 820px; top: 230px; z-index: 10; }
+.grafico-numero { font-size: 128px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 30px rgba(255, 255, 255, 0.4); display: flex; align-items: baseline; gap: 26px; }
+.grafico-numero .antes { opacity: 0.5; font-weight: 500; }
+.grafico-numero .seta { font-weight: 400; font-size: 90px; opacity: 0.8; }
+.grafico-numero .depois { font-family: "Playfair Display", serif; font-style: italic; font-weight: 700; }
+.grafico-rotulo { font-size: 44px; font-weight: 500; margin: 8px 0 26px; opacity: 0.92; }
+.grafico-svg { overflow: visible; }
+.grafico-svg .grade { stroke: rgba(255, 255, 255, 0.16); stroke-width: 1; filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.35)); }
+.grafico-svg .curva { fill: none; stroke: #fff; stroke-width: 4; filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.8)); }
+.grafico-svg .bola { fill: #fff; filter: drop-shadow(0 0 16px rgba(255, 255, 255, 1)); }
 
-.destaque { font-size: 74px; line-height: 1.05; font-weight: 900; text-transform: uppercase;
-  text-shadow: 0 0 20px rgba(255, 255, 255, 0.45), 0 0 60px rgba(255, 255, 255, 0.2); }
-.destaque .pal { display: inline-block; }
+/* ---------- ícone ---------- */
+.cena-icone { position: absolute; left: 0; right: 0; top: 260px; height: 640px; z-index: 10; }
+.orbita { position: absolute; left: 340px; top: 0; overflow: visible; }
+.orbita circle:first-child { fill: none; stroke: rgba(255, 255, 255, 0.55); stroke-width: 1.5; }
+.icone { position: absolute; left: 440px; top: 100px; width: 200px; height: 200px; }
+.icone svg { width: 200px; height: 200px; stroke-width: 1.2; filter: drop-shadow(0 0 14px rgba(255, 255, 255, 0.6)); }
+.icone-rotulo { font-size: 50px; position: absolute; left: 60px; right: 60px; top: 440px; text-align: center; line-height: 1.05; }
+.icone-rotulo span { display: inline-block; }
+.icone-rotulo .sans { font-size: 50px; }
+.icone-rotulo .serif { font-size: 92px; text-shadow: 0 0 30px rgba(255, 255, 255, 0.35); }
 
-.flash { position: absolute; inset: 0; background: #fff; opacity: 0; }
+/* ---------- pintura (b-roll em tela cheia) ---------- */
+.cena-pintura { position: absolute; inset: 0; z-index: 15; overflow: hidden; background: #0b0b0c; }
+.pintura-img { position: absolute; inset: -60px; background-size: cover; background-position: center;
+  filter: sepia(0.18) contrast(1.06) saturate(0.85) brightness(0.86); }
+.papel { position: absolute; inset: 0; mix-blend-mode: overlay; opacity: 0.55;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='700' height='700'><filter id='p'><feTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' seed='3'/><feColorMatrix values='0 0 0 0 0.5  0 0 0 0 0.48  0 0 0 0 0.45  0 0 0 0.9 0'/></filter><rect width='100%' height='100%' filter='url(%23p)'/></svg>"); }
+.pintura-borda { position: absolute; inset: 0; box-shadow: inset 0 0 220px 90px rgba(0, 0, 0, 0.85);
+  background: radial-gradient(ellipse 70% 60% at 50% 45%, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.45) 100%); }
+.pintura-texto { font-size: 56px; position: absolute; left: 80px; right: 80px; top: 820px; text-align: center; line-height: 1.04;
+  text-shadow: 0 4px 30px rgba(0, 0, 0, 0.7), 0 0 30px rgba(255, 255, 255, 0.25); }
+.pintura-texto span { display: inline-block; }
+.pintura-texto .sans { font-size: 56px; }
+.pintura-texto .serif { font-size: 110px; }
+.pintura-credito { position: absolute; left: 0; right: 0; bottom: 70px; text-align: center; font-size: 22px; opacity: 0.55; }
+
+/* ---------- transições ---------- */
+.luz { position: absolute; top: -200px; bottom: -200px; left: 0; width: 1080px; z-index: 40; transform: skewX(-18deg);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.85) 48%, rgba(255, 255, 255, 1) 50%,
+    rgba(255, 255, 255, 0.85) 52%, rgba(255, 255, 255, 0)); filter: blur(30px); }
+.flash { position: absolute; inset: 0; background: #fff; z-index: 41; }

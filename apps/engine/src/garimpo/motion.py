@@ -43,6 +43,13 @@ ICONES: dict[str, list[str]] = {
     "ShieldCheck": ["seguranca", "protecao", "garantia", "garantir", "proteger"],
     "Target": ["meta", "objetivo", "foco", "resultado", "resultados"],
 }
+# Consultas no acervo do Met (Open Access) por tema; testadas para trazer pinturas em domínio público pertinentes.
+PINTURAS = {
+    "Briefcase": "harvest workers", "Building2": "factory", "Users": "crowd street", "Banknote": "wall street",
+    "Coins": "wall street", "TrendingDown": "storm sea", "TriangleAlert": "shipwreck storm", "Landmark": "town hall assembly",
+    "Scale": "allegory prudence", "Clock": "laborers", "CalendarDays": "harvesters", "Vote": "town hall assembly",
+    "Handshake": "treaty", "Globe": "ships harbor", "TrendingUp": "harvesters", "FileText": "letter reading",
+}
 UNIDADES = {
     "%": "%", "por cento": "%", "porcento": "%", "mil": " mil", "milhao": " mi", "milhoes": " mi", "bilhao": " bi",
     "bilhoes": " bi", "trilhao": " tri", "trilhoes": " tri", "reais": "", "horas": "h", "hora": "h", "anos": " anos",
@@ -59,6 +66,7 @@ MAX_CENAS = 6
 @dataclass
 class PlanoMotion:
     palavras: list[dict]
+    grupos: list[dict] = field(default_factory=list)
     cenas: list[dict] = field(default_factory=list)
     zooms: list[float] = field(default_factory=list)  # instantes de punch-in (s desde o início do corte)
     transicoes: list[float] = field(default_factory=list)
@@ -113,6 +121,57 @@ def _rotulo(palavras: list[Palavra], i: int, n: int = 3) -> str:
     return " ".join(rot)
 
 
+MAX_GRUPO = 5
+
+
+def _peso_chave(texto: str) -> float:
+    n = _norm(_limpa(texto))
+    if not n:
+        return -9
+    p = 0.0
+    if re.search(r"\d", n):
+        p += 3
+    if n in ENFASE:
+        p += 2
+    if n not in STOP and len(n) >= 4:
+        p += 1 + len(n) / 10
+    return p
+
+
+def grupos_legenda(ws: list[Palavra], origem: float) -> list[dict]:
+    """Legenda em linhas de até 5 palavras (como na referência). Em cada linha, a palavra mais importante é a
+    "chave" (grande, serifada itálica, no centro); as demais ficam pequenas acima/abaixo, em minúsculas."""
+    grupos: list[list[Palavra]] = [[]]
+    for k, p in enumerate(ws):
+        grupos[-1].append(p)
+        prox = ws[k + 1] if k + 1 < len(ws) else None
+        if prox is None:
+            break
+        quebra = (len(grupos[-1]) >= MAX_GRUPO or p.texto.endswith((".", "?", "!", ",", ";", ":"))
+                  or prox.ini - p.fim > 0.35)
+        if quebra and len(grupos[-1]) >= 2 or prox.ini - p.fim > 0.8:
+            # não termina a linha em palavra vazia ("no", "e", "da"): ela passa para a próxima linha
+            pendente = []
+            while len(grupos[-1]) > 2 and _norm(_limpa(grupos[-1][-1].texto)) in STOP and not grupos[-1][-1].texto.endswith((".", "?", "!", ",")):
+                pendente.insert(0, grupos[-1].pop())
+            grupos.append(pendente)
+    saida = []
+    for g in grupos:
+        if not g:
+            continue
+        chave = max(range(len(g)), key=lambda i: _peso_chave(g[i].texto))
+        palavras = []
+        for i, p in enumerate(g):
+            t = _limpa(p.texto).lower() or p.texto.lower()
+            palavras.append({"t": t, "ini": round(p.ini - origem, 3), "fim": round(p.fim - origem, 3), "chave": i == chave})
+        saida.append({"ini": palavras[0]["ini"], "fim": palavras[-1]["fim"], "palavras": palavras})
+    for a, b in zip(saida, saida[1:]):
+        a["fim"] = round(min(b["ini"] - 0.02, a["fim"] + 0.6), 3)   # a linha fica até a próxima (respiro curto)
+    if saida:
+        saida[-1]["fim"] = round(saida[-1]["fim"] + 0.5, 3)
+    return saida
+
+
 def _num(txt: str) -> float | None:
     try:
         return float(txt.replace(".", "").replace(",", "."))
@@ -160,7 +219,7 @@ def cenas_por_regras(palavras: list[Palavra], origem: float) -> list[dict]:
 
 def _espacar(cenas: list[dict], duracao: float) -> list[dict]:
     """Prioriza número/comparação/destaque sobre ícones; respeita o intervalo mínimo e a duração do corte."""
-    ordem = {"destaque": 0, "comparacao": 1, "numero": 2, "icone": 3}
+    ordem = {"citacao": 0, "destaque": 1, "comparacao": 2, "numero": 3, "icone": 4}
     escolhidas: list[dict] = []
     icones = 0
     for c in sorted(cenas, key=lambda c: (ordem.get(c["tipo"], 9), c.get("_fraca", False), c["ini"])):
@@ -176,11 +235,11 @@ def _espacar(cenas: list[dict], duracao: float) -> list[dict]:
     escolhidas.sort(key=lambda c: c["ini"])
     for k, c in enumerate(escolhidas):
         prox = escolhidas[k + 1]["ini"] if k + 1 < len(escolhidas) else duracao
-        dur = DUR_CENA[1] if c["tipo"] in ("numero", "comparacao") else DUR_CENA[0]
+        dur = {"numero": 3.4, "comparacao": 3.6, "citacao": 3.8, "pintura": 3.0}.get(c["tipo"], 2.8)
         c["fim"] = round(min(c["ini"] + dur, prox - 0.3, duracao - 0.2), 3)
         c["ini"] = round(max(c["ini"] - 0.15, 0.0), 3)  # entra um tiquinho antes da palavra
         c.pop("_fraca", None)
-        c["texto"] = (c.get("texto") or "").upper()
+        c["texto"] = (c.get("texto") or "").strip()
     return [c for c in escolhidas if c["fim"] - c["ini"] >= 1.2]
 
 
@@ -189,7 +248,7 @@ PEDIDO_LLM = """Você é motion designer de vídeos curtos (Reels/TikTok). Abaix
 {frases}
 
 Planeje animações ilustrativas que reforcem o que é dito (no máximo 4), e um título-gancho.
-Tipos: "numero" (valor numérico grande que conta), "comparacao" (antes -> depois), "icone" (ícone + rótulo curto), "destaque" (2 a 4 palavras de impacto).
+Tipos: "numero" (valor numérico que aparece na fala), "comparacao" (antes -> depois), "icone" (ícone + rótulo curto), "destaque" (2 a 4 palavras de impacto), "citacao" (a frase mais forte, até 10 palavras, literal).
 Ícones permitidos: {icones}.
 Responda só JSON:
 {{"titulo": "2 a 4 palavras que resumem o gancho", "cenas": [{{"frase": número inteiro da frase, "tipo": "...", "texto": "rótulo de até 4 palavras", "valor": número ou null, "sufixo": "% | mi | bi | h | ''", "antes": "", "depois": "", "icone": "Nome"}}]}}"""
@@ -212,7 +271,7 @@ def cenas_por_llm(llm, frases: list[tuple[float, str]]) -> tuple[str | None, lis
             if not 0 <= k < len(frases):
                 continue
             tipo = c.get("tipo")
-            base = {"tipo": tipo, "ini": frases[k][0] + 0.4, "texto": str(c.get("texto") or "")[:32]}
+            base = {"tipo": tipo, "ini": frases[k][0] + 0.4, "texto": str(c.get("texto") or "")[:40]}
             valor = _num(str(c.get("valor"))) if c.get("valor") not in (None, "") else None
             numeros_da_frase = {_num(x) for x in re.findall(r"\d+(?:[.,]\d+)?", frases[k][1])}
             if tipo == "numero" and valor is not None and (valor in numeros_da_frase
@@ -225,6 +284,8 @@ def cenas_por_llm(llm, frases: list[tuple[float, str]]) -> tuple[str | None, lis
                 base.update(icone=c["icone"])
             elif tipo == "destaque" and base["texto"]:
                 pass
+            elif tipo == "citacao" and base["texto"]:
+                base["texto"] = str(c.get("texto"))[:80]
             else:
                 continue
             cenas.append(base)
@@ -234,19 +295,73 @@ def cenas_por_llm(llm, frases: list[tuple[float, str]]) -> tuple[str | None, lis
     return titulo, cenas
 
 
-def planejar(trechos: list[tuple[float, float, list[Palavra]]], llm=None, log=None) -> PlanoMotion:
+def trecho_citacao(ws: list[Palavra], maximo: int = 9) -> str:
+    """Até `maximo` palavras em volta da palavra mais forte (a citação é lida de relance)."""
+    textos = [_limpa(p.texto) for p in ws if _limpa(p.texto)]
+    if len(textos) <= maximo:
+        return " ".join(textos)
+    centro = max(range(len(textos)), key=lambda i: _peso_chave(textos[i]))
+    ini = max(0, min(centro - maximo // 2, len(textos) - maximo))
+    while ini > 0 and _norm(textos[ini]) in STOP:   # não começa em "da", "e"...
+        ini += 1 if ini + maximo < len(textos) else -1
+        if ini <= 0:
+            break
+    trecho = textos[ini:ini + maximo]
+    while trecho and _norm(trecho[-1]) in STOP:
+        trecho.pop()
+    return ("… " if ini > 0 else "") + " ".join(trecho) + (" …" if ini + maximo < len(textos) else "")
+
+
+def _imagem_data_uri(arq) -> str:
+    import base64
+    return "data:image/jpeg;base64," + base64.b64encode(arq.read_bytes()).decode("ascii")
+
+
+def com_pinturas(cenas: list[dict], duracao: float, log=None, maximo: int | None = None) -> list[dict]:
+    """Troca 1 ícone (2 em cortes longos) por uma pintura em domínio público do tema (b-roll em tela cheia)."""
+    from . import recursos
+    maximo = maximo if maximo is not None else (2 if duracao > 55 else 1)
+    usados: set[int] = set()
+    consultas_usadas: set[str] = set()
+    feitas = 0
+    for c in cenas:
+        if feitas >= maximo:
+            break
+        consulta = PINTURAS.get(c.get("icone", ""))
+        if c["tipo"] != "icone" or not consulta or consulta in consultas_usadas:
+            continue
+        consultas_usadas.add(consulta)
+        r = recursos.pintura(consulta, usados, log)
+        if not r:
+            continue
+        arq, credito = r
+        c.update(tipo="pintura", img=_imagem_data_uri(arq), credito=credito)
+        c["fim"] = round(min(c["ini"] + 3.0, duracao - 0.2), 3)
+        feitas += 1
+    return cenas
+
+
+def planejar(trechos: list[tuple[float, float, list[Palavra]]], llm=None, log=None, pinturas: bool = True) -> PlanoMotion:
     """Plano de um corte formado por 1+ trechos do vídeo (ex.: gancho "cold open" + corpo).
 
     `trechos`: (início no vídeo, fim no vídeo, palavras). Os tempos do plano são do corte montado (trechos em sequência)."""
     palavras_rel: list[dict] = []
+    grupos: list[dict] = []
     cenas: list[dict] = []
+    citacao: dict | None = None
     transicoes: list[float] = []
     frases: list[tuple[float, str]] = []
     deslocamento = 0.0
     for k, (ini, fim, ws) in enumerate(trechos):
         origem = ini - deslocamento
         palavras_rel += _palavras_rel(ws, origem)
-        cenas += cenas_por_regras(ws, origem)
+        grupos += grupos_legenda(ws, origem)
+        if k == 0 and len(trechos) > 1 and ws:
+            # cold open: a frase de impacto aparece como citação em destaque (aspas, texto escrito no centro)
+            citacao = {"tipo": "citacao", "ini": 0.05, "fim": round(fim - ini - 0.05, 3),
+                       "texto": trecho_citacao(ws), "cobreLegenda": True}
+        else:
+            cenas += cenas_por_regras(ws, origem)
         atual: list[str] = []
         ini_frase = (ws[0].ini - origem) if ws else deslocamento
         for p in ws:
@@ -267,8 +382,15 @@ def planejar(trechos: list[tuple[float, float, list[Palavra]]], llm=None, log=No
         cenas = extra + cenas
         if titulo and not transicoes:
             cenas.append({"tipo": "destaque", "ini": 0.35, "texto": titulo})
+    if citacao:
+        inicio_corpo = transicoes[0] if transicoes else 0
+        cenas = [c for c in cenas if c["ini"] > inicio_corpo + 1.0]
     escolhidas = _espacar(cenas, duracao)
-    zooms = [c["ini"] + 0.1 for c in escolhidas if c["tipo"] in ("numero", "comparacao", "destaque")]
+    if pinturas:
+        escolhidas = com_pinturas(escolhidas, duracao, log)
+    if citacao:
+        escolhidas = [citacao] + escolhidas
+    zooms = [c["ini"] + 0.1 for c in escolhidas if c["tipo"] in ("numero", "comparacao", "destaque", "icone")]
     zooms += [p["ini"] for p in palavras_rel if p["enfase"]]
     zooms_finais: list[float] = []
     for z in sorted(zooms):
@@ -276,4 +398,4 @@ def planejar(trechos: list[tuple[float, float, list[Palavra]]], llm=None, log=No
             zooms_finais.append(round(z, 3))
     if log:
         log(f"Motion: {len(escolhidas)} ilustração(ões), {len(zooms_finais)} zoom(s) de ênfase, {len(transicoes)} transição(ões)")
-    return PlanoMotion(palavras_rel, escolhidas, zooms_finais[:6], transicoes)
+    return PlanoMotion(palavras_rel, grupos, escolhidas, zooms_finais[:6], transicoes)

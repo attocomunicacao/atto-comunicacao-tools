@@ -22,12 +22,17 @@ description: Use ao mexer na edição dos cortes do Garimpo — legenda animada,
 
 Sem `ATTO_MOTION_CMD` (linha de comando pura), o motor cai para a legenda ASS (`legenda.py`) queimada no base.
 
-## Regras de estilo (pedido do cliente)
-- Legenda: uma palavra por vez, MAIÚSCULA, branca, Lato 900, 64 px, centro em y=1400, glow branco, sem traçado.
-- Entrada: y -100 -> 0, opacidade 0 -> 1, blur 14 -> 0, escala 0.9 -> 1, `expo.out`, até 0,55 s (encurta se a
-  palavra for curta — nunca termina depois da saída). Respira (y -6) parada. Saída: +18 px, blur 9, 0,18 s `power2.in`.
-- Ilustrações na faixa inferior (top 1500 px), cartão escuro translúcido, tudo branco, uma família (Lato).
-- Nada de cores além de branco/preto translúcido.
+## Regras de estilo (pedido do cliente, referência "minimal premium" — youtu.be/g9xoKm5DEeU)
+- Tudo branco. Duas famílias: Inter (texto, minúsculas) e Playfair Display itálico (palavra-chave). Sem cartões.
+- Legenda: linhas de até 5 palavras (`motion.grupos_legenda`); a palavra-chave fica grande no centro (serifa
+  itálica; números em Inter 800), as demais pequenas acima/abaixo, surgindo no tempo da fala. Chave: blur 18→0,
+  y −60→0, letter-spacing 0,08em→0, 0,85 s `expo.out`. Linha sai inteira em desfoque.
+- Cenas flutuando sobre o vídeo com vinheta escura suave: `destaque` = linha + texto; `numero`/`comparacao` =
+  gráfico (grade com brilho, curva e bolinha); `icone` = ícone de traço + órbita; `citacao` = tela escurecida com
+  textura, aspas e frase escrita (usada no cold open, cobre a legenda); `pintura` = b-roll em tela cheia (Met
+  Museum, domínio público, `recursos.pintura`) com textura de papel, bordas escuras e "camera slide".
+- Transição do cold open: faixa de luz diagonal + flash.
+- Iterar rápido: `ATTO_MANTER_TMP=1` mantém os trechos reenquadrados em cache; só a camada de motion é refeita.
 
 ## Adicionar um tipo de ilustração
 1. `tipos.ts`: novo valor em `Cena['tipo']` e campos.

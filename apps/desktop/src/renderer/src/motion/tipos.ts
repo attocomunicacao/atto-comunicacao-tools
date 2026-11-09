@@ -1,8 +1,9 @@
 /** Dados que o motor (Python) entrega para a camada de motion de um corte. Tempos em segundos desde o início do corte. */
-export interface PalavraMotion { t: string; ini: number; fim: number; enfase?: boolean }
+export interface PalavraGrupo { t: string; ini: number; fim: number; chave: boolean }
+export interface Grupo { ini: number; fim: number; palavras: PalavraGrupo[] }
 
 export interface Cena {
-  tipo: 'numero' | 'comparacao' | 'icone' | 'destaque'
+  tipo: 'numero' | 'comparacao' | 'icone' | 'destaque' | 'citacao' | 'pintura'
   ini: number
   fim: number
   texto?: string
@@ -11,6 +12,9 @@ export interface Cena {
   antes?: string
   depois?: string
   icone?: string // nome Lucide em PascalCase (ex.: "Clock", "Scale")
+  img?: string // data URI da pintura
+  credito?: string
+  cobreLegenda?: boolean
 }
 
 export interface JobMotion {
@@ -18,8 +22,7 @@ export interface JobMotion {
   altura: number
   fps: number
   duracao: number
-  palavras: PalavraMotion[]
+  grupos: Grupo[]
   cenas: Cena[]
   transicoes?: number[]
-  fontes?: string
 }
