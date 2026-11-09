@@ -112,3 +112,129 @@ def cortar_vertical(video: Path, ini: float, fim: float, ass: Path | None, saida
             "-c:a", "aac", "-b:a", "256k", "-t", f"{total:.3f}", "-movflags", "+faststart", str(saida)],
            aoProgresso, total)
     return saida
+
+
+# ---------------------------------------------------------------- edição dinâmica (v0.5)
+
+ZOOM = 0.09            # punch-in de 9% nos momentos de ênfase
+ZOOM_ENTRADA, ZOOM_SEGURA, ZOOM_SAIDA = 0.55, 1.8, 0.8
+# Masterização de voz para redes: corta grave de ruído, compressão leve e loudness de -14 LUFS (padrão de Reels/TikTok/YouTube).
+MASTER_AUDIO = ("highpass=f=75,acompressor=threshold=-21dB:ratio=3:attack=8:release=160:makeup=2,"
+                "loudnorm=I=-14:TP=-1.5:LRA=9")
+
+
+def _expr_zoom(zooms: list[float], fps: float) -> str:
+    """Expressão do zoompan: soma de "sinos" suaves (smoothstep na entrada e na saída) nos instantes de ênfase."""
+    if not zooms:
+        return "1"
+    partes = []
+    for k, z in enumerate(zooms):
+        a, b = 2 * k, 2 * k + 1
+        sobe = f"(st({a},clip((on/{fps:g}-{z:.3f})/{ZOOM_ENTRADA},0,1))*0+ld({a})*ld({a})*(3-2*ld({a})))"
+        desce = f"(1-(st({b},clip((on/{fps:g}-{z + ZOOM_ENTRADA + ZOOM_SEGURA:.3f})/{ZOOM_SAIDA},0,1))*0+ld({b})*ld({b})*(3-2*ld({b}))))"
+        partes.append(f"{sobe}*{desce}")
+    return f"1+{ZOOM}*min(1,{'+'.join(partes)})"
+
+
+def trecho_vertical(video: Path, ini: float, fim: float, saida: Path, zooms: list[float] | None = None,
+                    log=None, aoProgresso=None) -> Path:
+    """Um trecho do vídeo em 1080x1920: reenquadrado (rosto/tela dividida), com zooms suaves de ênfase.
+
+    Intermediário de alta qualidade (CRF 12); a legenda, as ilustrações e a logo entram depois."""
+    from . import enquadramento
+    saida.parent.mkdir(parents=True, exist_ok=True)
+    info = informacoes(video)
+    fps = round(info["fps"], 3)
+    dur = fim - ini
+    segmentos = enquadramento.analisar(video, ini, fim, info["largura"], info["altura"], log)
+    comp = enquadramento.filtro(segmentos, info["largura"], info["altura"], fps)
+    if zooms:
+        # supersampling 2x antes do zoompan: o enquadramento anda em meio pixel, sem tremor
+        comp += (f";[cv]scale=2160:3840:flags=bicubic,zoompan=z='{_expr_zoom(zooms, fps)}':"
+                 f"x='iw/2-(iw/zoom/2)':y='ih*0.42-(ih/zoom*0.42)':d=1:s=1080x1920:fps={fps:g}[vz]")
+        ultimo = "[vz]"
+    else:
+        ultimo = "[cv]"
+    comp += f";[0:a:0]afade=t=in:st=0:d=0.03,afade=t=out:st={max(dur - 0.06, 0):.3f}:d=0.06[a]"
+    _rodar(["ffmpeg", "-v", "error", "-y", "-ss", f"{ini:.3f}", "-to", f"{fim:.3f}", "-i", str(video),
+            "-filter_complex", comp, "-map", ultimo, "-map", "[a]", "-c:v", "libx264", "-preset", "faster", "-crf", "12",
+            "-pix_fmt", "yuv420p", "-r", f"{fps:g}", "-c:a", "pcm_s16le", "-t", f"{dur:.3f}", str(saida)], aoProgresso, dur)
+    return saida
+
+
+def montar(trechos: list[Path], saida: Path, logo: Path | None = None, log=None) -> tuple[Path, float]:
+    """Junta os trechos (ex.: gancho + corpo), masteriza o áudio e acrescenta o cartão final da logo.
+
+    Retorna (arquivo, duração do conteúdo sem a logo)."""
+    durs = []
+    for t in trechos:
+        r = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(t)],
+                           capture_output=True, text=True, check=True)
+        durs.append(float(r.stdout.strip()))
+    dur = sum(durs)
+    entradas: list[str] = []
+    for t in trechos:
+        entradas += ["-i", str(t)]
+    n = len(trechos)
+    comp = "".join(f"[{k}:v][{k}:a]" for k in range(n)) + f"concat=n={n}:v=1:a=1[vv][a0]"
+    ultimo = "[vv]"
+    audio = f"[a0]{MASTER_AUDIO}"
+    total = dur
+    if logo is not None:
+        entradas += ["-loop", "1", "-t", f"{LOGO_S:.3f}", "-i", str(logo)]
+        comp += ";" + _filtro_logo(dur).replace("[1:v]", f"[{n}:v]")
+        audio += f",apad=pad_dur={LOGO_S}"
+        ultimo, total = "[v]", dur + LOGO_S
+    comp += f";{audio},aresample=48000[a]"
+    if log:
+        log(f"Montando {n} trecho(s), {dur:.1f}s; áudio masterizado a -14 LUFS" + (" + logo final" if logo else ""))
+    _rodar(["ffmpeg", "-v", "error", "-y", *entradas, "-filter_complex", comp, "-map", ultimo, "-map", "[a]",
+            "-c:v", "libx264", "-preset", "faster", "-crf", "13", "-pix_fmt", "yuv420p",
+            "-c:a", "aac", "-b:a", "256k", "-t", f"{total:.3f}", str(saida)])
+    return saida, dur
+
+
+def comando_motion() -> list[str] | None:
+    """Como chamar o renderizador de motion (o app define ATTO_MOTION_CMD); None na linha de comando pura."""
+    import json as _json
+    bruto = os.environ.get("ATTO_MOTION_CMD")
+    return _json.loads(bruto) if bruto else None
+
+
+def aplicar_motion(base: Path, job: dict, saida: Path, log=None, aoProgresso=None) -> Path:
+    """Sobrepõe a camada ATTO Motion (legenda + ilustrações) ao vídeo-base, renderizada pelo app quadro a quadro."""
+    import json as _json
+    cmd = comando_motion()
+    if not cmd:
+        raise RuntimeError("Renderizador de motion indisponível (ATTO_MOTION_CMD não definido)")
+    job = {**job, "base": str(base), "saida": str(saida)}
+    fontes = os.environ.get("ATTO_FONTES")
+    if fontes:
+        job["fontes"] = fontes
+    arq = saida.with_suffix(".motion.json")
+    arq.write_text(_json.dumps(job, ensure_ascii=False), encoding="utf-8")
+    if log:
+        log(f"Renderizando motion: {len(job['palavras'])} palavras, {len(job['cenas'])} ilustração(ões), quadro a quadro")
+    p = subprocess.Popen([*cmd, str(arq)], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
+                         encoding="utf-8", errors="replace")
+    ultima = ""
+    for linha in p.stdout:
+        linha = linha.strip()
+        if linha.startswith("PCT ") and aoProgresso:
+            aoProgresso(int(linha[4:]) / 100)
+        elif linha:
+            ultima = linha
+    p.wait()
+    if p.returncode != 0 or not saida.exists() or ultima.startswith("ERRO"):
+        raise RuntimeError(f"Render de motion falhou: {ultima}")
+    return saida
+
+
+def queimar_legenda(base: Path, ass: Path, saida: Path) -> Path:
+    """Plano B sem o app (linha de comando): legenda ASS queimada sobre o vídeo-base."""
+    fontes = os.environ.get("ATTO_FONTES")
+    extra = f":fontsdir='{_caminho_filtro(Path(fontes))}'" if fontes else ""
+    _rodar(["ffmpeg", "-v", "error", "-y", "-i", str(base), "-vf", f"ass='{_caminho_filtro(ass)}'{extra}",
+            "-c:v", "libx264", "-preset", "faster", "-crf", "16", "-pix_fmt", "yuv420p", "-c:a", "copy",
+            "-movflags", "+faststart", str(saida)])
+    return saida

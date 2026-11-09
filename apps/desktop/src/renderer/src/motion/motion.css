@@ -1,0 +1,47 @@
+/* ATTO Motion: tudo branco, uma família (Lato), glow suave. Tela 1080x1920, fundo transparente. */
+html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: transparent; }
+#palco { position: relative; width: 1080px; height: 1920px; font-family: "AttoLato", "Lato", sans-serif; color: #fff; }
+
+/* Legenda */
+.legenda { position: absolute; left: 0; right: 0; top: 1400px; height: 0; }
+.palavra {
+  position: absolute; left: 50%; top: 0; transform: translate(-50%, -50%);
+  font-size: 64px; font-weight: 900; letter-spacing: 0.01em; text-transform: uppercase; white-space: nowrap;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.55), 0 0 28px rgba(255, 255, 255, 0.32), 0 0 60px rgba(255, 255, 255, 0.16),
+    0 2px 6px rgba(0, 0, 0, 0.35);
+  will-change: transform, filter, opacity;
+}
+.palavra.enfase {
+  text-shadow: 0 0 14px rgba(255, 255, 255, 0.8), 0 0 40px rgba(255, 255, 255, 0.45), 0 0 90px rgba(255, 255, 255, 0.25),
+    0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+/* Cenas ilustrativas: faixa inferior, abaixo da legenda */
+.cena {
+  position: absolute; left: 90px; right: 90px; top: 1500px; min-height: 230px; box-sizing: border-box;
+  padding: 30px 40px; border-radius: 34px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px; text-align: center;
+  background: linear-gradient(180deg, rgba(14, 16, 22, 0.62), rgba(6, 8, 12, 0.72));
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45), 0 0 40px rgba(255, 255, 255, 0.06) inset;
+  will-change: transform, filter, opacity;
+}
+.rotulo { font-size: 36px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; opacity: 0.92; }
+.traco { width: 60%; height: 4px; border-radius: 2px; background: #fff; transform-origin: left center;
+  box-shadow: 0 0 18px rgba(255, 255, 255, 0.7); }
+
+.numero { font-size: 132px; line-height: 1; font-weight: 900; font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 24px rgba(255, 255, 255, 0.5), 0 0 70px rgba(255, 255, 255, 0.25); }
+
+.comparacao { display: flex; align-items: center; gap: 34px; font-size: 96px; font-weight: 900; line-height: 1; }
+.comparacao .antes { opacity: 0.55; text-decoration: line-through; text-decoration-thickness: 5px; }
+.comparacao .depois { text-shadow: 0 0 24px rgba(255, 255, 255, 0.55), 0 0 70px rgba(255, 255, 255, 0.25); }
+.seta svg { width: 84px; height: 84px; stroke-width: 2.2; }
+
+.icone svg { width: 150px; height: 150px; stroke-width: 1.6; filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.55)); }
+
+.destaque { font-size: 74px; line-height: 1.05; font-weight: 900; text-transform: uppercase;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.45), 0 0 60px rgba(255, 255, 255, 0.2); }
+.destaque .pal { display: inline-block; }
+
+.flash { position: absolute; inset: 0; background: #fff; opacity: 0; }

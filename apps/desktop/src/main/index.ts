@@ -2,6 +2,18 @@ import { spawn } from 'node:child_process'
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { basename, extname, join, resolve, sep } from 'node:path'
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
+import { modoRender, prepararModoRender, renderizar } from './renderMotion'
+
+// Modo render (chamado pelo motor): sem janela, renderiza a camada de motion de um corte e sai.
+const jobMotion = modoRender()
+if (jobMotion) {
+  prepararModoRender()
+  app.whenReady().then(() => renderizar(jobMotion)).catch((e) => {
+    process.stdout.write(`ERRO ${e instanceof Error ? e.message : String(e)}
+`)
+    process.exitCode = 1
+  }).finally(() => app.quit())
+}
 
 const COMANDOS = new Set(['transcrever', 'estruturar', 'exportar', 'dicionario'])
 let janela: BrowserWindow | null = null
@@ -54,7 +66,12 @@ function criarJanela(): void {
 /** Empacotado: Python, FFmpeg, modelo e fontes vêm em resources/. Desenvolvimento: usa o uv do computador. */
 function comandoMotor(args: string[]): { exe: string; args: string[]; env: NodeJS.ProcessEnv } {
   // ATTO_CACHE: modelos grandes baixados na primeira vez (Whisper turbo, juiz LLM) ficam na pasta do usuário
-  const base = { ...process.env, PYTHONIOENCODING: 'utf-8', ATTO_CACHE: join(app.getPath('userData'), 'modelos') }
+  // ATTO_MOTION_CMD: como o motor chama o renderizador de motion (este mesmo executável em modo render)
+  const motion = app.isPackaged ? [process.execPath, '--render-motion'] : [process.execPath, app.getAppPath(), '--render-motion']
+  const base = {
+    ...process.env, PYTHONIOENCODING: 'utf-8', ATTO_CACHE: join(app.getPath('userData'), 'modelos'),
+    ATTO_MOTION_CMD: JSON.stringify(motion)
+  }
   if (!app.isPackaged) return { exe: 'uv', args: ['run', '--project', pastaMotor(), 'garimpo', ...args], env: base }
   const r = process.resourcesPath
   return {
@@ -91,7 +108,7 @@ function executarMotor(args: string[], aoLinha: (linha: string) => void): Promis
   })
 }
 
-app.whenReady().then(() => {
+if (!jobMotion) app.whenReady().then(() => {
   mkdirSync(pastaProjetos(), { recursive: true })
 
   ipcMain.handle('video:escolher', async () => {
@@ -158,4 +175,4 @@ app.whenReady().then(() => {
   app.on('activate', () => BrowserWindow.getAllWindows().length === 0 && criarJanela())
 })
 
-app.on('window-all-closed', () => process.platform !== 'darwin' && app.quit())
+app.on('window-all-closed', () => !jobMotion && process.platform !== 'darwin' && app.quit())

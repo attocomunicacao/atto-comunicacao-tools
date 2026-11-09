@@ -21,7 +21,7 @@ from .estrutura import _norm, tokens
 from .modelos import Corte, Frase, Tema
 
 MIN_S = 30.0
-MAX_S = 90.0
+MAX_S = 90.0  # inclui o gancho "cold open"
 ALVO_S = 60.0
 BORDA_S = 180.0  # primeiros e últimos 3 min da gravação costumam ser protocolo
 
@@ -265,7 +265,7 @@ def completar_contexto(c: Corte, todas: list[Frase], limite_ini: float = 0.0) ->
     while e_dependente(fs[0]) and len(fs) > 1 and fs[-1].fim - fs[1].ini >= MIN_S:
         fs.pop(0)
     j = pos.get(id(fs[-1]), None)
-    while j is not None and not _termina_frase(fs[-1]) and j + 1 < len(todas)             and todas[j + 1].ini - fs[-1].fim <= PAUSA_CONTEXTO_S and todas[j + 1].fim - fs[0].ini <= MAX_S + 15:
+    while j is not None and not _termina_frase(fs[-1]) and j + 1 < len(todas)             and todas[j + 1].ini - fs[-1].fim <= PAUSA_CONTEXTO_S and todas[j + 1].fim - fs[0].ini <= MAX_S:
         j += 1
         fs.append(todas[j])
     return Corte(c.tema, fs, c.pontuacao)
@@ -320,6 +320,39 @@ def ajustar_limites(ini: float, fim: float, ant_fim: float | None, prox_ini: flo
     return max(novo_ini, 0.0), max(novo_fim, fim)
 
 
+TEASER_S = (2.0, 7.5)
+
+
+def com_teaser(c: Corte, frase: Frase, log=None) -> Corte:
+    """Põe a frase de maior impacto como "cold open" (os 5 primeiros segundos que seguram), sem passar de MAX_S."""
+    dur = frase.fim - frase.ini
+    if not TEASER_S[0] <= dur <= TEASER_S[1] or e_ruido(frase) or e_dependente(frase) or e_abertura(_norm(frase.texto)):
+        return c
+    if frase not in c.frases or frase is c.frases[0]:
+        return c
+    fs = list(c.frases)
+    while fs[-1].fim - fs[0].ini + dur + 0.3 > MAX_S and len(fs) > 1 and fs[-2].fim - fs[0].ini >= MIN_S:
+        fs.pop()
+    if fs[-1].fim - fs[0].ini + dur + 0.3 > MAX_S or frase not in fs:
+        return c
+    if log:
+        log(f"    gancho “cold open”: “{frase.texto[:70]}”")
+    return Corte(c.tema, fs, c.pontuacao, teaser=frase)
+
+
+def teaser_heuristico(c: Corte) -> Corte:
+    """Sem juiz: usa como gancho a frase (após os 10 s iniciais) com pergunta/número mais forte que a abertura."""
+    abertura = nota_gancho(c.frases)
+    melhor, nota = None, abertura + 0.3
+    for f in c.frases[1:]:
+        if f.ini - c.ini < 10:
+            continue
+        n = nota_gancho([f])
+        if n > nota:
+            melhor, nota = f, n
+    return com_teaser(c, melhor) if melhor else c
+
+
 def _sobrepoe(a: Corte, b: Corte, folga: float = 0.0) -> bool:
     return not (a.fim <= b.ini + folga or a.ini >= b.fim - folga)
 
@@ -343,7 +376,7 @@ def sugerir(temas: list[Tema], por_minutos: float = 7.0, juiz=None, log=None) ->
     lista: list[Corte] = []
     for t in temas:
         lista += [completar_contexto(c, todas, inicio) for c in candidatos(t, idf, total, t0, inicio)]
-    lista = [c for c in lista if admissivel(c.frases, inicio) and MIN_S <= c.duracao <= MAX_S + 15]
+    lista = [c for c in lista if admissivel(c.frases, inicio) and MIN_S <= c.duracao <= MAX_S]
     lista.sort(key=lambda c: -c.pontuacao)
     curtos: list[Corte] = []
     vaga = min(max(quota + 6, int(quota * 1.3)), 24) if juiz else quota  # ~15 s por finalista em CPU
@@ -375,9 +408,14 @@ def sugerir(temas: list[Tema], por_minutos: float = 7.0, juiz=None, log=None) ->
                     if log:
                         log(f"    início adiantado para a frase {r.inicio + 1}: “{cand.texto[:60]}…”")
             novo.pontuacao = r.nota + 0.1 * c.pontuacao
+            impacto = c.frases[r.impacto] if 0 <= r.impacto < len(c.frases) else None
+            if impacto is not None and impacto is not novo.frases[0]:
+                novo = com_teaser(novo, impacto, log)
             avaliados.append(novo)
         curtos = sorted(avaliados, key=lambda c: -c.pontuacao)
 
+    if not juiz:
+        curtos = [teaser_heuristico(c) for c in curtos]
     final: list[Corte] = []
     contagem: dict[str, int] = {}
     for c in curtos:

@@ -37,8 +37,9 @@ Dê notas de 0 a 10:
 Também:
 - "bastidor": true se houver conversa de gravação (contagem 1 2 3 / 5 4 3, "gravando", "pronto", teste de som, combinações da equipe).
 - "inicio": número da frase onde o corte deveria começar para ter o melhor gancho mantendo o sentido (1 = como está).
+- "impacto": número da frase mais forte, surpreendente ou polêmica do trecho, que funcionaria sozinha como chamada nos primeiros segundos do vídeo.
 
-JSON: {{"gancho": n, "contexto": n, "valor": n, "fechamento": n, "bastidor": bool, "inicio": n}}"""
+JSON: {{"gancho": n, "contexto": n, "valor": n, "fechamento": n, "bastidor": bool, "inicio": n, "impacto": n}}"""
 
 
 @dataclass
@@ -49,6 +50,7 @@ class Avaliacao:
     fechamento: float
     bastidor: bool
     inicio: int  # índice (0 = primeira frase)
+    impacto: int = 0  # índice da frase mais forte (candidata a "cold open")
 
     @property
     def nota(self) -> float:
@@ -57,18 +59,20 @@ class Avaliacao:
 
 
 def _num(v, padrao: float = 5.0) -> float:
-    try:
-        return max(0.0, min(10.0, float(v)))
-    except (TypeError, ValueError):
+    """Aceita 8, "8", "8/10", "nota 8" (o Qwen3 varia o formato)."""
+    m = re.search(r"\d+(?:[.,]\d+)?", str(v)) if v is not None else None
+    if not m:
         return padrao
+    return max(0.0, min(10.0, float(m.group(0).replace(",", "."))))
 
 
 def interpretar(texto: str, n_frases: int) -> Avaliacao:
     m = re.search(r"\{.*\}", texto, re.S)
     d = json.loads(m.group(0)) if m else {}
     ini = int(_num(d.get("inicio", 1), 1)) - 1
+    imp = int(_num(d.get("impacto", 1), 1)) - 1
     return Avaliacao(_num(d.get("gancho")), _num(d.get("contexto")), _num(d.get("valor")), _num(d.get("fechamento")),
-                     bool(d.get("bastidor", False)), max(0, min(ini, n_frases - 1)))
+                     bool(d.get("bastidor", False)), max(0, min(ini, n_frases - 1)), max(0, min(imp, n_frases - 1)))
 
 
 def montar_prompt(c: Corte) -> str:
@@ -89,10 +93,10 @@ class Juiz:
         try:
             r = self.llm.create_chat_completion(
                 messages=[{"role": "system", "content": SISTEMA}, {"role": "user", "content": montar_prompt(c) + " /no_think"}],
-                response_format={"type": "json_object"}, temperature=0.1, max_tokens=90)
+                response_format={"type": "json_object"}, temperature=0.1, max_tokens=110)
             return interpretar(r["choices"][0]["message"]["content"], len(c.frases))
         except Exception:
-            return Avaliacao(5, 5, 5, 5, False, 0)
+            return Avaliacao(5, 5, 5, 5, False, 0, 0)
 
 
 def carregar(log=None) -> Juiz | None:

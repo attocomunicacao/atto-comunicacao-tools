@@ -71,6 +71,7 @@ class Corte:
     tema: str
     frases: list[Frase]
     pontuacao: float
+    teaser: Frase | None = None  # "cold open": frase de maior impacto repetida no início, antes do corte
 
     @property
     def ini(self) -> float:

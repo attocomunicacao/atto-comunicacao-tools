@@ -148,8 +148,17 @@ def estruturar(video: Path, pasta: Path, aprovadas: list[int]) -> list[Corte]:
         _log(f"Corte {i:02d}: {c.ini:.2f}s-{c.fim:.2f}s  ->  {ini:.2f}s-{fim:.2f}s (silêncio mais próximo); abre com “{c.texto[:60]}…”")
         midia.previa_wav(video, ini, fim, pasta / "previas" / f"corte-{i:02d}.wav")
         _pct(i / len(cs))
-        dados.append({"n": i, "tema": c.tema, "ini": ini, "fim": fim, "duracao": fim - ini, "texto": c.texto,
-                      "palavras": [vars(p) for f in c.frases for p in f.palavras]})
+        item = {"n": i, "tema": c.tema, "ini": ini, "fim": fim, "duracao": fim - ini, "texto": c.texto,
+                "palavras": [vars(p) for f in c.frases for p in f.palavras]}
+        if c.teaser is not None:
+            t_ant = next((p.fim for p in reversed(palavras) if p.fim <= c.teaser.ini - 0.001), None)
+            t_prox = next((p.ini for p in palavras if p.ini >= c.teaser.fim + 0.001), None)
+            ti, tf = mod_cortes.ajustar_limites(c.teaser.ini, c.teaser.fim, t_ant, t_prox, wav)
+            item["teaser"] = {"ini": ti, "fim": tf, "texto": c.teaser.texto, "palavras": [vars(p) for p in c.teaser.palavras]}
+            item["duracao"] += tf - ti
+            item["texto"] = f"[gancho] {c.teaser.texto} … {c.texto}"
+            _log(f"  Corte {i:02d} abre com o gancho “{c.teaser.texto[:60]}”")
+        dados.append(item)
     (pasta / "cortes.json").write_text(json.dumps(dados, ensure_ascii=False), encoding="utf-8")
     print(f"RESULTADO {len(ts)} temas {len(cs)} cortes", flush=True)
     return cs
@@ -162,20 +171,63 @@ def analisar(video: Path, pasta: Path, modelo: str, aceitar_todas: bool) -> None
 
 
 def exportar(video: Path, pasta: Path, aprovados: list[int], logo: Path | None = None) -> None:
+    """Etapas 10-11: edição dinâmica de cada corte aprovado.
+
+    1. plano de motion (legenda, ilustrações, zooms, transição do gancho) — `motion.planejar`;
+    2. trechos em 1080x1920 reenquadrados com zooms suaves — `midia.trecho_vertical`;
+    3. montagem (gancho + corpo), áudio masterizado (-14 LUFS) e logo final — `midia.montar`;
+    4. camada ATTO Motion renderizada quadro a quadro pelo app — `midia.aplicar_motion`
+       (sem o app, na linha de comando, a legenda ASS é queimada no lugar)."""
+    from . import juiz as mod_juiz
+    from . import motion
     dados = json.loads((pasta / "cortes.json").read_text(encoding="utf-8"))
     escolhidos = [d for d in dados if d["n"] in aprovados]
     if logo is not None and not logo.exists():
         _log(f"Logo não encontrada ({logo}); gerando sem ela")
         logo = None
     _log("Logo no final de cada corte: " + (logo.name if logo else "nenhuma"))
+    tem_motion = midia.comando_motion() is not None
+    _log("Camada de motion: " + ("ATTO Motion (GSAP, quadro a quadro)" if tem_motion else "indisponível; legenda ASS"))
+    llm = None
+    if tem_motion:
+        j = mod_juiz.carregar(_log)
+        llm = j.llm if j else None
+    saida_dir = pasta / "saida"
+    tmp = saida_dir / "tmp"
     for k, d in enumerate(escolhidos, 1):
+        nome = f"corte-{d['n']:02d}"
         _etapa(k, len(escolhidos), f"Gerando o corte {d['n']:02d}")
-        _log(f"Corte {d['n']:02d}: {d['ini']:.2f}s a {d['fim']:.2f}s ({d['duracao']:.0f} s)")
-        c = Corte(d["tema"], [Frase([Palavra(**p) for p in d["palavras"]])], 0.0)
-        ass = legenda.gerar_ass(c, pasta / "saida" / f"corte-{d['n']:02d}.ass", origem=d["ini"])
-        _log(f"Legenda: {len(c.frases[0].palavras)} palavras, uma por vez (64 px, branca, glow)")
-        mp4 = midia.cortar_vertical(video, d["ini"], d["fim"], ass, pasta / "saida" / f"corte-{d['n']:02d}.mp4",
-                                    logo=logo, log=_log, aoProgresso=_pct)
+        partes = []
+        if d.get("teaser"):
+            t = d["teaser"]
+            partes.append((t["ini"], t["fim"], [Palavra(**p) for p in t["palavras"]]))
+        partes.append((d["ini"], d["fim"], [Palavra(**p) for p in d["palavras"]]))
+        _log(f"Corte {d['n']:02d}: {len(partes)} trecho(s), {sum(b - a for a, b, _ in partes):.0f} s"
+             + (" (abre com gancho)" if len(partes) > 1 else ""))
+        plano = motion.planejar(partes, llm, _log)
+        arquivos, deslocamento = [], 0.0
+        for j, (a, b, _) in enumerate(partes):
+            zooms = [z - deslocamento for z in plano.zooms if deslocamento <= z < deslocamento + (b - a) - 2]
+            arq = midia.trecho_vertical(video, a, b, tmp / f"{nome}-{j}.mkv", zooms, _log,
+                                        lambda f, j=j: _pct(0.45 * (j + f) / len(partes)))
+            arquivos.append(arq)
+            deslocamento += b - a
+        base, dur = midia.montar(arquivos, tmp / f"{nome}-base.mp4", logo, _log)
+        _pct(0.5)
+        mp4 = saida_dir / f"{nome}.mp4"
+        if tem_motion:
+            job = {"fps": 30, "duracao": round(dur, 3), "largura": 1080, "altura": 1920, "palavras": plano.palavras,
+                   "cenas": plano.cenas, "transicoes": plano.transicoes}
+            fps = midia.informacoes(base)["fps"]
+            job["fps"] = round(fps, 3)
+            (saida_dir / f"{nome}.plano.json").write_text(json.dumps(job, ensure_ascii=False, indent=1), encoding="utf-8")
+            midia.aplicar_motion(base, job, mp4, _log, lambda f: _pct(0.5 + 0.5 * f))
+        else:
+            c = Corte(d["tema"], [Frase([Palavra(**p) for p in d["palavras"]])], 0.0)
+            ass = legenda.gerar_ass(c, saida_dir / f"{nome}.ass", origem=d["ini"] - (deslocamento - (d["fim"] - d["ini"])))
+            midia.queimar_legenda(base, ass, mp4)
+        for arq in arquivos + [base]:
+            arq.unlink(missing_ok=True)
         _log(f"Arquivo pronto: {mp4.name} ({mp4.stat().st_size / 1e6:.0f} MB)")
         print(f"ARQUIVO {mp4}", flush=True)
 
