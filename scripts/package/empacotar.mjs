@@ -42,13 +42,36 @@ writeFileSync(join(stage, 'package.json'), JSON.stringify({
   name: 'atto-tools', productName: 'ATTO Tools', version: versao, main: 'out/main/index.js',
   description: 'Suíte desktop da Atto Comunicação', author: 'Atto Comunicação'
 }, null, 2))
-const { packager } = await import(pathUrl(join(raiz, 'node_modules/@electron/packager/dist/index.js')))
-const [pasta] = await packager({
-  dir: stage, out: dist, name: 'ATTO Tools', executableName: 'ATTO Tools', platform: 'win32', arch: 'x64',
-  electronVersion: JSON.parse(readFileSync(join(raiz, 'node_modules/electron/package.json'), 'utf-8')).version,
-  asar: true, overwrite: true, appVersion: versao, quiet: true,
-  win32metadata: { CompanyName: 'Atto Comunicação', ProductName: 'ATTO Tools', FileDescription: 'ATTO Tools' }
-})
+// Plano B: se o Windows (Controle de Aplicativos / Smart App Control) bloquear o binário nativo que o packager usa
+// para descompactar o Electron, monta a pasta a partir do Electron já descompactado em node_modules/electron/dist
+// e gera o app.asar com @electron/asar (JavaScript puro). Nada de mexer na política do sistema.
+async function montarSemPackager() {
+  const destino = join(dist, 'ATTO Tools-win32-x64')
+  rmSync(destino, { recursive: true, force: true })
+  cpSync(join(raiz, 'node_modules/electron/dist'), destino, { recursive: true })
+  rmSync(join(destino, 'resources/default_app.asar'), { force: true })
+  const exe = join(destino, 'ATTO Tools.exe')
+  cpSync(join(destino, 'electron.exe'), exe)
+  rmSync(join(destino, 'electron.exe'), { force: true })
+  const asar = await import(pathUrl(join(raiz, 'node_modules/@electron/asar/lib/asar.js')))
+  await asar.createPackage(stage, join(destino, 'resources/app.asar'))
+  console.log('   (montado sem o packager: sem ícone/metadados no .exe)')
+  return [destino]
+}
+let pasta
+try {
+  const { packager } = await import(pathUrl(join(raiz, 'node_modules/@electron/packager/dist/index.js')))
+  ;[pasta] = await packager({
+    dir: stage, out: dist, name: 'ATTO Tools', executableName: 'ATTO Tools', platform: 'win32', arch: 'x64',
+    electronVersion: JSON.parse(readFileSync(join(raiz, 'node_modules/electron/package.json'), 'utf-8')).version,
+    asar: true, overwrite: true, appVersion: versao, quiet: true,
+    win32metadata: { CompanyName: 'Atto Comunicação', ProductName: 'ATTO Tools', FileDescription: 'ATTO Tools' }
+  })
+} catch (e) {
+  const motivo = String(e?.message ?? e).split(String.fromCharCode(10))[0].slice(0, 120)
+  console.log(`   packager indisponível (${motivo}); usando o plano B`)
+  ;[pasta] = await montarSemPackager()
+}
 const res = join(pasta, 'resources')
 function pathUrl(p) { return 'file:///' + p.replaceAll('\\', '/') }
 

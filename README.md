@@ -52,7 +52,7 @@ Você escolhe o vídeo de uma palestra ou podcast (de 30 minutos a 3 horas). O G
 **Requisitos:** Windows 10/11 x64, 8 GB de RAM (16 GB recomendado), cerca de 8 GB livres (os modelos de transcrição e de escolha de cortes, 4 GB, são baixados na primeira análise). Placa de vídeo dedicada não é necessária: tudo roda no processador, então gravações longas demoram (cerca de 0,6x a duração do vídeo só na transcrição).
 
 **Instalação (recomendada):**
-1. Em [Releases](https://github.com/attocomunicacao/atto-comunicacao-tools/releases/latest), baixe `ATTO-Tools-Setup-0.5.0.exe` (122 MB) e execute. Ele instala o Launcher só para o seu usuário, sem pedir administrador.
+1. Em [Releases](https://github.com/attocomunicacao/atto-comunicacao-tools/releases/latest), baixe `ATTO-Tools-Setup-0.4.0.exe` (122 MB) e execute. Ele instala o Launcher só para o seu usuário, sem pedir administrador.
 2. No Launcher, clique em **Baixar e instalar**. Ele baixa o app (886 MB), confere o SHA-256 e instala.
 3. Se o Windows avisar, veja "Avisos do Windows" abaixo.
 

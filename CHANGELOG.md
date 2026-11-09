@@ -15,6 +15,8 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). 
 
 ### Alterado
 - **Legenda** refeita na camada de motion: entrada com desfoque → nítido, y −100 → 0 e escala, assentando com `expo.out`; respiração sutil parada; saída desfocando e descendo; ênfase em números e palavras fortes. Continua uma palavra por vez, branca, maiúscula, Lato 64 px.
+- Empacotador com plano B: se o Windows bloquear o binário nativo do `@electron/packager`, monta o app a partir do Electron já descompactado (sem ícone/metadados no .exe nesta versão).
+- O instalador do Launcher continua o da v0.4.0 (o código do Launcher não mudou; o compilador NSIS foi bloqueado pela política de Controle de Aplicativos desta máquina).
 - Leitura das respostas do LLM ficou tolerante a formatos variados (antes, notas caíam no padrão 5 e cenas eram descartadas).
 
 ## [0.4.0] - 2026-11-06
