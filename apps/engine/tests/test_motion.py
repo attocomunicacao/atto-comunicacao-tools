@@ -43,3 +43,19 @@ def test_leitura_tolerante_do_llm():
     assert motion.inteiro_em("3. [9.0s] São 75 milhões") == 3
     assert motion._escala(75_000_000, "mi") == 75
     assert juiz._num("8/10") == 8 and juiz._num(None) == 5
+
+
+class _LLMFalso:
+    def __init__(self, resposta):
+        self.resposta = resposta
+
+    def create_chat_completion(self, **_):
+        return {"choices": [{"message": {"content": self.resposta}}]}
+
+
+def test_llm_nao_inventa_numero():
+    frases = [(0.0, "Foi uma decisão do Supremo."), (4.0, "São 75 milhões de pessoas.")]
+    resp = ('{"titulo": "x", "cenas": [{"frase": 1, "tipo": "numero", "valor": 1, "sufixo": "mi", "texto": "decisão"},'
+            '{"frase": "2. [4.0s] São", "tipo": "numero", "valor": 75000000, "sufixo": "mi", "texto": "pessoas"}]}')
+    _, cenas = motion.cenas_por_llm(_LLMFalso(resp), frases)
+    assert [c["valor"] for c in cenas] == [75]

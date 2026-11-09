@@ -162,11 +162,16 @@ def _espacar(cenas: list[dict], duracao: float) -> list[dict]:
     """Prioriza número/comparação/destaque sobre ícones; respeita o intervalo mínimo e a duração do corte."""
     ordem = {"destaque": 0, "comparacao": 1, "numero": 2, "icone": 3}
     escolhidas: list[dict] = []
+    icones = 0
     for c in sorted(cenas, key=lambda c: (ordem.get(c["tipo"], 9), c.get("_fraca", False), c["ini"])):
         if len(escolhidas) >= MAX_CENAS or c["ini"] < 0 or c["ini"] > duracao - 2.0:
             continue
         if any(abs(c["ini"] - e["ini"]) < INTERVALO_MIN for e in escolhidas):
             continue
+        if c["tipo"] == "icone":
+            if icones >= 3:
+                continue
+            icones += 1
         escolhidas.append(c)
     escolhidas.sort(key=lambda c: c["ini"])
     for k, c in enumerate(escolhidas):
@@ -209,10 +214,12 @@ def cenas_por_llm(llm, frases: list[tuple[float, str]]) -> tuple[str | None, lis
             tipo = c.get("tipo")
             base = {"tipo": tipo, "ini": frases[k][0] + 0.4, "texto": str(c.get("texto") or "")[:32]}
             valor = _num(str(c.get("valor"))) if c.get("valor") not in (None, "") else None
-            if tipo == "numero" and valor is not None:
+            numeros_da_frase = {_num(x) for x in re.findall(r"\d+(?:[.,]\d+)?", frases[k][1])}
+            if tipo == "numero" and valor is not None and (valor in numeros_da_frase
+                                                         or _escala(valor, str(c.get("sufixo") or "")) in numeros_da_frase):
                 suf = str(c.get("sufixo") or "")[:4]
                 base.update(valor=_escala(valor, suf), sufixo=(" " + suf.strip()) if suf.strip() not in ("", "%", "h", "x") else suf.strip())
-            elif tipo == "comparacao" and c.get("antes") and c.get("depois"):
+            elif tipo == "comparacao" and c.get("antes") and c.get("depois") and re.search(r"\d", frases[k][1]):
                 base.update(antes=str(c["antes"])[:8], depois=str(c["depois"])[:8])
             elif tipo == "icone" and c.get("icone") in ICONES:
                 base.update(icone=c["icone"])

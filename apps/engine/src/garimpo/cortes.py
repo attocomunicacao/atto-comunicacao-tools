@@ -323,34 +323,64 @@ def ajustar_limites(ini: float, fim: float, ant_fim: float | None, prox_ini: flo
 TEASER_S = (2.0, 7.5)
 
 
-def com_teaser(c: Corte, frase: Frase, log=None) -> Corte:
-    """Põe a frase de maior impacto como "cold open" (os 5 primeiros segundos que seguram), sem passar de MAX_S."""
-    dur = frase.fim - frase.ini
-    if not TEASER_S[0] <= dur <= TEASER_S[1] or e_ruido(frase) or e_dependente(frase) or e_abertura(_norm(frase.texto)):
+CONECTIVOS_SOLTOS = {"entao", "e", "mas", "ne", "ai", "olha", "bom", "assim", "tipo", "porque", "que", "eh", "ah"}
+
+
+def oracoes(f: Frase) -> list[Frase]:
+    """Divide uma frase falada (que pode durar 30 s) em orações de 2 a 7,5 s, nas vírgulas e pausas.
+
+    Tira conectivos soltos do começo ("Então,", "E,", "Mas"): a oração vira uma chamada que se sustenta sozinha."""
+    partes: list[list] = [[]]
+    for k, p in enumerate(f.palavras):
+        partes[-1].append(p)
+        prox = f.palavras[k + 1] if k + 1 < len(f.palavras) else None
+        if prox and (p.texto.endswith((",", ";", ":")) or prox.ini - p.fim > 0.35):
+            partes.append([])
+    saida: list[Frase] = []
+    atual: list = []
+    for parte in partes:
+        atual += parte
+        if not atual:
+            continue
+        while atual and _limpo(atual[0].texto).strip() in CONECTIVOS_SOLTOS:
+            atual.pop(0)
+        if atual and atual[-1].fim - atual[0].ini >= TEASER_S[0]:
+            saida.append(Frase(list(atual)))
+            atual = []
+    return [o for o in saida if o.fim - o.ini <= TEASER_S[1] and len(o.palavras) >= 5]
+
+
+def com_teaser(c: Corte, frase: Frase, log=None, exigir_melhor: bool = False) -> Corte:
+    """Põe uma oração de impacto como "cold open" (os primeiros segundos que seguram), sem passar de MAX_S.
+
+    `frase` pode ser longa: escolhe dentro dela a oração com o gancho mais forte."""
+    candidatas = [frase] if TEASER_S[0] <= frase.fim - frase.ini <= TEASER_S[1] else []
+    candidatas += oracoes(frase)
+    candidatas = [o for o in candidatas if len(o.palavras) >= 5 and not e_ruido(o) and not e_abertura(_norm(o.texto))
+                  and o.ini >= c.ini + 3.0 and o.fim <= c.fim]
+    if not candidatas:
         return c
-    if frase not in c.frases or frase is c.frases[0]:
-        return c
+    o = max(candidatas, key=lambda x: (nota_gancho([x]), -abs((x.fim - x.ini) - 4.5)))
+    if exigir_melhor and nota_gancho([o]) <= nota_gancho(c.frases):
+        return c  # heurística: só vale se o gancho prende mais do que a abertura original
+    dur = o.fim - o.ini
     fs = list(c.frases)
-    while fs[-1].fim - fs[0].ini + dur + 0.3 > MAX_S and len(fs) > 1 and fs[-2].fim - fs[0].ini >= MIN_S:
+    while fs[-1].fim - fs[0].ini + dur + 0.3 > MAX_S and len(fs) > 1 and fs[-2].fim - fs[0].ini >= MIN_S             and fs[-2].fim > o.fim:
         fs.pop()
-    if fs[-1].fim - fs[0].ini + dur + 0.3 > MAX_S or frase not in fs:
+    if fs[-1].fim - fs[0].ini + dur + 0.3 > MAX_S:
         return c
     if log:
-        log(f"    gancho “cold open”: “{frase.texto[:70]}”")
-    return Corte(c.tema, fs, c.pontuacao, teaser=frase)
+        log(f"    gancho “cold open”: “{o.texto[:80]}”")
+    return Corte(c.tema, fs, c.pontuacao, teaser=o)
 
 
-def teaser_heuristico(c: Corte) -> Corte:
-    """Sem juiz: usa como gancho a frase (após os 10 s iniciais) com pergunta/número mais forte que a abertura."""
-    abertura = nota_gancho(c.frases)
-    melhor, nota = None, abertura + 0.3
-    for f in c.frases[1:]:
-        if f.ini - c.ini < 10:
-            continue
-        n = nota_gancho([f])
-        if n > nota:
-            melhor, nota = f, n
-    return com_teaser(c, melhor) if melhor else c
+def teaser_heuristico(c: Corte, log=None) -> Corte:
+    """Sem indicação do juiz: a oração (após os 8 s iniciais) com o gancho mais forte, se prender mais que a abertura."""
+    ors = [o for f in c.frases for o in oracoes(f) if o.ini - c.ini >= 8]
+    if not ors:
+        return c
+    melhor = max(ors, key=lambda o: nota_gancho([o]))
+    return com_teaser(c, melhor, log, exigir_melhor=True)
 
 
 def _sobrepoe(a: Corte, b: Corte, folga: float = 0.0) -> bool:
@@ -369,7 +399,8 @@ def sugerir(temas: list[Tema], por_minutos: float = 7.0, juiz=None, log=None) ->
     inicio = inicio_util(todas)
     if log and inicio > t0:
         log(f"Bastidor de gravação detectado: ignorando tudo antes de {inicio - t0:.1f}s")
-    quota = sum(1 + int((t.fim - t.ini) // (por_minutos * 60)) for t in temas)
+    # menos e melhores: ~1 corte a cada 8 min de gravação (mín. 3, máx. 10)
+    quota = max(3, min(10, round(total / 480)))
 
     # 1-2: candidatos válidos e pontuados; melhores sem sobreposição (diversidade entre temas)
     por_tema: dict[str, int] = {}
@@ -411,8 +442,13 @@ def sugerir(temas: list[Tema], por_minutos: float = 7.0, juiz=None, log=None) ->
             impacto = c.frases[r.impacto] if 0 <= r.impacto < len(c.frases) else None
             if impacto is not None and impacto is not novo.frases[0]:
                 novo = com_teaser(novo, impacto, log)
+            if novo.teaser is None:
+                novo = teaser_heuristico(novo, log)
             avaliados.append(novo)
         curtos = sorted(avaliados, key=lambda c: -c.pontuacao)
+        # nota mínima: só passa o que o juiz considera bom (mantém ao menos 3)
+        bons = [c for c in curtos if c.pontuacao >= 5.6]
+        curtos = bons if len(bons) >= 3 else curtos[:max(3, len(bons))]
 
     if not juiz:
         curtos = [teaser_heuristico(c) for c in curtos]

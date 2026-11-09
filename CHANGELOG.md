@@ -8,7 +8,9 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). 
 - **ATTO Motion**: nova camada de animação dos cortes em HTML + GSAP, renderizada quadro a quadro pelo próprio app (mesmo princípio do HyperFrames e das ferramentas de "vibe motion"). Fundo transparente, composta pelo FFmpeg.
 - **Ilustrações animadas do que é falado**: números que contam ("75 mi", "40%"), comparações antes → depois ("44h → 40h"), ícones que se desenham (lei, jornada, governo, dinheiro...) e frases-chave / título-gancho. Vêm de regras e do LLM local (Qwen3-4B), espaçadas para não poluir.
 - **Edição dinâmica**: zooms suaves de ênfase (punch-in de 9% com supersampling, sem tremor), flash na transição do gancho e áudio masterizado para redes (−14 LUFS, compressor, filtro de graves).
-- **Cold open**: o juiz escolhe a frase de maior impacto do corte e ela abre o vídeo (2–7,5 s), seguida do corte desde o início. Total sempre ≤ 90 s.
+- **Cold open**: o juiz aponta a frase de maior impacto e o motor escolhe dentro dela a oração mais forte (2–7,5 s, sem conectivo solto no começo); ela abre o vídeo, seguida do corte desde o início. Total sempre ≤ 90 s.
+- **Menos cortes, melhores**: cerca de 1 a cada 8 min de gravação (3 a 10), só com nota mínima do juiz.
+- Números sugeridos pelo LLM só entram se aparecem na fala; no máximo 3 ícones por corte.
 - Skills do projeto (`garimpo-motion`, `garimpo-cortes`, `atto-release`), `CLAUDE.md`, `docs/motion.md` e a pesquisa em `docs/pesquisa/`.
 
 ### Alterado

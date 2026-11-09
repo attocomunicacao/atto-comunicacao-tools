@@ -93,7 +93,7 @@ class Juiz:
         try:
             r = self.llm.create_chat_completion(
                 messages=[{"role": "system", "content": SISTEMA}, {"role": "user", "content": montar_prompt(c) + " /no_think"}],
-                response_format={"type": "json_object"}, temperature=0.1, max_tokens=110)
+                response_format={"type": "json_object"}, temperature=0.1, max_tokens=200)
             return interpretar(r["choices"][0]["message"]["content"], len(c.frases))
         except Exception:
             return Avaliacao(5, 5, 5, 5, False, 0, 0)
