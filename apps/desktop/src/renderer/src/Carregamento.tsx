@@ -137,3 +137,41 @@ export function LogoFinal() {
     </div>
   )
 }
+
+/** Recursos da edição: sons (ex.: Epidemic Sound do usuário) e chave gratuita do Pexels para fotos modernas. */
+export function RecursosEdicao() {
+  const [sons, setSons] = useState<Record<string, string | null>>({})
+  const [pexels, setPexels] = useState(false)
+  const [chave, setChave] = useState('')
+  useEffect(() => {
+    window.atto.sons().then(setSons).catch(() => {})
+    window.atto.temPexels().then(setPexels).catch(() => {})
+  }, [])
+  const nomes: Record<string, string> = { whoosh: 'Whoosh (transições e imagens)', clique: 'Clique (textos e ícones)', impacto: 'Impacto (números)' }
+  return (
+    <div className="logo-final" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+      <h3>Sons da edição</h3>
+      <p className="meta">Anexe seus efeitos (ex.: baixados da Epidemic Sound). Sem arquivo, o app usa um efeito sutil próprio.</p>
+      {Object.keys(nomes).map((t) => (
+        <div key={t} className="acoes" style={{ marginTop: 6, alignItems: 'center' }}>
+          <span style={{ minWidth: 260 }}>{nomes[t]}</span>
+          <span className="meta">{sons[t] ?? 'padrão do app'}</span>
+          <button className="btn sec" onClick={async () => setSons(await window.atto.escolherSom(t))}>{sons[t] ? 'Trocar' : 'Anexar'}</button>
+          {sons[t] && <button className="link" onClick={async () => setSons(await window.atto.removerSom(t))}>Remover</button>}
+        </div>
+      ))}
+      <h3 style={{ marginTop: 18 }}>Fotos do Pexels (opcional)</h3>
+      <p className="meta">
+        {pexels ? 'Chave cadastrada: as imagens também vêm do Pexels.' : 'Sem chave, as imagens vêm de acervos em domínio público (Wikimedia, Openverse, Met).'}
+        {' '}A chave é gratuita em pexels.com/api.
+      </p>
+      <div className="acoes" style={{ marginTop: 6 }}>
+        <input type="password" placeholder={pexels ? '••••••••' : 'Cole aqui a sua chave do Pexels'} value={chave}
+          onChange={(e) => setChave(e.target.value)} style={{ flex: 1, padding: 10, borderRadius: 8 }} />
+        <button className="btn sec" onClick={async () => { setPexels(await window.atto.salvarPexels(chave)); setChave('') }}>
+          {chave ? 'Salvar' : pexels ? 'Remover chave' : 'Salvar'}
+        </button>
+      </div>
+    </div>
+  )
+}

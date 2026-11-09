@@ -59,3 +59,35 @@ def test_llm_nao_inventa_numero():
             '{"frase": "2. [4.0s] São", "tipo": "numero", "valor": 75000000, "sufixo": "mi", "texto": "pessoas"}]}')
     _, cenas = motion.cenas_por_llm(_LLMFalso(resp), frases)
     assert [c["valor"] for c in cenas] == [75]
+
+
+def test_linha_nao_termina_em_palavra_vazia_e_chave_tem_sentido():
+    ws = fala("a reforma da lei trabalhista mudou o custo do trabalho no Brasil inteiro agora")
+    gs = motion.grupos_legenda(ws, 0)
+    for g in gs[:-1]:
+        assert g["palavras"][-1]["t"] not in ("da", "do", "no", "o", "e", "de")
+    for g in gs:
+        chaves = [w["t"] for w in g["palavras"] if w["chave"]]
+        assert len(chaves) <= 1 and all(c not in motion.AUXILIARES for c in chaves)
+
+
+def test_linha_de_muleta_fica_sem_chave():
+    gs = [{"ini": 0, "fim": 1, "palavras": [{"t": "mas", "ini": 0, "fim": .3, "chave": True}, {"t": "assim", "ini": .3, "fim": .6, "chave": False}]}]
+    motion.sem_chave(gs)
+    assert not any(w["chave"] for w in gs[0]["palavras"])
+
+
+def test_chaves_por_llm_valida_resposta():
+    gs = motion.grupos_legenda(fala("não tomaram a decisão lá no supremo ontem"), 0)
+    resp = '{"chaves": [' + ", ".join('"decisão"' if any(w["t"] == "decisão" for w in g["palavras"]) else '"a"' for g in gs) + "]}"
+    motion.chaves_por_llm(_LLMFalso(resp), gs)
+    linha = next(g for g in gs if any(w["t"] == "decisão" for w in g["palavras"]))
+    assert next(w["t"] for w in linha["palavras"] if w["chave"]) == "decisão"
+
+
+def test_sons_eventos_sem_empilhar():
+    from garimpo import sons
+    ev = sons.eventos([{"tipo": "imagem", "ini": 5.0}, {"tipo": "icone", "ini": 5.1}, {"tipo": "numero", "ini": 12.0}], [3.0])
+    assert [t for t, _ in ev] == sorted(t for t, _ in ev)
+    assert all(b[0] - a[0] >= 0.6 for a, b in zip(ev, ev[1:]))
+    assert ("whoosh" in {k for _, k in ev}) and ("impacto" in {k for _, k in ev})

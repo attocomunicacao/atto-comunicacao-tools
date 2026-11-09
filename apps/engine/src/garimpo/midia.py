@@ -162,7 +162,8 @@ def trecho_vertical(video: Path, ini: float, fim: float, saida: Path, zooms: lis
     return saida
 
 
-def montar(trechos: list[Path], saida: Path, logo: Path | None = None, log=None) -> tuple[Path, float]:
+def montar(trechos: list[Path], saida: Path, logo: Path | None = None, log=None,
+           sons: list[tuple[float, Path, float]] | None = None) -> tuple[Path, float]:
     """Junta os trechos (ex.: gancho + corpo), masteriza o áudio e acrescenta o cartão final da logo.
 
     Retorna (arquivo, duração do conteúdo sem a logo)."""
@@ -185,9 +186,22 @@ def montar(trechos: list[Path], saida: Path, logo: Path | None = None, log=None)
         comp += ";" + _filtro_logo(dur).replace("[1:v]", f"[{n}:v]")
         audio += f",apad=pad_dur={LOGO_S}"
         ultimo, total = "[v]", dur + LOGO_S
-    comp += f";{audio},aresample=48000[a]"
+    comp += f";{audio},aresample=48000[voz]"
+    # design de som: cada efeito entra no seu instante, bem abaixo da voz já masterizada
+    sons = sons or []
+    base_idx = n + (1 if logo is not None else 0)
+    for k, (t, arq, vol) in enumerate(sons):
+        entradas += ["-i", str(arq)]
+        ms = int(t * 1000)
+        comp += f";[{base_idx + k}:a]aresample=48000,aformat=channel_layouts=stereo,volume={vol}dB,adelay={ms}|{ms}[s{k}]"
+    if sons:
+        rotulos = "".join(f"[s{k}]" for k in range(len(sons)))
+        comp += f";[voz]{rotulos}amix=inputs={len(sons) + 1}:duration=first:normalize=0,alimiter=limit=0.89[a]"
+    else:
+        comp += ";[voz]anull[a]"
     if log:
-        log(f"Montando {n} trecho(s), {dur:.1f}s; áudio masterizado a -14 LUFS" + (" + logo final" if logo else ""))
+        log(f"Montando {n} trecho(s), {dur:.1f}s; áudio masterizado a -14 LUFS" + (" + logo final" if logo else "")
+            + (f"; {len(sons)} efeito(s) sonoro(s)" if sons else ""))
     _rodar(["ffmpeg", "-v", "error", "-y", *entradas, "-filter_complex", comp, "-map", ultimo, "-map", "[a]",
             "-c:v", "libx264", "-preset", "faster", "-crf", "13", "-pix_fmt", "yuv420p",
             "-c:a", "aac", "-b:a", "256k", "-t", f"{total:.3f}", str(saida)])

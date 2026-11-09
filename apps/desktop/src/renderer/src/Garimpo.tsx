@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Carregamento, LogoFinal, useAndamento } from './Carregamento'
+import { Carregamento, LogoFinal, RecursosEdicao, useAndamento } from './Carregamento'
 
 type Etapa = 'video' | 'transcricao' | 'duvidas' | 'estrutura' | 'cortes' | 'exportar'
 const PASSOS: { id: Etapa[]; nome: string }[] = [
@@ -171,6 +171,7 @@ export function Garimpo() {
               ))}
             </div>
             <LogoFinal />
+            <RecursosEdicao />
             <div className="acoes">
               <button className="btn" onClick={exportar} disabled={escolhidos.size === 0}>Gerar {escolhidos.size || ''} {escolhidos.size === 1 ? 'corte' : 'cortes'}</button>
               <button className="btn sec" onClick={() => setEtapa('duvidas')}>Voltar</button>

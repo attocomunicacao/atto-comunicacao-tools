@@ -124,11 +124,22 @@ def _rotulo(palavras: list[Palavra], i: int, n: int = 3) -> str:
 MAX_GRUPO = 5
 
 
-def _peso_chave(texto: str) -> float:
+AUXILIARES = {"e", "foi", "era", "sao", "ser", "esta", "estava", "estao", "tem", "tinha", "ter", "vai", "vou", "ia",
+              "fazer", "faz", "fez", "pode", "podia", "acho", "assim", "entao", "porque", "quando", "muito", "mais",
+              "isso", "esse", "essa", "aqui", "ali", "la", "agora", "ainda", "tambem", "gente", "coisa", "voce", "voces",
+              "nao", "sim", "ne", "tipo", "bem", "ate", "sobre", "depois", "antes", "todo", "toda", "tudo", "nada"}
+
+
+def _peso_chave(texto: str, meio_de_frase: bool = False) -> float:
     n = _norm(_limpa(texto))
     if not n:
         return -9
     p = 0.0
+    if n in AUXILIARES:
+        p -= 2
+    limpo = _limpa(texto)
+    if meio_de_frase and limpo[:1].isupper() and len(limpo) > 2:
+        p += 1.5  # nome próprio (STF, Supremo, Erika Hilton...)
     if re.search(r"\d", n):
         p += 3
     if n in ENFASE:
@@ -155,11 +166,20 @@ def grupos_legenda(ws: list[Palavra], origem: float) -> list[dict]:
             while len(grupos[-1]) > 2 and _norm(_limpa(grupos[-1][-1].texto)) in STOP and not grupos[-1][-1].texto.endswith((".", "?", "!", ",")):
                 pendente.insert(0, grupos[-1].pop())
             grupos.append(pendente)
+    juntos: list[list[Palavra]] = []
+    for g in grupos:
+        if not g:
+            continue
+        if juntos and len(juntos[-1]) == 1 and len(juntos[-1]) + len(g) <= MAX_GRUPO + 1:
+            juntos[-1] += g
+        else:
+            juntos.append(g)
+    grupos = juntos
     saida = []
     for g in grupos:
         if not g:
             continue
-        chave = max(range(len(g)), key=lambda i: _peso_chave(g[i].texto))
+        chave = max(range(len(g)), key=lambda i: (_peso_chave(g[i].texto, meio_de_frase=i > 0), -_vazia(g[i].texto)))
         palavras = []
         for i, p in enumerate(g):
             t = _limpa(p.texto).lower() or p.texto.lower()
@@ -167,6 +187,108 @@ def grupos_legenda(ws: list[Palavra], origem: float) -> list[dict]:
         saida.append({"ini": palavras[0]["ini"], "fim": palavras[-1]["fim"], "palavras": palavras})
     for a, b in zip(saida, saida[1:]):
         a["fim"] = round(min(b["ini"] - 0.02, a["fim"] + 0.6), 3)   # a linha fica até a próxima (respiro curto)
+    if saida:
+        saida[-1]["fim"] = round(saida[-1]["fim"] + 0.5, 3)
+    return saida
+
+
+PEDIDO_LEGENDA = """Você é o legendista de vídeos curtos no estilo "minimal premium": a fala vira linhas de até 5 palavras;
+em cada linha UMA palavra-chave aparece grande (serifa itálica) e as outras pequenas, acima e abaixo dela.
+
+Palavras do trecho (índice:palavra):
+{palavras}
+
+Regras:
+1. Linhas em ordem, cobrindo todas as palavras, sem pular nenhuma; de 2 a 5 palavras cada.
+2. Quebre onde a fala respira: vírgula, ponto, fim de oração. Nunca separe artigo/preposição da palavra seguinte
+   ("da | lei" é proibido) nem termine a linha em "e", "de", "que", "o", "a".
+3. A palavra-chave é a que carrega o sentido da linha: substantivo, verbo forte, número ou nome próprio.
+   Nunca artigo, preposição, conjunção, pronome ou "é/foi/né".
+Responda só JSON: {{"linhas": [[índice inicial, índice final, índice da palavra-chave], ...]}}"""
+
+
+def _vazia(texto: str) -> bool:
+    n = _norm(_limpa(texto))
+    return n in STOP or len(n) <= 2
+
+
+def linhas_por_llm(llm, ws: list[Palavra]) -> list[tuple[int, int, int]] | None:
+    """Divide as palavras em linhas coerentes e escolhe a palavra-chave pelo sentido. None se a resposta for inválida."""
+    if llm is None or not ws:
+        return None
+    lista = "\n".join(f"{i}:{_limpa(p.texto) or p.texto}" for i, p in enumerate(ws))
+    try:
+        r = llm.create_chat_completion(
+            messages=[{"role": "user", "content": PEDIDO_LEGENDA.format(palavras=lista) + " /no_think"}],
+            response_format={"type": "json_object"}, temperature=0.1, max_tokens=min(2400, 40 + len(ws) * 6))
+        d = json.loads(re.search(r"\{.*\}", r["choices"][0]["message"]["content"], re.S).group(0))
+        brutas = [[inteiro_em(x) for x in l][:3] for l in d.get("linhas", []) if isinstance(l, list) and len(l) >= 3]
+    except Exception:
+        return None
+    linhas: list[tuple[int, int, int]] = []
+    esperado = 0
+    for a, b, k in brutas:
+        if a is None or b is None or a != esperado or b < a or b - a > 5:
+            return None  # resposta incoerente: fica a regra
+        if k is None or not a <= k <= b or _vazia(ws[k].texto):
+            k = max(range(a, b + 1), key=lambda i: _peso_chave(ws[i].texto))
+        linhas.append((a, b, k))
+        esperado = b + 1
+    return linhas if esperado == len(ws) else None
+
+
+PEDIDO_CHAVES = """Legenda de vídeo curto: cada linha abaixo vai mostrar UMA palavra grande (a palavra-chave) e as outras pequenas.
+Para cada linha, escolha a palavra que carrega o sentido (substantivo, verbo forte, número ou nome próprio).
+Nunca escolha artigo, preposição, conjunção, pronome, "é", "foi", "né", "isso", "muito".
+
+{linhas}
+
+Responda só JSON: {{"chaves": ["palavra da linha 1", "palavra da linha 2", ...]}} (uma por linha, copiada exatamente)."""
+
+
+def chaves_por_llm(llm, grupos: list[dict]) -> int:
+    """Troca a palavra-chave de cada linha pela escolha do LLM (por sentido). Retorna quantas linhas mudaram."""
+    if llm is None or not grupos:
+        return 0
+    linhas = "\n".join(f"{k}. {' '.join(w['t'] for w in g['palavras'])}" for k, g in enumerate(grupos, 1))
+    try:
+        r = llm.create_chat_completion(
+            messages=[{"role": "user", "content": PEDIDO_CHAVES.format(linhas=linhas) + " /no_think"}],
+            response_format={"type": "json_object"}, temperature=0.1, max_tokens=min(1600, 30 + len(grupos) * 8))
+        chaves = json.loads(re.search(r"\{.*\}", r["choices"][0]["message"]["content"], re.S).group(0)).get("chaves", [])
+    except Exception:
+        return 0
+    mudou = 0
+    for g, ch in zip(grupos, chaves):
+        alvo = _norm(_limpa(str(ch)).lower())
+        idx = [i for i, w in enumerate(g["palavras"]) if _norm(w["t"]) == alvo]
+        if not idx or _vazia(g["palavras"][idx[0]]["t"]) or _norm(g["palavras"][idx[0]]["t"]) in AUXILIARES:
+            continue
+        atual = next(i for i, w in enumerate(g["palavras"]) if w["chave"])
+        if idx[0] != atual:
+            g["palavras"][atual]["chave"] = False
+            g["palavras"][idx[0]]["chave"] = True
+            mudou += 1
+    sem_chave(grupos)
+    return mudou
+
+
+def sem_chave(grupos: list[dict]) -> None:
+    """Linha só de muleta ("mas assim", "ainda não"): nenhuma palavra em destaque, todas pequenas."""
+    for g in grupos:
+        for w in g["palavras"]:
+            if w["chave"] and (_vazia(w["t"]) or _norm(w["t"]) in AUXILIARES):
+                w["chave"] = False
+
+
+def grupos_de_linhas(ws: list[Palavra], linhas: list[tuple[int, int, int]], origem: float) -> list[dict]:
+    saida = []
+    for a, b, k in linhas:
+        palavras = [{"t": (_limpa(p.texto) or p.texto).lower(), "ini": round(p.ini - origem, 3),
+                     "fim": round(p.fim - origem, 3), "chave": i == k} for i, p in zip(range(a, b + 1), ws[a:b + 1])]
+        saida.append({"ini": palavras[0]["ini"], "fim": palavras[-1]["fim"], "palavras": palavras})
+    for x, y in zip(saida, saida[1:]):
+        x["fim"] = round(min(y["ini"] - 0.02, x["fim"] + 0.6), 3)
     if saida:
         saida[-1]["fim"] = round(saida[-1]["fim"] + 0.5, 3)
     return saida
@@ -219,7 +341,7 @@ def cenas_por_regras(palavras: list[Palavra], origem: float) -> list[dict]:
 
 def _espacar(cenas: list[dict], duracao: float) -> list[dict]:
     """Prioriza número/comparação/destaque sobre ícones; respeita o intervalo mínimo e a duração do corte."""
-    ordem = {"citacao": 0, "destaque": 1, "comparacao": 2, "numero": 3, "icone": 4}
+    ordem = {"citacao": 0, "imagem": 1, "destaque": 2, "comparacao": 3, "numero": 4, "icone": 5}
     escolhidas: list[dict] = []
     icones = 0
     for c in sorted(cenas, key=lambda c: (ordem.get(c["tipo"], 9), c.get("_fraca", False), c["ini"])):
@@ -235,7 +357,7 @@ def _espacar(cenas: list[dict], duracao: float) -> list[dict]:
     escolhidas.sort(key=lambda c: c["ini"])
     for k, c in enumerate(escolhidas):
         prox = escolhidas[k + 1]["ini"] if k + 1 < len(escolhidas) else duracao
-        dur = {"numero": 3.4, "comparacao": 3.6, "citacao": 3.8, "pintura": 3.0}.get(c["tipo"], 2.8)
+        dur = {"numero": 3.4, "comparacao": 3.6, "citacao": 3.8, "pintura": 3.0, "imagem": 3.4}.get(c["tipo"], 2.8)
         c["fim"] = round(min(c["ini"] + dur, prox - 0.3, duracao - 0.2), 3)
         c["ini"] = round(max(c["ini"] - 0.15, 0.0), 3)  # entra um tiquinho antes da palavra
         c.pop("_fraca", None)
@@ -247,19 +369,25 @@ PEDIDO_LLM = """Você é motion designer de vídeos curtos (Reels/TikTok). Abaix
 
 {frases}
 
-Planeje animações ilustrativas que reforcem o que é dito (no máximo 4), e um título-gancho.
+Planeje animações ilustrativas que reforcem o que é dito (no máximo 4), um título-gancho e até {n_imagens} imagens
+(fotos reais) para frases concretas que ficam mais fortes com uma imagem (lugar, objeto, pessoas trabalhando, dinheiro...).
+Para cada imagem, escreva uma busca curta EM INGLÊS (3 a 5 palavras) que descreva a cena concreta DAQUELA frase
+(objetos, lugares, pessoas trabalhando) — nada genérico, nada copiado de exemplo. Evite política partidária, protestos
+e pessoas famosas. Se nenhuma frase pedir imagem, deixe "imagens" vazio.
+IMPORTANTE: "titulo" e todo "texto" SEMPRE em português do Brasil; só "busca" é em inglês.
 Tipos: "numero" (valor numérico que aparece na fala), "comparacao" (antes -> depois), "icone" (ícone + rótulo curto), "destaque" (2 a 4 palavras de impacto), "citacao" (a frase mais forte, até 10 palavras, literal).
 Ícones permitidos: {icones}.
 Responda só JSON:
-{{"titulo": "2 a 4 palavras que resumem o gancho", "cenas": [{{"frase": número inteiro da frase, "tipo": "...", "texto": "rótulo de até 4 palavras", "valor": número ou null, "sufixo": "% | mi | bi | h | ''", "antes": "", "depois": "", "icone": "Nome"}}]}}"""
+{{"titulo": "2 a 4 palavras que resumem o gancho", "imagens": [{{"frase": n, "busca": "english query", "texto": "rótulo de 2 a 4 palavras"}}], "cenas": [{{"frase": número inteiro da frase, "tipo": "...", "texto": "rótulo de até 4 palavras", "valor": número ou null, "sufixo": "% | mi | bi | h | ''", "antes": "", "depois": "", "icone": "Nome"}}]}}"""
 
 
-def cenas_por_llm(llm, frases: list[tuple[float, str]]) -> tuple[str | None, list[dict]]:
+def cenas_por_llm(llm, frases: list[tuple[float, str]], n_imagens: int = 2) -> tuple[str | None, list[dict]]:
     texto = "\n".join(f"{k}. [{t:.1f}s] {f}" for k, (t, f) in enumerate(frases[:18], 1))
     try:
         r = llm.create_chat_completion(
-            messages=[{"role": "user", "content": PEDIDO_LLM.format(frases=texto, icones=", ".join(ICONES)) + " /no_think"}],
-            response_format={"type": "json_object"}, temperature=0.2, max_tokens=420)
+            # sem gramática JSON: com ela o Qwen3-4B tende a responder "{}" neste pedido longo (extração tolerante abaixo)
+            messages=[{"role": "user", "content": PEDIDO_LLM.format(frases=texto, icones=", ".join(ICONES), n_imagens=n_imagens) + " /no_think"}],
+            temperature=0.2, max_tokens=1000)
         bruto = r["choices"][0]["message"]["content"]
         d = json.loads(re.search(r"\{.*\}", bruto, re.S).group(0))
     except Exception:
@@ -291,6 +419,11 @@ def cenas_por_llm(llm, frases: list[tuple[float, str]]) -> tuple[str | None, lis
             cenas.append(base)
         except (TypeError, ValueError):
             continue
+    for im in (d.get("imagens") or [])[:n_imagens]:
+        k = (inteiro_em(im.get("frase")) or 0) - 1
+        busca = str(im.get("busca") or "").strip()
+        if 0 <= k < len(frases) and busca and re.fullmatch(r"[A-Za-z0-9 ,'-]{3,60}", busca):
+            cenas.append({"tipo": "imagem", "ini": frases[k][0] + 0.3, "busca": busca, "texto": str(im.get("texto") or "")[:32]})
     titulo = str(d.get("titulo") or "").strip()[:32] or None
     return titulo, cenas
 
@@ -341,6 +474,27 @@ def com_pinturas(cenas: list[dict], duracao: float, log=None, maximo: int | None
     return cenas
 
 
+def com_imagens(cenas: list[dict], log=None) -> list[dict]:
+    """Busca a imagem livre de cada cena "imagem" (Pexels/Commons/Openverse/Met) e o mapa de profundidade (3D)."""
+    from . import imagens
+    usados: set[str] = set()
+    saida = []
+    for c in cenas:
+        if c["tipo"] != "imagem":
+            saida.append(c)
+            continue
+        r = imagens.buscar(c.pop("busca", c.get("texto", "")), usados, log)
+        if not r:
+            continue
+        arq, credito = r
+        prof = imagens.profundidade(arq, log)
+        c.update(img=_imagem_data_uri(arq), credito=credito)
+        if prof:
+            c["prof"] = "data:image/png;base64," + __import__("base64").b64encode(prof.read_bytes()).decode("ascii")
+        saida.append(c)
+    return saida
+
+
 def planejar(trechos: list[tuple[float, float, list[Palavra]]], llm=None, log=None, pinturas: bool = True) -> PlanoMotion:
     """Plano de um corte formado por 1+ trechos do vídeo (ex.: gancho "cold open" + corpo).
 
@@ -355,7 +509,12 @@ def planejar(trechos: list[tuple[float, float, list[Palavra]]], llm=None, log=No
     for k, (ini, fim, ws) in enumerate(trechos):
         origem = ini - deslocamento
         palavras_rel += _palavras_rel(ws, origem)
-        grupos += grupos_legenda(ws, origem)
+        gs = grupos_legenda(ws, origem)
+        mudou = chaves_por_llm(llm, gs)
+        sem_chave(gs)
+        grupos += gs
+        if log:
+            log(f"Legenda: {len(gs)} linha(s) no trecho {k + 1}; palavra-chave revista pelo LLM em {mudou}")
         if k == 0 and len(trechos) > 1 and ws:
             # cold open: a frase de impacto aparece como citação em destaque (aspas, texto escrito no centro)
             citacao = {"tipo": "citacao", "ini": 0.05, "fim": round(fim - ini - 0.05, 3),
@@ -376,7 +535,7 @@ def planejar(trechos: list[tuple[float, float, list[Palavra]]], llm=None, log=No
             transicoes.append(round(deslocamento, 3))
     duracao = deslocamento
     if llm is not None:
-        titulo, extra = cenas_por_llm(llm, frases)
+        titulo, extra = cenas_por_llm(llm, frases, n_imagens=1 if deslocamento < 40 else 2)
         if log:
             log(f"Motion: LLM sugeriu {len(extra)} cena(s)" + (f" e o título “{titulo}”" if titulo else ""))
         cenas = extra + cenas
@@ -387,7 +546,7 @@ def planejar(trechos: list[tuple[float, float, list[Palavra]]], llm=None, log=No
         cenas = [c for c in cenas if c["ini"] > inicio_corpo + 1.0]
     escolhidas = _espacar(cenas, duracao)
     if pinturas:
-        escolhidas = com_pinturas(escolhidas, duracao, log)
+        escolhidas = com_imagens(escolhidas, log)
     if citacao:
         escolhidas = [citacao] + escolhidas
     zooms = [c["ini"] + 0.1 for c in escolhidas if c["tipo"] in ("numero", "comparacao", "destaque", "icone")]

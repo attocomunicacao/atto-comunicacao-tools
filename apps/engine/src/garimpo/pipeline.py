@@ -220,7 +220,9 @@ def exportar(video: Path, pasta: Path, aprovados: list[int], logo: Path | None =
                 _log(f"Trecho {j + 1} reaproveitado do cache")
             arquivos.append(arq)
             deslocamento += b - a
-        base, dur = midia.montar(arquivos, tmp / f"{nome}-base.mp4", logo, _log)
+        from . import sons as mod_sons
+        faixa = mod_sons.faixa(mod_sons.eventos(plano.cenas, plano.transicoes))
+        base, dur = midia.montar(arquivos, tmp / f"{nome}-base.mp4", logo, _log, faixa)
         _pct(0.5)
         mp4 = saida_dir / f"{nome}.mp4"
         if tem_motion:

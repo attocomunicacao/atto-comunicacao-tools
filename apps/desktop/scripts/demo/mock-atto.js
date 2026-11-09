@@ -44,6 +44,11 @@
     logoBytes: async () => null,
     escolherLogo: async () => null,
     removerLogo: async () => {},
+    sons: async () => ({ whoosh: null, clique: null, impacto: null }),
+    escolherSom: async () => ({}),
+    removerSom: async () => ({}),
+    temPexels: async () => false,
+    salvarPexels: async () => false,
     mostrarNaPasta: async () => {}
   }
 })()

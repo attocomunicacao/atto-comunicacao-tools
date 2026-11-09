@@ -14,6 +14,7 @@ import '@fontsource/playfair-display/700-italic.css'
 import gsap from 'gsap'
 import * as icones from 'lucide-static'
 import './motion.css'
+import { cenaImagem3D } from './imagem3d'
 import type { Cena, Grupo, JobMotion } from './tipos'
 
 declare global {
@@ -25,6 +26,7 @@ declare global {
 
 const palco = document.getElementById('palco')!
 let tl: gsap.core.Timeline | null = null
+const desenhos: (() => void)[] = [] // cenas WebGL redesenhadas a cada quadro
 const NS = 'http://www.w3.org/2000/svg'
 
 const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls: string, txt?: string) => {
@@ -68,6 +70,26 @@ function legenda(job: JobMotion, t: gsap.core.Timeline) {
     if (cobertos.some((c) => g.ini >= c.ini - 0.05 && g.ini < c.fim)) return
     const ki = g.palavras.findIndex((p) => p.chave)
     const bloco = el('div', 'grupo')
+    if (ki < 0) {
+      // linha sem destaque: tudo pequeno, na mesma linha, surgindo no tempo da fala
+      const linha = el('div', 'linha-peq linha-solta')
+      const ss = g.palavras.map((p) => {
+        const s = el('span', 'peq', p.t)
+        linha.append(s, document.createTextNode(' '))
+        return [s, p.ini] as [HTMLElement, number]
+      })
+      bloco.append(linha)
+      palco.appendChild(bloco)
+      gsap.set(ss.map(([s]) => s), { opacity: 0 })
+      for (const [s, ini] of ss) {
+        t.fromTo(s, { opacity: 0, y: 14, filter: 'blur(8px)' },
+          { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.45, ease: 'power3.out', immediateRender: false }, ini - 0.04)
+      }
+      const prox = job.grupos[gi + 1]
+      const sai = Math.min(g.fim, prox ? prox.ini : g.fim) - 0.28
+      t.to(bloco, { opacity: 0, y: '-=18', filter: 'blur(10px)', duration: 0.3, ease: 'power2.in' }, Math.max(sai, g.ini + 0.3))
+      return
+    }
     const antes = el('div', 'linha-peq')
     const depois = el('div', 'linha-peq')
     const pal = g.palavras[ki]
@@ -282,9 +304,10 @@ function cenaPintura(t: gsap.core.Timeline, c: Cena) {
   t.to(caixa, { opacity: 0, x: -200, filter: 'blur(20px)', duration: 0.5, ease: 'power2.in' }, c.fim - 0.5)
 }
 
-function cenas(job: JobMotion, t: gsap.core.Timeline) {
+async function cenas(job: JobMotion, t: gsap.core.Timeline) {
   for (const c of job.cenas) {
-    if (c.tipo === 'citacao') cenaCitacao(t, c)
+    if (c.tipo === 'imagem' && c.img) await cenaImagem3D(palco, t, c, desenhos)
+    else if (c.tipo === 'citacao') cenaCitacao(t, c)
     else if (c.tipo === 'pintura' && c.img) cenaPintura(t, c)
     else if (c.tipo === 'numero' || c.tipo === 'comparacao') cenaGrafico(t, c)
     else if (c.tipo === 'icone') cenaIcone(t, c)
@@ -310,8 +333,9 @@ function transicoes(job: JobMotion, t: gsap.core.Timeline) {
 
 window.__montar = async (job: JobMotion) => {
   palco.innerHTML = ''
+  desenhos.length = 0
   tl = gsap.timeline({ paused: true })
-  cenas(job, tl)
+  await cenas(job, tl)
   legenda(job, tl)
   transicoes(job, tl)
   tl.set({}, {}, job.duracao)
@@ -320,5 +344,6 @@ window.__montar = async (job: JobMotion) => {
 
 window.__seek = async (t: number) => {
   tl?.seek(t, false)
+  for (const d of desenhos) d()
   await new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(ok)))
 }

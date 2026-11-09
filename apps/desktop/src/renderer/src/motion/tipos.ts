@@ -3,7 +3,7 @@ export interface PalavraGrupo { t: string; ini: number; fim: number; chave: bool
 export interface Grupo { ini: number; fim: number; palavras: PalavraGrupo[] }
 
 export interface Cena {
-  tipo: 'numero' | 'comparacao' | 'icone' | 'destaque' | 'citacao' | 'pintura'
+  tipo: 'numero' | 'comparacao' | 'icone' | 'destaque' | 'citacao' | 'pintura' | 'imagem'
   ini: number
   fim: number
   texto?: string
@@ -12,7 +12,8 @@ export interface Cena {
   antes?: string
   depois?: string
   icone?: string // nome Lucide em PascalCase (ex.: "Clock", "Scale")
-  img?: string // data URI da pintura
+  img?: string // data URI da pintura/imagem
+  prof?: string // data URI do mapa de profundidade (efeito 3D)
   credito?: string
   cobreLegenda?: boolean
 }

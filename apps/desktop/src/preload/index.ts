@@ -18,6 +18,11 @@ const api = {
   logoBytes: (): Promise<Uint8Array | null> => ipcRenderer.invoke('logo:bytes'),
   escolherLogo: (): Promise<string | null> => ipcRenderer.invoke('logo:escolher'),
   removerLogo: (): Promise<void> => ipcRenderer.invoke('logo:remover'),
+  sons: (): Promise<Record<string, string | null>> => ipcRenderer.invoke('sons:listar'),
+  escolherSom: (tipo: string): Promise<Record<string, string | null>> => ipcRenderer.invoke('sons:escolher', tipo),
+  removerSom: (tipo: string): Promise<Record<string, string | null>> => ipcRenderer.invoke('sons:remover', tipo),
+  temPexels: (): Promise<boolean> => ipcRenderer.invoke('config:pexels'),
+  salvarPexels: (chave: string): Promise<boolean> => ipcRenderer.invoke('config:salvarPexels', chave),
   mostrarNaPasta: (caminho: string): Promise<void> => ipcRenderer.invoke('pasta:mostrar', caminho)
 }
 

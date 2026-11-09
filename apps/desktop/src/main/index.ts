@@ -20,6 +20,21 @@ let janela: BrowserWindow | null = null
 
 const pastaProjetos = () => join(app.getPath('userData'), 'projetos')
 const pastaLogo = () => join(app.getPath('userData'), 'logo')
+const pastaSons = () => join(app.getPath('userData'), 'sons')
+const arquivoConfig = () => join(app.getPath('userData'), 'config.json')
+const TIPOS_SOM = ['whoosh', 'clique', 'impacto']
+function lerConfig(): Record<string, string> {
+  try {
+    return JSON.parse(readFileSync(arquivoConfig(), 'utf-8'))
+  } catch {
+    return {}
+  }
+}
+function sonsAtuais(): Record<string, string | null> {
+  const dir = pastaSons()
+  const arquivos = existsSync(dir) ? readdirSync(dir) : []
+  return Object.fromEntries(TIPOS_SOM.map((t) => [t, arquivos.find((n) => n.toLowerCase().startsWith(t + '.')) ?? null]))
+}
 /** Logo salva pelo usuário (uma só, usada no fim de todos os cortes). */
 function logoAtual(): string | null {
   const dir = pastaLogo()
@@ -70,7 +85,9 @@ function comandoMotor(args: string[]): { exe: string; args: string[]; env: NodeJ
   const motion = app.isPackaged ? [process.execPath, '--render-motion'] : [process.execPath, app.getAppPath(), '--render-motion']
   const base = {
     ...process.env, PYTHONIOENCODING: 'utf-8', ATTO_CACHE: join(app.getPath('userData'), 'modelos'),
-    ATTO_MOTION_CMD: JSON.stringify(motion)
+    ATTO_MOTION_CMD: JSON.stringify(motion),
+    ATTO_SONS: pastaSons(),
+    ATTO_PEXELS_KEY: lerConfig()['pexels'] ?? ''
   }
   if (!app.isPackaged) return { exe: 'uv', args: ['run', '--project', pastaMotor(), 'garimpo', ...args], env: base }
   const r = process.resourcesPath
@@ -164,6 +181,33 @@ if (!jobMotion) app.whenReady().then(() => {
     const destino = join(dir, `logo${extname(r.filePaths[0]).toLowerCase()}`)
     copyFileSync(r.filePaths[0], destino)
     return destino
+  })
+  ipcMain.handle('sons:listar', () => sonsAtuais())
+  ipcMain.handle('sons:escolher', async (_e, tipo: string) => {
+    if (!TIPOS_SOM.includes(tipo)) throw new Error('Tipo de som inválido')
+    const r = await dialog.showOpenDialog({
+      title: `Escolha o som de ${tipo} (ex.: baixado da Epidemic Sound)`,
+      properties: ['openFile'],
+      filters: [{ name: 'Áudio', extensions: ['wav', 'mp3', 'ogg', 'flac', 'm4a', 'aac'] }]
+    })
+    if (r.canceled || !r.filePaths[0]) return sonsAtuais()
+    mkdirSync(pastaSons(), { recursive: true })
+    for (const n of readdirSync(pastaSons())) if (n.toLowerCase().startsWith(tipo + '.')) rmSync(join(pastaSons(), n))
+    copyFileSync(r.filePaths[0], join(pastaSons(), `${tipo}${extname(r.filePaths[0]).toLowerCase()}`))
+    return sonsAtuais()
+  })
+  ipcMain.handle('sons:remover', (_e, tipo: string) => {
+    if (!TIPOS_SOM.includes(tipo)) throw new Error('Tipo de som inválido')
+    if (existsSync(pastaSons())) for (const n of readdirSync(pastaSons())) if (n.toLowerCase().startsWith(tipo + '.')) rmSync(join(pastaSons(), n))
+    return sonsAtuais()
+  })
+  ipcMain.handle('config:pexels', () => Boolean(lerConfig()['pexels']))
+  ipcMain.handle('config:salvarPexels', (_e, chave: string) => {
+    const c = lerConfig()
+    if (chave.trim()) c['pexels'] = chave.trim()
+    else delete c['pexels']
+    writeFileSync(arquivoConfig(), JSON.stringify(c), 'utf-8')
+    return Boolean(c['pexels'])
   })
   ipcMain.handle('logo:remover', () => rmSync(pastaLogo(), { recursive: true, force: true }))
 

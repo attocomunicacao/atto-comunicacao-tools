@@ -30,6 +30,7 @@ export function prepararModoRender(): void {
   app.commandLine.appendSwitch('force-device-scale-factor', '1')
   app.commandLine.appendSwitch('disable-renderer-backgrounding')
   app.disableHardwareAcceleration() // offscreen em software: igual em qualquer máquina
+  app.commandLine.appendSwitch('enable-unsafe-swiftshader') // WebGL em software (efeito 3D das imagens)
 }
 
 const out = (s: string) => process.stdout.write(s + '\n')
