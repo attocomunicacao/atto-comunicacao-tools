@@ -169,3 +169,21 @@ def test_conceitos_vem_da_frase_e_cobrem_legenda():
     _, cenas = motion.cenas_por_llm(LLM(), frases, n_imagens=2)
     con = [c for c in cenas if c["tipo"] == "conceito"]
     assert len(con) == 1 and con[0]["destaque"] == "caixa" and con[0]["cobreLegenda"]
+
+
+def test_citacao_de_autor_vira_documento():
+    from garimpo.motion import documentos_por_regras
+    from garimpo.transcricao import Palavra
+    f = "Sócrates que dizia quem não gosta de política é governado por quem gosta."
+    ws = [Palavra(w, i * 0.3, i * 0.3 + 0.25) for i, w in enumerate(f.split())]
+    docs = documentos_por_regras(ws, 0)
+    assert docs and docs[0]["rotulo"] == "SÓCRATES" and docs[0]["texto"].startswith("quem não gosta")
+    f2 = "Meu pai falava assim, olha eu vou lá e falo."
+    assert documentos_por_regras([Palavra(w, i, i + 0.5) for i, w in enumerate(f2.split())], 0) == []
+
+
+def test_flash_cut_curto():
+    from garimpo import transicoes as tr
+    brancos = sum(b.endswith("w") for b in tr.PADRAO_ANTES + tr.PADRAO_DEPOIS)
+    assert 2 <= brancos <= 4
+    assert not any(b.startswith("A") for b in tr.PADRAO_DEPOIS)   # sem voltar ao plano anterior

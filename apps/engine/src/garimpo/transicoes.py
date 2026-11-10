@@ -22,8 +22,8 @@ from . import recursos
 # notebook dentro da silhueta. MediaPipe Selfie Multiclass 256x256 (Apache-2.0), conversão ONNX.
 SEGMENTACAO = ("FreeHugsForRobots/ps-skin-seg", "selfie_multiclass_256x256.onnx")
 CLASSES_PESSOA = (1, 2, 3, 4)  # 0 fundo · 1 cabelo · 2 pele do corpo · 3 rosto · 4 roupa · 5 outros
-FLASH_ANTES = 0.4    # s antes do corte
-FLASH_DEPOIS = 0.4   # s depois do corte
+FLASH_ANTES = 0.1    # s antes do corte (3 quadros a 30 fps)
+FLASH_DEPOIS = 0.1   # s depois do corte
 # Medido em videoplayback (2).mp4 (27,2-28,4 s, quadro a quadro): o 1º quadro é um borrão ampliado (~250%),
 # em 0,3 s já está em ~140% e assenta em 100% perto de 1 s — "ease out" com a curva puxada, obturador 360°.
 # v0.7 (retorno do cliente): 250% em 1 s com tmix ficou com "fantasmas" e lento demais. Agora é um punch-in
@@ -33,8 +33,10 @@ ZOOM_DURACAO = 0.7   # s até assentar em 100% (lab ciclo 8: cauda mais longa, c
 
 # Padrão QUADRO A QUADRO (v0.7, medido em videoplayback (1).mp4, 0,5-1,35 s a 24 fps): a silhueta branca pisca
 # um quadro sim, um não; A = plano que sai, B = plano que entra, "w" = silhueta. Termina limpo em B.
-PADRAO_ANTES = ["A", "A", "Aw", "A", "Aw", "A", "Bw", "A", "Aw", "A", "Aw", "A"]
-PADRAO_DEPOIS = ["B", "Bw", "B", "Bw", "B", "B", "Aw", "B", "Bw", "B", "B", "B"]
+# Cliente (teste real, 10/11): flash de 2 a 4 quadros, sem "vai e volta" — 1 quadro de silhueta antes do corte e
+# 2 depois, sempre no plano do próprio instante.
+PADRAO_ANTES = ["A", "A", "Aw"]
+PADRAO_DEPOIS = ["Bw", "Bw", "B"]
 
 _sessao = None
 

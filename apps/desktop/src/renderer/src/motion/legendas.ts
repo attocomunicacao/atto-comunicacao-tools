@@ -206,9 +206,14 @@ function maquina(palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) {
   const fimDigitacao = letras.length ? letras[letras.length - 1][1] : g.ini
   const pisca = { v: 0 }
   const d = Math.max(g.fim - fimDigitacao, 0.3)
+  // cliente (10/11): o cursor ficava aceso o vídeo inteiro (barra branca fixa). Agora só existe durante a linha.
+  const inicio = letras.length ? letras[0][1] : g.ini
+  gsap.set(cursor, { opacity: 0 })
+  t.set(cursor, { opacity: 1 }, inicio)
   t.to(pisca, { v: 1, duration: d, ease: 'none', onUpdate: () => {
     cursor.style.opacity = String(0.675 + 0.325 * Math.cos(pisca.v * d * Math.PI * 2)) // pulso suave, sem degrau
   } }, fimDigitacao)
+  t.set(cursor, { opacity: 0 }, Math.max(g.fim, fimDigitacao + d))
   viver(t, c, g, prox, letras.length ? letras[letras.length - 1][1] : g.ini)
 }
 
@@ -266,8 +271,9 @@ const PRESETS: Record<string, (palco: HTMLElement, t: T, g: Grupo, prox?: Grupo)
 }
 
 export function legenda(palco: HTMLElement, job: JobMotion, t: T) {
-  // citação e conceito ocupam a tela com texto próprio: a legenda some durante eles (lab ciclo 16)
-  const cobertos = job.cenas.filter((c) => c.cobreLegenda || c.tipo === 'citacao' || c.tipo === 'conceito')
+  // só a citação tem texto próprio: a legenda some sob ela (lab ciclo 16). O conceito/ícone não escreve nada
+  // (cliente, 10/11) e a legenda passa por cima dele.
+  const cobertos = job.cenas.filter((c) => c.tipo === 'citacao')
   job.grupos.forEach((g, gi) => {
     if (cobertos.some((c) => g.ini >= c.ini - 0.05 && g.ini < c.fim)) return
     // lab ciclo 15: a linha que começou antes de uma cena de tela cheia sai antes dela entrar (não fica por baixo)

@@ -191,10 +191,8 @@ function cenaIcone(t: gsap.core.Timeline, c: Cena) {
   orbita.append(anel, ponto)
   const ic = el('div', 'icone')
   ic.innerHTML = icone(c.icone)
-  const rotulo = el('div', 'icone-rotulo')
-  const ps = (c.texto ?? '').toLowerCase().split(' ')
-  ps.forEach((p, i) => rotulo.append(el('span', i === ps.length - 1 ? 'serif' : 'sans', p), document.createTextNode(' ')))
-  caixa.append(orbita, ic, rotulo)
+  // cliente (10/11): o ícone não escreve texto próprio — o único texto na tela é a legenda
+  caixa.append(orbita, ic)
   palco.appendChild(caixa)
   gsap.set(caixa, { opacity: 0 })
   t.set(caixa, { opacity: 1 }, c.ini)
@@ -206,8 +204,6 @@ function cenaIcone(t: gsap.core.Timeline, c: Cena) {
   const svgIc = ic.querySelector('svg')!
   t.to(tracos(svgIc), { strokeDashoffset: 0, duration: 1.0, ease: 'power2.inOut', stagger: 0.08 }, c.ini + 0.2)
   t.fromTo(svgIc, { scale: 0.8, filter: 'blur(8px)' }, { scale: 1, filter: 'blur(0px)', duration: 1, ease: 'expo.out', immediateRender: false }, c.ini + 0.2)
-  t.fromTo(rotulo.children, { opacity: 0, y: 20, filter: 'blur(10px)' },
-    { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.6, ease: 'expo.out', stagger: 0.1, immediateRender: false }, c.ini + 0.55)
   sair(t, caixa, c)
 }
 
@@ -312,9 +308,6 @@ function fundoCheio(t: gsap.core.Timeline, c: Cena) {
 function cenaConceito(t: gsap.core.Timeline, c: Cena) {
   const fundo = el('div', 'citacao-fundo conceito-fundo')
   const caixa = el('div', 'cena-conceito')
-  const sobre = el('div', 'conceito-sobre')
-  const palavras = (c.texto ?? '').split(/\s+/).filter(Boolean)
-  palavras.forEach((p) => sobre.append(el('span', 'sans', p.toLowerCase()), document.createTextNode(' ')))
   const arte = el('div', 'conceito-arte')
   const anel = svgEl('svg', { viewBox: '0 0 600 600', width: 600, height: 600, class: 'conceito-anel' })
   const circ = svgEl('circle', { cx: 300, cy: 300, r: 270 })
@@ -324,8 +317,8 @@ function cenaConceito(t: gsap.core.Timeline, c: Cena) {
   const ic = el('div', 'conceito-icone')
   ic.innerHTML = icone(c.icone)
   arte.append(anel, ic)
-  const chave = el('div', 'conceito-chave', (c.destaque || palavras[palavras.length - 1] || '').toLowerCase())
-  caixa.append(sobre, arte, chave)
+  // cliente (10/11): sem frase nem palavra-chave próprias — a legenda passa por cima e é o único texto
+  caixa.append(arte)
   palco.append(fundo, caixa)
   gsap.set([fundo, caixa, ponto], { opacity: 0 })
   const d = c.fim - c.ini
@@ -340,11 +333,6 @@ function cenaConceito(t: gsap.core.Timeline, c: Cena) {
     t.to(tracos(svgIc), { strokeDashoffset: 0, duration: 1.1, ease: 'power2.inOut', stagger: 0.08 }, c.ini + 0.25)
     t.fromTo(svgIc, { scale: 0.85 }, { scale: 1, duration: 1.2, ease: 'expo.out', immediateRender: false }, c.ini + 0.25)
   }
-  const passo = Math.min(0.16, (d * 0.4) / Math.max(palavras.length, 1))
-  t.fromTo(sobre.children, { opacity: 0, y: 16, filter: 'blur(8px)' },
-    { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.35, ease: 'power3.out', stagger: passo, immediateRender: false }, c.ini + 0.15)
-  t.fromTo(chave, { opacity: 0, letterSpacing: '0.08em', filter: 'blur(14px)' },
-    { opacity: 1, letterSpacing: '0em', filter: 'blur(0px)', duration: 0.6, ease: 'power2.out', immediateRender: false }, c.ini + 0.55)
   t.fromTo(caixa, { y: 0 }, { y: -18, duration: d, ease: 'none', immediateRender: false }, c.ini)
   // saída suave (o fundo escuro some aos poucos, sem corte seco)
   t.to([fundo, caixa], { opacity: 0, filter: 'blur(16px)', duration: 0.4, ease: 'power1.inOut' }, c.fim - 0.4)

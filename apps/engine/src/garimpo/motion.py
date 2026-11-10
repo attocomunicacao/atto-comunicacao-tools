@@ -655,8 +655,38 @@ DOC_GATILHOS = ("lei", "decisao", "pec", "stf", "supremo", "tst", "projeto", "no
                 "constituicao", "jurisprudencia", "sumula", "acordo", "convencao", "medida provisoria", "sentenca")
 
 
+VERBOS_CITAR = ("dizia", "disse", "diz", "falava", "escreveu", "ensinava", "afirmava")
+NAO_AUTOR = {"como", "entao", "porque", "assim", "segundo", "mas", "agora", "ja", "ele", "ela", "eu", "voce", "meu", "minha", "pai", "mae", "a", "o", "que", "isso", "se", "quem", "isabel"}
+
+
+def _citacao_de_autor(frase: list[Palavra]) -> dict | None:
+    """'Sócrates que dizia ...', 'como dizia Platão, ...', 'segundo Drucker ...' → card com a frase do autor (cliente,
+    10/11: toda informação de fora da conversa — lei, frase de filósofo — ganha o recorte de papel)."""
+    ws = [_limpa(p.texto) for p in frase]
+    ns = [_norm(w) for w in ws]
+    for i, n in enumerate(ns):
+        if n not in VERBOS_CITAR and n != "segundo":
+            continue
+        nome = None
+        for j in (i - 1, i - 2, i + 1):   # "Sócrates dizia", "Sócrates que dizia", "dizia Sócrates"/"segundo Drucker"
+            if 0 <= j < len(ws) and ws[j][:1].isupper() and ns[j] not in NAO_AUTOR and len(ns[j]) > 3:
+                nome = ws[j]
+                break
+        if not nome:
+            continue
+        ini_frase = i + 2 if (i + 1 < len(ws) and ws[i + 1] == nome) else i + 1
+        resto = [w for w in ws[ini_frase:] if w]
+        if len(resto) < 4:
+            continue
+        manchete = " ".join(resto[:9])
+        destaque = max(resto[:9], key=len)
+        return {"tipo": "documento", "texto": manchete[:70], "destaque": destaque, "rotulo": nome.upper()}
+    return None
+
+
 def documentos_por_regras(palavras: list[Palavra], origem: float) -> list[dict]:
-    """Frases que citam lei/decisão/projeto viram um recorte de "matéria" (papel, manchete marcada)."""
+    """Informação de fora da conversa vira um recorte de "matéria" (papel, manchete marcada): frases que citam
+    lei/decisão/projeto e frases ditas por um autor ("como dizia Sócrates…")."""
     saida: list[dict] = []
     frase: list[Palavra] = []
     for p in palavras:
@@ -664,6 +694,11 @@ def documentos_por_regras(palavras: list[Palavra], origem: float) -> list[dict]:
         if p.texto.endswith((".", "?", "!")) or len(frase) >= 18:
             texto = " ".join(_limpa(x.texto) for x in frase if _limpa(x.texto))
             n = _norm(texto)
+            autor = _citacao_de_autor(frase)
+            if autor:
+                saida.append(autor | {"ini": frase[0].ini - origem + 0.2})
+                frase = []
+                continue
             gatilho = next((g for g in DOC_GATILHOS if f" {g} " in f" {n} "), None)
             if gatilho and len(frase) >= 5:
                 manchete = trecho_citacao(frase, 8).strip("… ")
