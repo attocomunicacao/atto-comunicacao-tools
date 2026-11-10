@@ -1,0 +1,12 @@
+{
+ "numero_cheio": {
+  "nota": 10.0,
+  "entrada_s": 0.067,
+  "montagem_s": 0.133,
+  "saida_s": 0.1,
+  "salto": 0.057,
+  "tremor": 1.103,
+  "deriva_px": 0.0,
+  "cobertura": 0.704
+ }
+}

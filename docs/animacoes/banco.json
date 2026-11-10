@@ -1246,19 +1246,23 @@
     {
      "rodada": "20261110-002309",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-002631",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-002309",
+    "rodada": "20261110-002631",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.3,
-     "montagem_s": 1.667,
-     "saida_s": 0.267,
+     "montagem_s": 1.633,
+     "saida_s": 0.233,
      "salto": 0.04,
-     "tremor": 2.256,
+     "tremor": 1.717,
      "deriva_px": 0.0,
-     "cobertura": 0.913
+     "cobertura": 0.898
     },
     "fora": []
    }
@@ -1273,17 +1277,21 @@
     {
      "rodada": "20261110-002355",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-002631",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-002355",
+    "rodada": "20261110-002631",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.067,
      "montagem_s": 0.233,
      "saida_s": 0.2,
      "salto": 0.063,
-     "tremor": 0.147,
+     "tremor": 0.16,
      "deriva_px": 0.0,
      "cobertura": 0.993
     },
@@ -1296,19 +1304,27 @@
     {
      "rodada": "20261110-002309",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-002631",
+     "nota": 10.0
+    },
+    {
+     "rodada": "20261110-002700",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-002309",
+    "rodada": "20261110-002700",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.067,
-     "montagem_s": 0.2,
-     "saida_s": 0.133,
-     "salto": 0.054,
-     "tremor": 1.344,
+     "montagem_s": 0.133,
+     "saida_s": 0.1,
+     "salto": 0.057,
+     "tremor": 1.103,
      "deriva_px": 0.0,
-     "cobertura": 0.703
+     "cobertura": 0.704
     },
     "fora": []
    }
@@ -1470,6 +1486,18 @@
    "media": 10.0,
    "nota": "ciclo 17: icone em tela cheia usa layout do conceito",
    "cenarios": 3
+  },
+  {
+   "rodada": "20261110-002631",
+   "media": 10.0,
+   "nota": "ciclo 18: tela cheia com margem (860 px)",
+   "cenarios": 3
+  },
+  {
+   "rodada": "20261110-002700",
+   "media": 10.0,
+   "nota": "ciclo 18b: tela cheia termina em 1160",
+   "cenarios": 1
   }
  ],
  "ideias": [

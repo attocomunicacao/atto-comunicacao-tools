@@ -138,7 +138,7 @@ def caixa_livre(mapa: MapaRostos | None, ini: float, fim: float, tipo: str) -> t
         # sem espaço bom: a maior faixa livre que ainda dá para ler (a cena é reduzida); senão, nenhuma
         # sem espaço bom em volta do rosto: a cena vira um "corte" em tela cheia (fundo escuro texturizado), como as
         # cenas da referência — assim nada fica sobreposto ao rosto
-        return "cheia", (40, 240, 1000, 1000)  # termina em 1240: a legenda continua embaixo
+        return "cheia", (110, 300, 860, 860)  # termina em 1160: a legenda (1180+) continua embaixo
     # prefere a faixa mais alta da tela (perto do olhar) entre as que têm área boa
     return max(boas, key=lambda c: c[1][2] * min(c[1][3], 600) - c[1][1] * 120)
 
@@ -188,7 +188,7 @@ def aplicar(mapa: MapaRostos | None, grupos: list[dict], cenas: list[dict], log=
             continue
         dw, dh = PROJETO.get(c.get("tipo"), (1080, 600))
         if min(cx[2] / dw, cx[3] / dh) < 0.6:
-            c["zona"], c["caixa"], c["telaCheia"] = "cheia", (40, 240, 1000, 1000), True
+            c["zona"], c["caixa"], c["telaCheia"] = "cheia", (110, 300, 860, 860), True
     if log:
         uso: dict[str, int] = {}
         for x in grupos:

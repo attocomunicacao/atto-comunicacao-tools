@@ -90,3 +90,7 @@ Cenários novos: documento_cheio, icone_cheio, numero_cheio (todas 10 nas métri
 ícone em tela cheia herdava o layout de faixa (pequeno no topo, rótulo na borda) — a métrica não mede composição.
 Mudança: ícone em tela cheia usa a composição do conceito (centralizada, anel + ícone grandes, chave em serifa).
 Lição: além das métricas, o avaliador precisa olhar a folha de contato (composição), como diz o agente.
+
+## Ciclo 18 — composição em tela cheia (00:26)
+Folhas de contato: documento ok; gráfico de número encostava na borda direita (caixa de 1000 px). Caixa de tela cheia
+→ (110, 300, 860, 860): margem de ~110 px dos dois lados e termina em 1160 (a legenda começa em 1180). Todas 10.
