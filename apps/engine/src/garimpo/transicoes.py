@@ -1,7 +1,7 @@
 """Motor de transições entre planos (referências em docs/pesquisa/2026-11-referencias-edicao.md).
 
 - **flash cut**: na virada (gancho → corpo, ou troca de locutor) o vídeo "gagueja" entre o plano que sai (A) e o que
-  entra (B) em blocos de 2 quadros, com quadros em que a pessoa vira uma **silhueta branca** sobre o fundo.
+  entra (B) quadro a quadro, com quadros em que a pessoa vira uma **silhueta branca** sobre o fundo.
   Recorte da pessoa: MediaPipe Selfie Segmentation (ONNX, Apache-2.0).
 - **zoom**: o plano que entra começa ampliado (~230%) e com desfoque de movimento e assenta em 100% com
   desaceleração forte (curva de velocidade "ease out" + obturador 360°). Feito no filtro do trecho
@@ -26,10 +26,10 @@ FLASH_DEPOIS = 0.4   # s depois do corte
 ZOOM_INICIAL = 2.5   # escala no 1º quadro do plano que entra
 ZOOM_DURACAO = 1.0   # s até assentar em 100%
 
-# Padrão em blocos de 2 quadros (lido quadro a quadro na referência): A = plano que sai, B = plano que entra,
-# "w" = silhueta branca. Antes do corte domina A, depois domina B; termina limpo em B.
-PADRAO_ANTES = ["A", "Aw", "A", "Bw", "A", "Aw"]
-PADRAO_DEPOIS = ["B", "Bw", "A", "Bw", "B", "B"]
+# Padrão QUADRO A QUADRO (v0.7, medido em videoplayback (1).mp4, 0,5-1,35 s a 24 fps): a silhueta branca pisca
+# um quadro sim, um não; A = plano que sai, B = plano que entra, "w" = silhueta. Termina limpo em B.
+PADRAO_ANTES = ["A", "A", "Aw", "A", "Aw", "A", "Bw", "A", "Aw", "A", "Aw", "A"]
+PADRAO_DEPOIS = ["B", "Bw", "B", "Bw", "B", "B", "Aw", "B", "Bw", "B", "B", "B"]
 
 _sessao = None
 
@@ -105,7 +105,7 @@ def flash_cut(arq_a: Path, corte_a: float, arq_b: Path, corte_b: float, saida: P
     saida_q: list[np.ndarray] = []
     for janela, padrao, lado_natural in ((a, PADRAO_ANTES, "A"), (b, PADRAO_DEPOIS, "B")):
         for i in range(len(janela)):
-            bloco = padrao[min(i // 2, len(padrao) - 1)]
+            bloco = padrao[min(i, len(padrao) - 1)]
             lado, branco = bloco[0], bloco.endswith("w")
             # o lado "natural" usa o quadro do mesmo instante; o outro lado usa os primeiros/últimos quadros dele
             idx = i if lado == lado_natural else (i if lado == "B" else len(a) - len(janela) + i)

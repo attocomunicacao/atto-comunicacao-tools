@@ -1,4 +1,4 @@
-# Motores de edição do Garimpo (v0.6)
+# Motores de edição do Garimpo (v0.7)
 
 Fluxo de `pipeline.exportar` para cada corte:
 
@@ -23,6 +23,13 @@ camada ATTO Motion (Electron --render-motion)     legendas.ts (presets) + main.t
 | começa com contraste ("mas", "não", "porém"...) | **esquerda** / **direita** (alternando) |
 | palavra-chave forte (peso ≥ 2,5) | **sobe** |
 | demais | rodízio **cinemático, deslocamento, sobe, cinemático, desce, deslocamento**, nunca igual à anterior |
+
+## v0.7 — mudanças
+- **Transições**: todo corte abre com **zoom in** (250% → 100% em 1 s, `filtro(zoom_inicio=True)`); **toda troca
+  de locutor é flash cut**, agora com silhueta quadro a quadro (`PADRAO_ANTES/DEPOIS`).
+- **Legenda**: bloco em escada e movimento curto (`legendas.ts`); quebra ótima das linhas (`motion.segmentar`).
+- **Intercalação** (`motion.intercalar`): cada cena é `parcial` (na caixa livre, locutor visível) ou `dominante`
+  (imagem 3D, pintura, citação); locutor visível ≥ 60%, dominante ≤ 4,2 s, ≥ 4 s de locutor limpo entre elas.
 
 ## Motor de transições (`transicoes.py`)
 - **Flash cut**: 0,4 s antes + 0,4 s depois do corte, blocos de 2 quadros no padrão

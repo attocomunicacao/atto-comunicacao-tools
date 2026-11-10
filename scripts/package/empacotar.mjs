@@ -103,6 +103,10 @@ const hf = join(homedir(), '.cache/huggingface/hub/models--Systran--faster-whisp
 const snap = join(hf, readdirSync(hf)[0])
 mkdirSync(join(res, 'models/small'), { recursive: true })
 for (const f of readdirSync(snap)) cpSync(join(snap, f), join(res, 'models/small', f), { dereference: true })
+// e5-small (MIT, ONNX int8, 118 MB): camada semântica da seleção de cortes, embutida para funcionar offline
+const e5 = join(process.env.APPDATA, 'ATTO Tools/modelos/e5-small')
+if (existsSync(join(e5, 'model.onnx'))) cpSync(e5, join(res, 'models/e5-small'), { recursive: true })
+else console.warn('  e5-small não encontrado no cache: o app baixará na primeira análise')
 const fontes = join(process.env.LOCALAPPDATA, 'Microsoft/Windows/Fonts')
 mkdirSync(join(res, 'fonts'), { recursive: true })
 for (const f of ['Lato-Regular.ttf', 'Lato-Bold.ttf', 'Lato-Black.ttf']) cpSync(join(fontes, f), join(res, 'fonts', f))

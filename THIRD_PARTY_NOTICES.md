@@ -13,6 +13,7 @@ O pacote do ATTO Tools inclui software de terceiros, cada um sob a sua licença:
 | Modelo Whisper "small" (Systran/faster-whisper-small) | MIT | conversão do modelo da OpenAI |
 | Modelo Whisper "large-v3-turbo" (mobiuslabsgmbh/faster-whisper-large-v3-turbo) | MIT | baixado na primeira transcrição |
 | Modelo Qwen3-4B (Qwen/Qwen3-4B-GGUF, Q4_K_M) | Apache-2.0 | juiz de cortes; baixado na primeira análise |
+| Modelo multilingual-e5-small (intfloat/multilingual-e5-small, ONNX int8) | MIT | camada semântica da seleção de cortes; embutido |
 | llama-cpp-python / llama.cpp | MIT | execução do juiz em CPU |
 | OpenCV, modelo YuNet (detecção de rostos) | Apache-2.0 / MIT | enquadramento vertical |
 | GSAP | Licença padrão GSAP (gratuita, inclusive uso comercial) | animações da camada ATTO Motion |

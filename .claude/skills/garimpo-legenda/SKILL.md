@@ -10,6 +10,13 @@ Regras completas: `docs/legenda.md`. Resumo do que o cliente pediu:
 - as linhas formam frases **na ordem da fala** (acima → chave → abaixo);
 - os espaços têm lógica: rosto livre, ilustrações em cima (230–900 px), legenda no terço inferior (1270–1600 px).
 
+## v0.7
+- Quebra das linhas: `motion.segmentar` (programação dinâmica; custos em `_custo_quebra`/`_custo_linha`,
+  listas `FUNCAO`, `VERBOS_AUX`, `ADJ_ANTES`, `UNIDADES_FALA`). Linha guarda `pont` (pergunta → máquina).
+- Visual: `legendas.ts` → `compor` (bloco em escada, entrelinha 0,92, hierarquia S : 1,2S : K) + `viver`
+  (deriva e saída em desfoque de 0,16 s). Presets só mudam a entrada (0,3–0,45 s, expo/power out).
+  Medidas da referência: docs/pesquisa/2026-11-referencias-v07.md.
+
 ## Presets (motor)
 Cada linha recebe `preset` em `motion.escolher_presets`: gancho (impacto, revelacao, glitch), maquina (pergunta),
 elastico (número), esquerda/direita (contraste), sobe (chave forte), rodízio cinematico/deslocamento/desce.

@@ -2,6 +2,25 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões seguem `x.y.z`.
 
+## [0.7.0] - 2026-11-10
+
+### Adicionado
+- **Cache global da transcrição** por conteúdo do vídeo: o mesmo arquivo não é transcrito de novo, mesmo em projeto novo ("Transcrição reaproveitada"); opção "Transcrever de novo". Vetores de sentido e notas do juiz também ficam em cache.
+- **Descrição do vídeo** no app: guia a escolha dos cortes por relevância semântica e entra na avaliação do juiz.
+- **Camada semântica** (multilingual-e5-small, MIT, embutido): temas e parágrafos separados pelo sentido, coesão do corte e centralidade do gancho.
+- **Motor de intercalação** da narração ilustrada: locutor visível em pelo menos 60% do corte, ilustrações dominantes curtas e espaçadas.
+- Agente `avaliador-de-cortes`; pesquisas de transcrição, seleção e das 4 referências em `docs/pesquisa`.
+
+### Mudado
+- **Fim do corte nunca corta a fala**: só termina em fim de frase com pausa real e antes de frase que não continua a ideia ("porém", "mas", "então"...).
+- **Ganchos**: juiz lê a frase de antes e de depois; abertura fraca força o cold open com a oração mais forte e central.
+- **Transcrição**: prompt inicial pontuado, filtro de alucinação e tempo das palavras refinado pela energia do áudio.
+- **Legenda**: quebra ótima das linhas (sem "nova | lei"), bloco compacto em escada com hierarquia crescente, entradas curtas e suaves, deriva contínua e saída em desfoque — medido na referência de 7 presets.
+- **Transições**: zoom in no início de todo corte; flash cut em toda troca de locutor, com silhueta quadro a quadro.
+
+### Corrigido
+- Preset "máquina de escrever" nunca era usado em perguntas.
+
 ## [0.6.0] - 2026-11-09
 
 ### Adicionado

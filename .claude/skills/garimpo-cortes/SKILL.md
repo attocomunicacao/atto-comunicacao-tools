@@ -20,6 +20,16 @@ description: Use ao ajustar a escolha dos cortes do Garimpo (quais trechos viram
    - Duração: 30 s a 90 s **incluindo** o gancho (`MAX_S`).
 4. `ajustar_limites` — início/fim no silêncio mais próximo (análise de energia do WAV).
 
+## v0.7 (ver docs/pesquisa/2026-11-selecao-de-cortes.md e 2026-11-transcricao-avaliacao.md)
+- **Cache** (`cache.py`, pasta `ATTO_DADOS`): transcrição por conteúdo do vídeo (+modelo, versão, dicionário),
+  vetores das frases e notas do juiz. `--refazer` ignora. Mudou o motor de transcrição? suba `VERSAO_TRANSCRICAO`.
+- **Transcrição**: `PROMPT_INICIAL`, `_alucinado`, `refinar_tempos` (fim/início da palavra pela energia do WAV).
+- **Semântica** (`semantica.py`, e5-small ONNX): `estrutura.estruturar` (temas/parágrafos por sentido),
+  relevância para `--descricao` e coesão em `cortes._semantica`, centralidade do cold open.
+- **Fechamento** (`fecha_bem`, `CONTINUA`, `PAUSA_FIM_S`): filtro duro; `completar_contexto` avança/recua até fechar.
+- **Juiz** recebe ANTES/DEPOIS e a descrição; nota de `relevancia`; fechamento < 4 descarta; gancho < 7 força cold open.
+- Revisão: agente `avaliador-de-cortes`.
+
 ## Validar com um projeto real
 Projetos do app ficam em `%APPDATA%/ATTO Tools/projetos/<nome>/` (transcricao.json, cortes.json, previas/).
 ```bash
