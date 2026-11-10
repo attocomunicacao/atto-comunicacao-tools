@@ -82,7 +82,8 @@ def _sobrepoe(z: tuple[int, int, int, int], c: tuple[float, float, float, float]
     return ix * iy
 
 
-LEGENDA_FAIXA = (1270, 1760)   # onde a legenda prefere ficar (terço inferior)
+LEGENDA_FAIXA = (1180, 1600)   # terço inferior, ACIMA da descrição dos Reels/TikTok (lab ciclo 11: zona segura)
+SEGURO_X = (90, 840)            # x, largura: longe da coluna de botões da direita (curtir/comentar ~ x > 940)
 CENA_LIMITE = (110, 1250)      # ilustrações acima da área da legenda
 MIN_W, MIN_H = 420, 230
 
@@ -118,12 +119,12 @@ def caixa_livre(mapa: MapaRostos | None, ini: float, fim: float, tipo: str) -> t
     if tipo == "legenda":
         for a, b in _faixas_livres(ocup, LEGENDA_FAIXA):
             if b - a >= 200:
-                return "base", (60, a, 960, b - a)
-        faixas = sorted(_faixas_livres(ocup, (120, 1800)), key=lambda f: -(f[1] - f[0]))
+                return "base", (SEGURO_X[0], a, SEGURO_X[1], b - a)
+        faixas = sorted(_faixas_livres(ocup, (220, 1600)), key=lambda f: -(f[1] - f[0]))
         if faixas and faixas[0][1] - faixas[0][0] >= 160:
             a, b = faixas[0]
-            return "faixa", (60, a, 960, b - a)
-        return "base", (60, LEGENDA_FAIXA[0], 960, 420)  # sem espaço: fica embaixo (o rosto pode estar na base)
+            return "faixa", (SEGURO_X[0], a, SEGURO_X[1], b - a)
+        return "base", (SEGURO_X[0], LEGENDA_FAIXA[0], SEGURO_X[1], 420)  # sem espaço: fica embaixo (o rosto pode estar na base)
     candidatas = [("faixa", (60, a, 960, b - a)) for a, b in _faixas_livres(ocup, CENA_LIMITE)]
     if rostos:
         x0 = min(x - w * MARGEM for x, _, w, _ in rostos)

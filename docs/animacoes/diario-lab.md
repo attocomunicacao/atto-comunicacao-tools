@@ -57,3 +57,9 @@ Pesquisa: MediaPipe Selfie Multiclass 256x256 em ONNX ([ps-skin-seg](https://hug
 Apache-2.0; classes fundo/cabelo/pele/rosto/roupa/outros). Silhueta = soma das probabilidades de pessoa (borda suave).
 Nos quadros do corte-02: mesa, notebook, copo e microfone saem da silhueta; só a pessoa vira branca, como na referência.
 Flash 8 → 9,5. Próximo: varredura de transições em alta (whip/blur pan, light leak) para o banco.
+
+## Ciclo 11 — varredura de tendências + zona segura (23:58)
+Pesquisa: legenda palavra por palavra continua dominante; tendência "Dynamic Minimalism" (branco, entrada sutil) = nosso
+estilo; transições curtas; legenda fora da área dos botões e da descrição. 5 ideias no banco.
+Aplicado: zona segura (legenda 1180-1600 px, x 90-930). Testes ok; presets estáveis (oscilação na borda 0,133/0,15).
+Próximo: "subtle scale" na entrada das palavras.

@@ -51,7 +51,7 @@ def _palavras(frase: str, ini: float, passo: float = 0.32) -> list[dict]:
 def _grupo(frase: str, ini: float, preset: str, pont: str = "") -> dict:
     ps = _palavras(frase, ini, passo=0.8)   # palavras espaçadas: cada entrada fica isolada na medida
     return {"ini": ps[0]["ini"], "fim": round(ps[-1]["fim"] + 0.9, 3), "palavras": ps, "preset": preset, "pont": pont,
-            "caixa": [60, 1270, 960, 450]}
+            "caixa": [90, 1180, 840, 420]}
 
 
 PRESETS_LEGENDA = ["cinematico", "maquina", "sobe", "desce", "esquerda", "direita", "elastico", "deslocamento",

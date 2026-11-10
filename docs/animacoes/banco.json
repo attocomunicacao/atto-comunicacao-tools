@@ -63,21 +63,27 @@
     {
      "rodada": "20261109-233510",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261109-235847",
+     "nota": 8.3
     }
    ],
    "ultima": {
-    "rodada": "20261109-233510",
-    "nota": 10.0,
+    "rodada": "20261109-235847",
+    "nota": 8.3,
     "metricas": {
-     "entrada_s": 0.167,
+     "entrada_s": 0.133,
      "montagem_s": 3.333,
      "saida_s": 0.1,
-     "salto": 0.018,
-     "tremor": 0.322,
-     "deriva_px": 8.0,
+     "salto": 0.017,
+     "tremor": 0.393,
+     "deriva_px": 4.0,
      "cobertura": 0.016
     },
-    "fora": []
+    "fora": [
+     "entrada_s=0.133 (alvo 0.15-0.45)"
+    ]
    }
   },
   "conceito": {
@@ -197,18 +203,22 @@
     {
      "rodada": "20261109-233510",
      "nota": 8.3
+    },
+    {
+     "rodada": "20261109-235847",
+     "nota": 8.3
     }
    ],
    "ultima": {
-    "rodada": "20261109-233510",
+    "rodada": "20261109-235847",
     "nota": 8.3,
     "metricas": {
      "entrada_s": 0.133,
      "montagem_s": 3.3,
      "saida_s": 0.1,
      "salto": 0.026,
-     "tremor": 0.391,
-     "deriva_px": 8.0,
+     "tremor": 0.38,
+     "deriva_px": 4.0,
      "cobertura": 0.016
     },
     "fora": [
@@ -262,23 +272,27 @@
     {
      "rodada": "20261109-233510",
      "nota": 6.7
+    },
+    {
+     "rodada": "20261109-235847",
+     "nota": 6.7
     }
    ],
    "ultima": {
-    "rodada": "20261109-233510",
+    "rodada": "20261109-235847",
     "nota": 6.7,
     "metricas": {
      "entrada_s": 0.133,
      "montagem_s": 3.533,
      "saida_s": 0.067,
-     "salto": 0.027,
-     "tremor": 2.708,
+     "salto": 0.017,
+     "tremor": 2.667,
      "deriva_px": 8.0,
-     "cobertura": 0.026
+     "cobertura": 0.025
     },
     "fora": [
      "entrada_s=0.133 (alvo 0.15-0.45)",
-     "tremor=2.708 (alvo 0.0-2.5)"
+     "tremor=2.667 (alvo 0.0-2.5)"
     ]
    }
   },
@@ -509,18 +523,22 @@
     {
      "rodada": "20261109-233510",
      "nota": 8.3
+    },
+    {
+     "rodada": "20261109-235847",
+     "nota": 8.3
     }
    ],
    "ultima": {
-    "rodada": "20261109-233510",
+    "rodada": "20261109-235847",
     "nota": 8.3,
     "metricas": {
      "entrada_s": 0.133,
      "montagem_s": 1.733,
      "saida_s": 0.1,
      "salto": 0.011,
-     "tremor": 0.434,
-     "deriva_px": 8.0,
+     "tremor": 0.4,
+     "deriva_px": 12.0,
      "cobertura": 0.012
     },
     "fora": [
@@ -1215,6 +1233,12 @@
    "media": 10.0,
    "nota": "ciclo 7: conceito sai em 0,4 s power1.inOut",
    "cenarios": 2
+  },
+  {
+   "rodada": "20261109-235847",
+   "media": 7.9,
+   "nota": "ciclo 11: zona segura da legenda",
+   "cenarios": 4
   }
  ],
  "ideias": [
@@ -1224,6 +1248,41 @@
    "como": "trocar MediaPipe Selfie Segmentation por modelo multiclasse (ex.: MediaPipe selfie_multiclass, só a classe pessoa/pele/cabelo/roupa) ou matting (RVM, MODNet - checar licença)",
    "por_que": "no plano lateral a mesa/notebook entram na silhueta com prob. 0,73-0,93 (ciclo 9)",
    "status": "aplicada (ciclo 10)"
+  },
+  {
+   "nome": "zona segura Reels/TikTok",
+   "categoria": "texto",
+   "fonte": "https://captions.ai/help/guides/engagement/caption-styles-by-platform",
+   "como": "legenda acima da descrição (y ≤ 1600) e longe da coluna de botões (x ≤ 930)",
+   "status": "aplicada (ciclo 11)"
+  },
+  {
+   "nome": "Dynamic Minimalism",
+   "categoria": "texto",
+   "fonte": "https://blitzcutai.com/blog/tiktok-caption-trends-2026",
+   "como": "branco, palavra por palavra, escala/fade sutil na entrada; nada decorativo",
+   "status": "já é o estilo do Garimpo"
+  },
+  {
+   "nome": "whip pan / speed ramp",
+   "categoria": "transicao",
+   "fonte": "https://www.capcut.com/create/video-transition-trends-viral-short-form-edits",
+   "como": "desfoque direcional + rampa de velocidade 0,2-0,3 s em mudança de assunto (não de locutor)",
+   "status": "pendente"
+  },
+  {
+   "nome": "transição curta",
+   "categoria": "transicao",
+   "fonte": "https://spliceapp.com/blog/what-video-editors-enhance-transition-smoothness",
+   "como": "transição longa deixa o corte lento: manter ≤ 0,4 s de cada lado",
+   "status": "respeitado (flash 0,4+0,4)"
+  },
+  {
+   "nome": "subtle scale na palavra",
+   "categoria": "texto",
+   "fonte": "https://www.clipspeed.ai/blog/11-caption-styles-ranked-viral-performance-2026.html",
+   "como": "escala 0,96 → 1 junto do fade na entrada",
+   "status": "pendente"
   }
  ]
 }
