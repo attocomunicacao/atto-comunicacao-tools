@@ -77,3 +77,10 @@ revelacao 0,067 → 0,1 s (8,3; o wipe por máscara revela mais rápido que o fa
 Wipe por máscara power3 → power2.inOut, mínimo 0,3 s: entrada 0,1 → 0,133 s. Mantido.
 Situação: legenda e cenas com 9,4+; ganhos agora são marginais. Próximo: render de um corte real com tudo e comparação
 visual lado a lado com a referência (o teste que mais importa ao cliente).
+
+## Ciclos 15-16 — corte real x referência (00:10-00:40)
+Corte-01 renderizado com tudo e comparado com a referência (folha de 1 quadro/s):
+- documento minúsculo sobre o peito → cena que encolheria < 60% vira tela cheia (legível; legenda embaixo como narração) ✔;
+- legenda por baixo da citação → linha sai antes da cena; e toda citação/conceito cobre a legenda (antes só a do gancho) ✔;
+- duas citações (uma parafraseada) → só 1 por corte e literal ✔; conceito por regra quando o LLM não sugere.
+Próximo: re-render para conferir; depois volta ao laboratório (cenas em tela cheia nos cenários).

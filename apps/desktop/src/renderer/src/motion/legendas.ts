@@ -251,7 +251,8 @@ const PRESETS: Record<string, (palco: HTMLElement, t: T, g: Grupo, prox?: Grupo)
 }
 
 export function legenda(palco: HTMLElement, job: JobMotion, t: T) {
-  const cobertos = job.cenas.filter((c) => c.cobreLegenda)
+  // citação e conceito ocupam a tela com texto próprio: a legenda some durante eles (lab ciclo 16)
+  const cobertos = job.cenas.filter((c) => c.cobreLegenda || c.tipo === 'citacao' || c.tipo === 'conceito')
   job.grupos.forEach((g, gi) => {
     if (cobertos.some((c) => g.ini >= c.ini - 0.05 && g.ini < c.fim)) return
     // lab ciclo 15: a linha que começou antes de uma cena de tela cheia sai antes dela entrar (não fica por baixo)
