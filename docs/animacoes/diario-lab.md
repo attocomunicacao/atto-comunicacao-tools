@@ -84,3 +84,9 @@ Corte-01 renderizado com tudo e comparado com a referência (folha de 1 quadro/s
 - legenda por baixo da citação → linha sai antes da cena; e toda citação/conceito cobre a legenda (antes só a do gancho) ✔;
 - duas citações (uma parafraseada) → só 1 por corte e literal ✔; conceito por regra quando o LLM não sugere.
 Próximo: re-render para conferir; depois volta ao laboratório (cenas em tela cheia nos cenários).
+
+## Ciclo 17 — cenas em tela cheia no laboratório (00:23)
+Cenários novos: documento_cheio, icone_cheio, numero_cheio (todas 10 nas métricas). A folha de contato mostrou que o
+ícone em tela cheia herdava o layout de faixa (pequeno no topo, rótulo na borda) — a métrica não mede composição.
+Mudança: ícone em tela cheia usa a composição do conceito (centralizada, anel + ícone grandes, chave em serifa).
+Lição: além das métricas, o avaliador precisa olhar a folha de contato (composição), como diz o agente.

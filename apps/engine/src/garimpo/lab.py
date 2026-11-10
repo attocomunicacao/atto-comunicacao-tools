@@ -82,6 +82,10 @@ def cenarios() -> dict[str, dict]:
         cena = {**c, "ini": 0.3, "fim": 3.0, "caixa": [60, 160, 960, 900]}
         cat = "tela" if nome in ("citacao", "conceito") else "cena"
         cs[nome] = {"categoria": cat, "duracao": 3.4, "grupos": [], "cenas": [cena], "palavras": []}
+    # cenas que viram tela cheia quando não cabem ao lado do rosto (espaco.aplicar, lab ciclo 15)
+    for nome in ("documento", "icone", "numero"):
+        cena = {**cenas[nome], "ini": 0.3, "fim": 3.0, "caixa": [40, 240, 1000, 1000], "telaCheia": True}
+        cs[nome + "_cheio"] = {"categoria": "tela", "duracao": 3.4, "grupos": [], "cenas": [cena], "palavras": []}
     return cs
 
 

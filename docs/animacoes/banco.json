@@ -146,17 +146,21 @@
     {
      "rodada": "20261110-000139",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-002355",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-000139",
+    "rodada": "20261110-002355",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.067,
      "montagem_s": 0.233,
-     "saida_s": 0.233,
-     "salto": 0.051,
-     "tremor": 0.428,
+     "saida_s": 0.267,
+     "salto": 0.049,
+     "tremor": 0.414,
      "deriva_px": 0.0,
      "cobertura": 0.988
     },
@@ -1079,17 +1083,21 @@
     {
      "rodada": "20261110-000139",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-002355",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-000139",
+    "rodada": "20261110-002355",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.3,
      "montagem_s": 0.8,
      "saida_s": 0.2,
      "salto": 0.029,
-     "tremor": 0.271,
+     "tremor": 0.4,
      "deriva_px": 76.0,
      "cobertura": 0.087
     },
@@ -1230,6 +1238,79 @@
      "escala_inicial": 1.43,
      "assenta_s": 0.37
     }
+   }
+  },
+  "documento_cheio": {
+   "categoria": "tela",
+   "historico": [
+    {
+     "rodada": "20261110-002309",
+     "nota": 10.0
+    }
+   ],
+   "ultima": {
+    "rodada": "20261110-002309",
+    "nota": 10.0,
+    "metricas": {
+     "entrada_s": 0.3,
+     "montagem_s": 1.667,
+     "saida_s": 0.267,
+     "salto": 0.04,
+     "tremor": 2.256,
+     "deriva_px": 0.0,
+     "cobertura": 0.913
+    },
+    "fora": []
+   }
+  },
+  "icone_cheio": {
+   "categoria": "tela",
+   "historico": [
+    {
+     "rodada": "20261110-002309",
+     "nota": 10.0
+    },
+    {
+     "rodada": "20261110-002355",
+     "nota": 10.0
+    }
+   ],
+   "ultima": {
+    "rodada": "20261110-002355",
+    "nota": 10.0,
+    "metricas": {
+     "entrada_s": 0.067,
+     "montagem_s": 0.233,
+     "saida_s": 0.2,
+     "salto": 0.063,
+     "tremor": 0.147,
+     "deriva_px": 0.0,
+     "cobertura": 0.993
+    },
+    "fora": []
+   }
+  },
+  "numero_cheio": {
+   "categoria": "tela",
+   "historico": [
+    {
+     "rodada": "20261110-002309",
+     "nota": 10.0
+    }
+   ],
+   "ultima": {
+    "rodada": "20261110-002309",
+    "nota": 10.0,
+    "metricas": {
+     "entrada_s": 0.067,
+     "montagem_s": 0.2,
+     "saida_s": 0.133,
+     "salto": 0.054,
+     "tremor": 1.344,
+     "deriva_px": 0.0,
+     "cobertura": 0.703
+    },
+    "fora": []
    }
   }
  },
@@ -1376,6 +1457,18 @@
    "rodada": "20261110-000811",
    "media": 9.43,
    "nota": "ciclo 14: revelacao power2, min 0,3 s",
+   "cenarios": 3
+  },
+  {
+   "rodada": "20261110-002309",
+   "media": 10.0,
+   "nota": "ciclo 17: cenas em tela cheia",
+   "cenarios": 3
+  },
+  {
+   "rodada": "20261110-002355",
+   "media": 10.0,
+   "nota": "ciclo 17: icone em tela cheia usa layout do conceito",
    "cenarios": 3
   }
  ],

@@ -1,0 +1,32 @@
+{
+ "documento_cheio": {
+  "nota": 10.0,
+  "entrada_s": 0.3,
+  "montagem_s": 1.667,
+  "saida_s": 0.267,
+  "salto": 0.04,
+  "tremor": 2.256,
+  "deriva_px": 0.0,
+  "cobertura": 0.913
+ },
+ "icone_cheio": {
+  "nota": 10.0,
+  "entrada_s": 0.0,
+  "montagem_s": 0.067,
+  "saida_s": 0.1,
+  "salto": 0.061,
+  "tremor": 0.562,
+  "deriva_px": 0.0,
+  "cobertura": 0.72
+ },
+ "numero_cheio": {
+  "nota": 10.0,
+  "entrada_s": 0.067,
+  "montagem_s": 0.2,
+  "saida_s": 0.133,
+  "salto": 0.054,
+  "tremor": 1.344,
+  "deriva_px": 0.0,
+  "cobertura": 0.703
+ }
+}

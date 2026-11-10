@@ -351,18 +351,20 @@ function cenaConceito(t: gsap.core.Timeline, c: Cena) {
 
 async function cenas(job: JobMotion, t: gsap.core.Timeline) {
   for (const c of job.cenas) {
-    if (c.telaCheia) fundoCheio(t, c)
+    if (c.telaCheia && c.tipo !== 'icone') fundoCheio(t, c)
     const antes = new Set(palco.children)
     if (c.tipo === 'imagem' && c.img) await cenaImagem3D(palco, t, c, desenhos)
     else if (c.tipo === 'citacao') cenaCitacao(t, c)
     else if (c.tipo === 'conceito') cenaConceito(t, c)
     else if (c.tipo === 'pintura' && c.img) cenaPintura(t, c)
     else if (c.tipo === 'numero' || c.tipo === 'comparacao') cenaGrafico(t, c)
+    // ícone sem espaço ao lado do rosto: em tela cheia usa a composição do conceito (centralizada e grande; lab ciclo 17)
+    else if (c.tipo === 'icone' && c.telaCheia) cenaConceito(t, { ...c, destaque: c.destaque || (c.texto ?? '').split(' ').pop() })
     else if (c.tipo === 'icone') cenaIcone(t, c)
     else if (c.tipo === 'documento') cenaDocumento(t, c)
     else cenaLinha(t, c)
     // cenas que não são tela cheia vão para a caixa livre de rostos (mapa de espaço)
-    if (c.caixa && !['imagem', 'pintura', 'citacao', 'conceito'].includes(c.tipo)) {
+    if (c.caixa && !['imagem', 'pintura', 'citacao', 'conceito'].includes(c.tipo) && !(c.tipo === 'icone' && c.telaCheia)) {
       for (const novo of [...palco.children].filter((x) => !antes.has(x)) as HTMLElement[]) {
         if (novo.classList.contains('fundo-cheio')) continue
         if (novo.classList.contains('vinheta')) {
