@@ -179,7 +179,8 @@ function maquina(palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) {
   for (const x of c.palavras) {
     const txt = x.e.textContent ?? ''
     x.e.textContent = ''
-    const dur = Math.max(x.p.fim - x.p.ini, 0.12) * 0.85
+    // referência: digitação rápida e regular (≤ 55% da palavra falada, nunca mais de 1 letra por quadro)
+    const dur = Math.max(Math.min((x.p.fim - x.p.ini) * 0.55, txt.length * 0.045), txt.length / 30)
     ;[...txt].forEach((ch, j) => {
       const l = el('span', 'letra', ch)
       x.e.append(l)
@@ -191,11 +192,13 @@ function maquina(palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) {
   c.palavras[c.palavras.length - 1]?.e.parentElement?.append(cursor)
   gsap.set(letras.map(([l]) => l), { opacity: 0 })
   for (const [l, quando] of letras) t.fromTo(l, { opacity: 0 }, { opacity: 1, duration: 0.03, ...O }, quando)
+  // cursor aceso enquanto digita; depois pisca devagar (1 Hz), como na referência
+  const fimDigitacao = letras.length ? letras[letras.length - 1][1] : g.ini
   const pisca = { v: 0 }
-  const d = Math.max(g.fim - g.ini, 0.3)
+  const d = Math.max(g.fim - fimDigitacao, 0.3)
   t.to(pisca, { v: 1, duration: d, ease: 'none', onUpdate: () => {
-    cursor.style.opacity = Math.floor(pisca.v * d * 2.4) % 2 === 0 ? '1' : '0'
-  } }, g.ini)
+    cursor.style.opacity = Math.floor(pisca.v * d * 2) % 2 === 0 ? '1' : '0.15'
+  } }, fimDigitacao)
   viver(t, c, g, prox, letras.length ? letras[letras.length - 1][1] : g.ini)
 }
 

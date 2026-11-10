@@ -1,0 +1,32 @@
+{
+ "cinematico": {
+  "nota": 6.7,
+  "entrada_s": 0.1,
+  "montagem_s": 1.4,
+  "saida_s": 0.067,
+  "salto": 0.026,
+  "tremor": 0.7,
+  "deriva_px": 2.6,
+  "cobertura": 0.016
+ },
+ "maquina": {
+  "nota": 6.7,
+  "entrada_s": 0.5,
+  "montagem_s": 1.933,
+  "saida_s": 0.133,
+  "salto": 0.058,
+  "tremor": 2.738,
+  "deriva_px": 24.8,
+  "cobertura": 0.025
+ },
+ "sobe": {
+  "nota": 8.3,
+  "entrada_s": 0.1,
+  "montagem_s": 1.333,
+  "saida_s": 0.067,
+  "salto": 0.034,
+  "tremor": 0.796,
+  "deriva_px": 3.5,
+  "cobertura": 0.016
+ }
+}

@@ -15,18 +15,22 @@
     {
      "rodada": "20261109-230724",
      "nota": 8.3
+    },
+    {
+     "rodada": "20261109-231048",
+     "nota": 8.3
     }
    ],
    "ultima": {
-    "rodada": "20261109-230724",
+    "rodada": "20261109-231048",
     "nota": 8.3,
     "metricas": {
      "entrada_s": 0.1,
      "montagem_s": 1.333,
      "saida_s": 0.067,
      "salto": 0.034,
-     "tremor": 0.799,
-     "deriva_px": 3.2,
+     "tremor": 0.796,
+     "deriva_px": 3.5,
      "cobertura": 0.016
     },
     "fora": [
@@ -73,22 +77,27 @@
     {
      "rodada": "20261109-230724",
      "nota": 8.3
+    },
+    {
+     "rodada": "20261109-231048",
+     "nota": 6.7
     }
    ],
    "ultima": {
-    "rodada": "20261109-230724",
-    "nota": 8.3,
+    "rodada": "20261109-231048",
+    "nota": 6.7,
     "metricas": {
      "entrada_s": 0.1,
-     "montagem_s": 1.367,
+     "montagem_s": 1.4,
      "saida_s": 0.067,
-     "salto": 0.028,
-     "tremor": 0.626,
-     "deriva_px": 4.3,
+     "salto": 0.026,
+     "tremor": 0.7,
+     "deriva_px": 2.6,
      "cobertura": 0.016
     },
     "fora": [
-     "entrada_s=0.1 (alvo 0.15-0.45)"
+     "entrada_s=0.1 (alvo 0.15-0.45)",
+     "deriva_px=2.6 (alvo 3.0-30.0)"
     ]
    }
   },
@@ -98,23 +107,27 @@
     {
      "rodada": "20261109-230724",
      "nota": 6.7
+    },
+    {
+     "rodada": "20261109-231048",
+     "nota": 6.7
     }
    ],
    "ultima": {
-    "rodada": "20261109-230724",
+    "rodada": "20261109-231048",
     "nota": 6.7,
     "metricas": {
-     "entrada_s": 0.533,
-     "montagem_s": 2.067,
+     "entrada_s": 0.5,
+     "montagem_s": 1.933,
      "saida_s": 0.133,
-     "salto": 0.055,
-     "tremor": 3.257,
-     "deriva_px": 24.3,
+     "salto": 0.058,
+     "tremor": 2.738,
+     "deriva_px": 24.8,
      "cobertura": 0.025
     },
     "fora": [
-     "entrada_s=0.533 (alvo 0.15-0.45)",
-     "tremor=3.257 (alvo 0.0-2.5)"
+     "entrada_s=0.5 (alvo 0.15-0.45)",
+     "tremor=2.738 (alvo 0.0-2.5)"
     ]
    }
   },
@@ -481,6 +494,12 @@
    "media": 8.49,
    "nota": "base v0.7",
    "cenarios": 18
+  },
+  {
+   "rodada": "20261109-231048",
+   "media": 7.23,
+   "nota": "ciclo 1: maquina digita rapido, cursor fixo",
+   "cenarios": 3
   }
  ]
 }
