@@ -124,7 +124,7 @@ function porPalavra(palco: HTMLElement, t: T, g: Grupo, prox: Grupo | undefined,
 const O = { immediateRender: false }
 
 /** Opacidade em tween próprio: a palavra vai de cinza a branco em ~8 quadros, sem "estalar" (referência). */
-const acende = (t: T, w: HTMLElement, quando: number, dur = 0.3) =>
+const acende = (t: T, w: HTMLElement, quando: number, dur = 0.36) =>
   t.fromTo(w, { opacity: 0 }, { opacity: 1, duration: dur, ease: 'power1.out', ...O }, quando)
 
 /** Desliza pra cima: sobe ~0,4 da altura da letra, de 0 a 100% de opacidade, desfoque de movimento curto. */

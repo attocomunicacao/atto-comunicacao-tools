@@ -67,23 +67,29 @@
     {
      "rodada": "20261109-235847",
      "nota": 8.3
+    },
+    {
+     "rodada": "20261110-000112",
+     "nota": 8.3
+    },
+    {
+     "rodada": "20261110-000139",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261109-235847",
-    "nota": 8.3,
+    "rodada": "20261110-000139",
+    "nota": 10.0,
     "metricas": {
-     "entrada_s": 0.133,
-     "montagem_s": 3.333,
+     "entrada_s": 0.2,
+     "montagem_s": 3.367,
      "saida_s": 0.1,
-     "salto": 0.017,
-     "tremor": 0.393,
-     "deriva_px": 4.0,
+     "salto": 0.021,
+     "tremor": 0.444,
+     "deriva_px": 8.0,
      "cobertura": 0.016
     },
-    "fora": [
-     "entrada_s=0.133 (alvo 0.15-0.45)"
-    ]
+    "fora": []
    }
   },
   "conceito": {
@@ -132,16 +138,20 @@
     {
      "rodada": "20261109-234011",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-000139",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261109-234011",
+    "rodada": "20261110-000139",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.067,
      "montagem_s": 0.233,
      "saida_s": 0.233,
-     "salto": 0.049,
+     "salto": 0.051,
      "tremor": 0.428,
      "deriva_px": 0.0,
      "cobertura": 0.988
@@ -207,17 +217,21 @@
     {
      "rodada": "20261109-235847",
      "nota": 8.3
+    },
+    {
+     "rodada": "20261110-000139",
+     "nota": 8.3
     }
    ],
    "ultima": {
-    "rodada": "20261109-235847",
+    "rodada": "20261110-000139",
     "nota": 8.3,
     "metricas": {
      "entrada_s": 0.133,
      "montagem_s": 3.3,
      "saida_s": 0.1,
      "salto": 0.026,
-     "tremor": 0.38,
+     "tremor": 0.483,
      "deriva_px": 4.0,
      "cobertura": 0.016
     },
@@ -276,23 +290,26 @@
     {
      "rodada": "20261109-235847",
      "nota": 6.7
+    },
+    {
+     "rodada": "20261110-000139",
+     "nota": 8.3
     }
    ],
    "ultima": {
-    "rodada": "20261109-235847",
-    "nota": 6.7,
+    "rodada": "20261110-000139",
+    "nota": 8.3,
     "metricas": {
      "entrada_s": 0.133,
      "montagem_s": 3.533,
      "saida_s": 0.067,
      "salto": 0.017,
-     "tremor": 2.667,
+     "tremor": 2.266,
      "deriva_px": 8.0,
      "cobertura": 0.025
     },
     "fora": [
-     "entrada_s=0.133 (alvo 0.15-0.45)",
-     "tremor=2.667 (alvo 0.0-2.5)"
+     "entrada_s=0.133 (alvo 0.15-0.45)"
     ]
    }
   },
@@ -342,23 +359,25 @@
     {
      "rodada": "20261109-233510",
      "nota": 8.3
+    },
+    {
+     "rodada": "20261110-000139",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261109-233510",
-    "nota": 8.3,
+    "rodada": "20261110-000139",
+    "nota": 10.0,
     "metricas": {
-     "entrada_s": 0.133,
-     "montagem_s": 3.333,
+     "entrada_s": 0.2,
+     "montagem_s": 3.367,
      "saida_s": 0.1,
-     "salto": 0.017,
-     "tremor": 0.463,
-     "deriva_px": 8.0,
-     "cobertura": 0.016
+     "salto": 0.02,
+     "tremor": 0.375,
+     "deriva_px": 4.0,
+     "cobertura": 0.017
     },
-    "fora": [
-     "entrada_s=0.133 (alvo 0.15-0.45)"
-    ]
+    "fora": []
    }
   },
   "esquerda": {
@@ -407,21 +426,27 @@
     {
      "rodada": "20261109-233510",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-000139",
+     "nota": 8.3
     }
    ],
    "ultima": {
-    "rodada": "20261109-233510",
-    "nota": 10.0,
+    "rodada": "20261110-000139",
+    "nota": 8.3,
     "metricas": {
-     "entrada_s": 0.167,
+     "entrada_s": 0.133,
      "montagem_s": 2.5,
      "saida_s": 0.1,
-     "salto": 0.02,
-     "tremor": 0.338,
+     "salto": 0.022,
+     "tremor": 0.324,
      "deriva_px": 20.0,
      "cobertura": 0.018
     },
-    "fora": []
+    "fora": [
+     "entrada_s=0.133 (alvo 0.15-0.45)"
+    ]
    }
   },
   "direita": {
@@ -470,23 +495,25 @@
     {
      "rodada": "20261109-233510",
      "nota": 8.3
+    },
+    {
+     "rodada": "20261110-000139",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261109-233510",
-    "nota": 8.3,
+    "rodada": "20261110-000139",
+    "nota": 10.0,
     "metricas": {
-     "entrada_s": 0.133,
-     "montagem_s": 3.267,
+     "entrada_s": 0.2,
+     "montagem_s": 3.3,
      "saida_s": 0.1,
-     "salto": 0.02,
-     "tremor": 0.335,
+     "salto": 0.016,
+     "tremor": 0.355,
      "deriva_px": 8.0,
      "cobertura": 0.024
     },
-    "fora": [
-     "entrada_s=0.133 (alvo 0.15-0.45)"
-    ]
+    "fora": []
    }
   },
   "elastico": {
@@ -527,22 +554,26 @@
     {
      "rodada": "20261109-235847",
      "nota": 8.3
+    },
+    {
+     "rodada": "20261110-000139",
+     "nota": 8.3
     }
    ],
    "ultima": {
-    "rodada": "20261109-235847",
+    "rodada": "20261110-000139",
     "nota": 8.3,
     "metricas": {
-     "entrada_s": 0.133,
+     "entrada_s": 0.6,
      "montagem_s": 1.733,
      "saida_s": 0.1,
-     "salto": 0.011,
-     "tremor": 0.4,
+     "salto": 0.021,
+     "tremor": 0.431,
      "deriva_px": 12.0,
      "cobertura": 0.012
     },
     "fora": [
-     "entrada_s=0.133 (alvo 0.15-0.45)"
+     "entrada_s=0.6 (alvo 0.15-0.45)"
     ]
    }
   },
@@ -588,22 +619,26 @@
     {
      "rodada": "20261109-233510",
      "nota": 8.3
+    },
+    {
+     "rodada": "20261110-000139",
+     "nota": 8.3
     }
    ],
    "ultima": {
-    "rodada": "20261109-233510",
+    "rodada": "20261110-000139",
     "nota": 8.3,
     "metricas": {
-     "entrada_s": 0.1,
+     "entrada_s": 0.133,
      "montagem_s": 3.3,
      "saida_s": 0.1,
-     "salto": 0.023,
-     "tremor": 0.429,
+     "salto": 0.021,
+     "tremor": 0.389,
      "deriva_px": 8.0,
      "cobertura": 0.016
     },
     "fora": [
-     "entrada_s=0.1 (alvo 0.15-0.45)"
+     "entrada_s=0.133 (alvo 0.15-0.45)"
     ]
    }
   },
@@ -653,17 +688,25 @@
     {
      "rodada": "20261109-233741",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-000112",
+     "nota": 8.3
+    },
+    {
+     "rodada": "20261110-000139",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261109-233741",
+    "rodada": "20261110-000139",
     "nota": 10.0,
     "metricas": {
-     "entrada_s": 0.167,
-     "montagem_s": 3.333,
+     "entrada_s": 0.2,
+     "montagem_s": 3.367,
      "saida_s": 0.1,
-     "salto": 0.016,
-     "tremor": 0.314,
+     "salto": 0.022,
+     "tremor": 0.484,
      "deriva_px": 8.0,
      "cobertura": 0.016
     },
@@ -708,22 +751,26 @@
     {
      "rodada": "20261109-233741",
      "nota": 8.3
+    },
+    {
+     "rodada": "20261110-000139",
+     "nota": 8.3
     }
    ],
    "ultima": {
-    "rodada": "20261109-233741",
+    "rodada": "20261110-000139",
     "nota": 8.3,
     "metricas": {
-     "entrada_s": 0.1,
+     "entrada_s": 0.067,
      "montagem_s": 3.267,
      "saida_s": 0.1,
      "salto": 0.025,
-     "tremor": 0.533,
+     "tremor": 0.497,
      "deriva_px": 4.0,
      "cobertura": 0.016
     },
     "fora": [
-     "entrada_s=0.1 (alvo 0.15-0.45)"
+     "entrada_s=0.067 (alvo 0.15-0.45)"
     ]
    }
   },
@@ -765,18 +812,22 @@
     {
      "rodada": "20261109-233741",
      "nota": 8.3
+    },
+    {
+     "rodada": "20261110-000139",
+     "nota": 8.3
     }
    ],
    "ultima": {
-    "rodada": "20261109-233741",
+    "rodada": "20261110-000139",
     "nota": 8.3,
     "metricas": {
      "entrada_s": 0.1,
      "montagem_s": 3.267,
      "saida_s": 0.1,
      "salto": 0.045,
-     "tremor": 0.425,
-     "deriva_px": 8.0,
+     "tremor": 0.463,
+     "deriva_px": 4.0,
      "cobertura": 0.016
     },
     "fora": [
@@ -822,18 +873,22 @@
     {
      "rodada": "20261109-233741",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-000139",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261109-233741",
+    "rodada": "20261110-000139",
     "nota": 10.0,
     "metricas": {
-     "entrada_s": 0.3,
-     "montagem_s": 0.367,
+     "entrada_s": 0.267,
+     "montagem_s": 0.3,
      "saida_s": 0.2,
      "salto": 0.072,
-     "tremor": 0.829,
-     "deriva_px": 36.0,
+     "tremor": 0.639,
+     "deriva_px": 64.0,
      "cobertura": 0.084
     },
     "fora": []
@@ -873,17 +928,21 @@
     {
      "rodada": "20261109-233510",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-000139",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261109-233510",
+    "rodada": "20261110-000139",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.267,
      "montagem_s": 0.767,
      "saida_s": 0.2,
      "salto": 0.021,
-     "tremor": 1.474,
+     "tremor": 1.268,
      "deriva_px": 12.0,
      "cobertura": 0.098
     },
@@ -924,18 +983,22 @@
     {
      "rodada": "20261109-233510",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-000139",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261109-233510",
+    "rodada": "20261110-000139",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.3,
      "montagem_s": 0.433,
      "saida_s": 0.2,
      "salto": 0.063,
-     "tremor": 1.561,
-     "deriva_px": 12.0,
+     "tremor": 1.415,
+     "deriva_px": 8.0,
      "cobertura": 0.097
     },
     "fora": []
@@ -979,17 +1042,21 @@
     {
      "rodada": "20261109-233741",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-000139",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261109-233741",
+    "rodada": "20261110-000139",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.3,
      "montagem_s": 0.8,
      "saida_s": 0.2,
-     "salto": 0.017,
-     "tremor": 0.291,
+     "salto": 0.029,
+     "tremor": 0.271,
      "deriva_px": 76.0,
      "cobertura": 0.087
     },
@@ -1030,17 +1097,21 @@
     {
      "rodada": "20261109-233510",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-000139",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261109-233510",
+    "rodada": "20261110-000139",
     "nota": 10.0,
     "metricas": {
-     "entrada_s": 0.333,
+     "entrada_s": 0.3,
      "montagem_s": 1.633,
-     "saida_s": 0.233,
-     "salto": 0.021,
-     "tremor": 0.487,
+     "saida_s": 0.267,
+     "salto": 0.01,
+     "tremor": 0.627,
      "deriva_px": 12.0,
      "cobertura": 0.25
     },
@@ -1085,17 +1156,21 @@
     {
      "rodada": "20261109-234011",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-000139",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261109-234011",
+    "rodada": "20261110-000139",
     "nota": 10.0,
     "metricas": {
-     "entrada_s": 0.167,
+     "entrada_s": 0.2,
      "montagem_s": 0.267,
      "saida_s": 0.1,
-     "salto": 0.045,
-     "tremor": 0.218,
+     "salto": 0.053,
+     "tremor": 0.221,
      "deriva_px": 0.0,
      "cobertura": 0.984
     },
@@ -1239,6 +1314,18 @@
    "media": 7.9,
    "nota": "ciclo 11: zona segura da legenda",
    "cenarios": 4
+  },
+  {
+   "rodada": "20261110-000112",
+   "media": 8.3,
+   "nota": "ciclo 12: subtle scale no sobe",
+   "cenarios": 2
+  },
+  {
+   "rodada": "20261110-000139",
+   "media": 9.34,
+   "nota": "ciclo 12b: acender 0,36 s",
+   "cenarios": 18
   }
  ],
  "ideias": [
@@ -1282,7 +1369,7 @@
    "categoria": "texto",
    "fonte": "https://www.clipspeed.ai/blog/11-caption-styles-ranked-viral-performance-2026.html",
    "como": "escala 0,96 → 1 junto do fade na entrada",
-   "status": "pendente"
+   "status": "testada (ciclo 12): neutra, revertida"
   }
  ]
 }

@@ -1,0 +1,22 @@
+{
+ "sobe": {
+  "nota": 8.3,
+  "entrada_s": 0.133,
+  "montagem_s": 3.333,
+  "saida_s": 0.1,
+  "salto": 0.017,
+  "tremor": 0.379,
+  "deriva_px": 4.0,
+  "cobertura": 0.016
+ },
+ "impacto": {
+  "nota": 8.3,
+  "entrada_s": 0.133,
+  "montagem_s": 3.333,
+  "saida_s": 0.1,
+  "salto": 0.018,
+  "tremor": 0.427,
+  "deriva_px": 4.0,
+  "cobertura": 0.016
+ }
+}

@@ -63,3 +63,8 @@ Pesquisa: legenda palavra por palavra continua dominante; tendência "Dynamic Mi
 estilo; transições curtas; legenda fora da área dos botões e da descrição. 5 ideias no banco.
 Aplicado: zona segura (legenda 1180-1600 px, x 90-930). Testes ok; presets estáveis (oscilação na borda 0,133/0,15).
 Próximo: "subtle scale" na entrada das palavras.
+
+## Ciclo 12 — subtle scale e acender (00:01-00:03)
+12a: escala 0,96 → 1 no "sobe" (ideia do banco) → neutro (8,3 = 8,3) → revertido pela regra.
+12b: `acende` 0,30 → 0,36 s → rodada completa **9,34** (sobe, desce, direita, impacto = 10; maquina 8,3).
+Pendentes: elastico (a chave entra na janela de 0,6 s — rever cenário), revelacao 0,07 s, glitch 0,1 s.
