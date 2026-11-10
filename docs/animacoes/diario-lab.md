@@ -124,3 +124,7 @@ Restantes (maquina, esquerda, revelacao) a 1 quadro do alvo (0,133 vs 0,15 s). S
 ## Ciclo 24 — revelacao (01:29)
 Wipe mínimo 0,3 → 0,4 s: entrada 0,133 → 0,1 (piorou: o wipe longo deixa a palavra "acesa" antes de revelar). Revertido.
 Hipótese para o próximo: amarrar o acender ao avanço do wipe (opacidade segue a máscara).
+
+## Ciclo 25 — revelacao (01:50)
+Hipótese do ciclo 24 confirmada: o acender com a mesma duração do wipe → revelacao 8,3 → 10.
+Restam só maquina e esquerda a 1 quadro do alvo.

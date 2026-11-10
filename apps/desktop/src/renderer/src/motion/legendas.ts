@@ -227,7 +227,7 @@ function impacto(palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) {
 function revelacao(palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) {
   porPalavra(palco, t, g, prox, (tl, w, p) => {
     const dur = Math.min(0.45, Math.max(p.fim - p.ini, 0.3))
-    acende(tl, w, p.ini)
+    acende(tl, w, p.ini, dur)  // acende junto com o avanço da máscara (lab ciclo 25)
     tl.fromTo(w, { clipPath: 'inset(-20% 100% -20% 0%)', filter: 'blur(3px)' },
       { clipPath: 'inset(-20% -5% -20% 0%)', filter: 'blur(0px)', duration: dur, ease: 'power2.inOut', ...O }, p.ini)
   }, 1)
