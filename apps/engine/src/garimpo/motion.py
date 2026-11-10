@@ -680,7 +680,8 @@ def _citacao_de_autor(frase: list[Palavra]) -> dict | None:
             continue
         manchete = " ".join(resto[:9])
         destaque = max(resto[:9], key=len)
-        return {"tipo": "documento", "texto": manchete[:70], "destaque": destaque, "rotulo": nome.upper()}
+        return {"tipo": "documento", "texto": manchete[:70], "destaque": destaque, "rotulo": nome.upper(),
+                "gancho": True}   # cliente (10/11): frase de autor pode entrar mesmo nos 5 s do gancho
     return None
 
 
