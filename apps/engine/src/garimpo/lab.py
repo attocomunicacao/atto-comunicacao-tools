@@ -146,7 +146,13 @@ def medir(arq: Path, fundo: Path) -> dict:
     da = np.abs(np.diff(area[meio])) / max(pico, 1e-6)
     v = np.diff(cen[meio], axis=0)
     acc = np.linalg.norm(np.diff(v, axis=0), axis=1)
-    deriva = np.nanmax(np.linalg.norm(cen[meio] - cen[c0], axis=1)) if c1 > c0 else 0.0
+    # deriva: o topo do 1º elemento (o layout é fixo; só a deriva/entrada o movem) entre a entrada e +1 s
+    def topo(k):
+        linhas = np.nonzero(masc[k].any(axis=1))[0]
+        return float(linhas[0]) * 4 if len(linhas) else np.nan
+    k2 = min(e1 + int(1.0 * FPS), max(s1 - 1, e1))
+    deriva = abs(topo(k2) - topo(e1)) if k2 > e1 else 0.0
+    deriva = 0.0 if np.isnan(deriva) else deriva
     return {
         "entrada_s": round((e1 - a0) / FPS, 3),
         "montagem_s": round((c0 - a0) / FPS, 3),   # até o bloco inteiro estar na tela

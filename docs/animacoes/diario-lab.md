@@ -20,3 +20,9 @@ Folha a 30 fps de "sobe" mostrou a palavra indo de cinza a branco em ~5 quadros 
 dava 0,5 s: o ruído de compressão fazia o "início" cair no quadro 0. Métrica v4 desconta esse ruído.
 Com v4: entradas 0,1 s (referência 0,17-0,2) → `acende` 0,2 → 0,3 s → entradas 0,13 s. Média 7,12 → **8,33**.
 Próximo: deriva do bloco 1-3 px (referência 5-15 px) e "elastico" com entrada 0,7 s.
+
+## Ciclo 4 — deriva do bloco (23:27-23:28)
+Mudança: `viver` deriva y −10 → −18 px e escala 2,2% → 3%, curva sine.out (desacelera, nunca para de vez).
+A deriva medida antes usava só o trecho com o bloco completo (curto); métrica v5 mede o topo do 1º elemento por 1 s.
+Média 8,33 → **9,16**. Restam: elastico (entrada 0,7 s), maquina (tremor 3,3), revelacao/glitch (entrada < 0,1 s),
+conceito (saída 0,07 s).

@@ -101,7 +101,7 @@ function compor(palco: HTMLElement, g: Grupo, escada: 1 | -1 = 1, opc: { maiusc?
 function viver(t: T, c: Composicao, g: Grupo, prox: Grupo | undefined, ultimaEntrada: number) {
   const fimVisivel = Math.max(Math.min(g.fim, prox ? prox.ini : g.fim), ultimaEntrada + 0.35)
   const ini = c.palavras[0]?.p.ini ?? g.ini
-  t.fromTo(c.bloco, { y: 0, scale: 1 }, { y: -10, scale: 1.022, duration: Math.max(fimVisivel - ini, 0.3), ease: 'none', immediateRender: false }, ini)
+  t.fromTo(c.bloco, { y: 0, scale: 1 }, { y: -18, scale: 1.03, duration: Math.max(fimVisivel - ini, 0.3), ease: 'sine.out', immediateRender: false }, ini)
   t.to(c.bloco, { opacity: 0, filter: 'blur(10px)', scale: '+=0.012', duration: SAIDA, ease: 'power2.in' }, fimVisivel - SAIDA)
 }
 
