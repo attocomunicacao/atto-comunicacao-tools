@@ -711,17 +711,21 @@
     {
      "rodada": "20261110-000555",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-000811",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-000555",
+    "rodada": "20261110-000811",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.2,
      "montagem_s": 3.367,
      "saida_s": 0.1,
      "salto": 0.022,
-     "tremor": 0.507,
+     "tremor": 0.388,
      "deriva_px": 8.0,
      "cobertura": 0.016
     },
@@ -774,22 +778,26 @@
     {
      "rodada": "20261110-000555",
      "nota": 8.3
+    },
+    {
+     "rodada": "20261110-000811",
+     "nota": 8.3
     }
    ],
    "ultima": {
-    "rodada": "20261110-000555",
+    "rodada": "20261110-000811",
     "nota": 8.3,
     "metricas": {
-     "entrada_s": 0.1,
+     "entrada_s": 0.133,
      "montagem_s": 3.3,
      "saida_s": 0.1,
-     "salto": 0.009,
-     "tremor": 0.322,
+     "salto": 0.037,
+     "tremor": 0.54,
      "deriva_px": 8.0,
      "cobertura": 0.016
     },
     "fora": [
-     "entrada_s=0.1 (alvo 0.15-0.45)"
+     "entrada_s=0.133 (alvo 0.15-0.45)"
     ]
    }
   },
@@ -839,17 +847,21 @@
     {
      "rodada": "20261110-000555",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-000811",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-000555",
+    "rodada": "20261110-000811",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.2,
      "montagem_s": 3.367,
      "saida_s": 0.1,
      "salto": 0.017,
-     "tremor": 0.417,
+     "tremor": 0.401,
      "deriva_px": 4.0,
      "cobertura": 0.016
     },
@@ -1358,6 +1370,12 @@
    "rodada": "20261110-000555",
    "media": 9.43,
    "nota": "ciclo 13: ganchos acendem 0,36 s",
+   "cenarios": 3
+  },
+  {
+   "rodada": "20261110-000811",
+   "media": 9.43,
+   "nota": "ciclo 14: revelacao power2, min 0,3 s",
    "cenarios": 3
   }
  ],

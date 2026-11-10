@@ -225,10 +225,10 @@ function impacto(palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) {
 /** Revelação: cada palavra é revelada da esquerda para a direita por máscara, com um fio de luz na frente. */
 function revelacao(palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) {
   porPalavra(palco, t, g, prox, (tl, w, p) => {
-    const dur = Math.min(0.42, Math.max(p.fim - p.ini, 0.22))
+    const dur = Math.min(0.45, Math.max(p.fim - p.ini, 0.3))
     acende(tl, w, p.ini)
     tl.fromTo(w, { clipPath: 'inset(-20% 100% -20% 0%)', filter: 'blur(3px)' },
-      { clipPath: 'inset(-20% -5% -20% 0%)', filter: 'blur(0px)', duration: dur, ease: 'power3.inOut', ...O }, p.ini)
+      { clipPath: 'inset(-20% -5% -20% 0%)', filter: 'blur(0px)', duration: dur, ease: 'power2.inOut', ...O }, p.ini)
   }, 1)
 }
 

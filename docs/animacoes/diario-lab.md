@@ -72,3 +72,8 @@ Pendentes: elastico (a chave entra na janela de 0,6 s — rever cenário), revel
 ## Ciclo 13 — elastico e ganchos (00:05)
 Métrica v7: janela de entrada 0,5 s → elastico 8,3 → 10. Ganchos com `acende` padrão (0,36 s): glitch 8,3 → 10,
 revelacao 0,067 → 0,1 s (8,3; o wipe por máscara revela mais rápido que o fade). maquina tremor 2,50 (na borda).
+
+## Ciclo 14 — revelacao (00:08)
+Wipe por máscara power3 → power2.inOut, mínimo 0,3 s: entrada 0,1 → 0,133 s. Mantido.
+Situação: legenda e cenas com 9,4+; ganhos agora são marginais. Próximo: render de um corte real com tudo e comparação
+visual lado a lado com a referência (o teste que mais importa ao cliente).
