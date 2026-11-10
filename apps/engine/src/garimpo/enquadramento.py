@@ -258,7 +258,7 @@ def filtro(segmentos: list[Segmento], largura: int, altura: int, fps: float = 30
                     f"[s{i}]split=2[h{i}][r{i}];"
                     f"[h{i}]trim=end={d:.3f},setpts=PTS-STARTPTS,scale=2160:3840:flags=bicubic,"
                     f"zoompan=z='{expr_zoom_entrada(fps)}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s={LARG}x{ALT}:fps={fps:g},"
-                    f"tmix=frames=4,setsar=1,format=yuv420p[hz{i}];"
+                    f"setsar=1,format=yuv420p[hz{i}];"
                     f"[r{i}]trim=start={d:.3f},setpts=PTS-STARTPTS[rr{i}];"
                     f"[hz{i}][rr{i}]concat=n=2:v=1:a=0[z{i}]")
                 rotulos.append(f"[z{i}]")

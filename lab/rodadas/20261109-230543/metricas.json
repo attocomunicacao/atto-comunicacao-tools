@@ -1,0 +1,20 @@
+{
+ "sobe": {
+  "nota": 6.7,
+  "entrada_s": 1.333,
+  "saida_s": 0.067,
+  "salto": 0.034,
+  "tremor": 0.796,
+  "deriva_px": 3.5,
+  "cobertura": 0.016
+ },
+ "conceito": {
+  "nota": 6.7,
+  "entrada_s": 0.0,
+  "saida_s": 0.033,
+  "salto": 0.009,
+  "tremor": 0.363,
+  "deriva_px": 5.1,
+  "cobertura": 0.988
+ }
+}

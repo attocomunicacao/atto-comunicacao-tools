@@ -26,7 +26,12 @@ LIVRES = ("public domain", "cc0", "no restrictions", "pd", "pdm")
 # Nada de imagem que possa constranger o cliente (política, violência, pessoas identificáveis em situação sensível).
 SENSIVEIS = ("protest", "protesto", "manifesta", "riot", "police", "policia", "polícia", "war", "guerra", "army",
              "military", "dead", "death", "morte", "blood", "nude", "naked", "bolsonar", "lula", "trump", "expuls",
-             "fire", "incêndio", "accident", "acidente", "funeral", "prison", "prisão", "weapon", "gun")
+             "fire", "incêndio", "accident", "acidente", "funeral", "prison", "prisão", "weapon", "gun",
+             # v0.7: nada de figura política/pública (a foto do Reagan entrou num corte de teste)
+             "president", "presidente", "reagan", "senator", "senador", "governor", "governador", "minister",
+             "ministro", "congress", "congresso", "parliament", "white house", "politic", "elei", "election",
+             "campaign", "deputad", "king", "queen", "prince", "pope", "papa ", "secretary", "ambassador",
+             "official portrait", "meeting with", "visit of", "oval office")
 STOP_EN = {"the", "a", "an", "of", "with", "and", "in", "on", "for", "at", "to"}
 
 

@@ -49,7 +49,8 @@ DEPENDENTES = CONJUNCOES + (
     "isso ", "isto ", "essa ", "esse ", "essas ", "esses ", "nisso ", "nessa ", "nesse ", "disso ", "dessa ",
     "desse ", "por isso", "por isso,", "tambem ", "alem disso", "ou seja", "dai ", "pois ", "porem ", "contudo",
     "entretanto", "inclusive", "aquilo ", "ele ", "ela ", "eles ", "elas ", "la ", "ali ", "assim ", "logo ",
-    "portanto", "e a ", "e o ", "mas a ", "mas o ")
+    "portanto", "e a ", "e o ", "mas a ", "mas o ", "que ", "ne ", "o que eu ", "como eu falei", "como voce falou",
+    "e o que voce falou", "ate porque", "outra ")
 # Ruído de gravação (bastidor): nunca entra em corte.
 RUIDO_GRAVACAO = [
     "gravando", "estamos gravando", "to gravando", "ta gravando", "pode gravar", "podemos gravar", "vamos gravar",
@@ -178,6 +179,12 @@ def nota_gancho(fs: list[Frase]) -> float:
     nota += 0.1 * min(sum(_contem(t, [m]) for m in GANCHO_FORTE), 3)
     nota -= 0.25 * _limpo(t).lstrip().startswith(VICIOS_INICIO)
     return max(0.0, min(1.0, nota))
+
+
+def comeca_no_meio(f: Frase) -> bool:
+    """O Whisper abre frase nova com maiúscula: começar em minúscula = pedaço do meio de uma fala."""
+    primeira = f.palavras[0].texto.lstrip("\"'“(¿¡")
+    return primeira[:1].isalpha() and primeira[:1].islower()
 
 
 def e_dependente(f: Frase) -> bool:
@@ -380,7 +387,7 @@ def oracoes(f: Frase) -> list[Frase]:
     for k, p in enumerate(f.palavras):
         partes[-1].append(p)
         prox = f.palavras[k + 1] if k + 1 < len(f.palavras) else None
-        if prox and (p.texto.endswith((",", ";", ":")) or prox.ini - p.fim > 0.35):
+        if prox and (p.texto.endswith((",", ";", ":", ".", "?", "!")) or prox.ini - p.fim > 0.35):
             partes.append([])
     saida: list[Frase] = []
     atual: list = []
@@ -412,8 +419,10 @@ def com_teaser(c: Corte, frase: Frase, log=None, exigir_melhor: bool = False) ->
     `frase` pode ser longa: escolhe dentro dela a oração com o gancho mais forte."""
     candidatas = [frase] if TEASER_S[0] <= frase.fim - frase.ini <= TEASER_S[1] else []
     candidatas += oracoes(frase)
+    # v0.7: o gancho é uma FRASE COMPLETA (termina em . ? !) que não começa retomando outra ("que", "mas"...)
     candidatas = [o for o in candidatas if len(o.palavras) >= 5 and not e_ruido(o) and not e_abertura(_norm(o.texto))
-                  and o.ini >= c.ini + 3.0 and o.fim <= c.fim]
+                  and o.ini >= c.ini + 3.0 and o.fim <= c.fim and _termina_frase(o) and not e_dependente(o)
+                  and not continua_ideia(o)]
     if not candidatas:
         return c
     o = max(candidatas, key=lambda x: (nota_gancho([x]) + 0.4 * _centralidade(x, c) - 0.05 * abs((x.fim - x.ini) - 4.5)))
@@ -501,8 +510,10 @@ def sugerir(temas: list[Tema], por_minutos: float = 7.0, juiz=None, log=None, de
     pos = {id(f): i for i, f in enumerate(todas)}
     seguinte = lambda f: todas[pos[id(f)] + 1] if pos[id(f)] + 1 < len(todas) else None  # noqa: E731
     antes = len(lista)
+    pontuada = sum(comeca_no_meio(f) for f in todas) < 0.5 * len(todas)   # transcrição com maiúsculas
     lista = [c for c in lista if admissivel(c.frases, inicio) and MIN_S <= c.duracao <= MAX_S
-             and fecha_bem(c.frases[-1], seguinte(c.frases[-1]))]
+             and fecha_bem(c.frases[-1], seguinte(c.frases[-1]))
+             and not (pontuada and comeca_no_meio(c.frases[0]))]
     if log:
         log(f"{antes - len(lista)} janela(s) descartada(s) por não fechar a ideia ou cortar a fala")
     _semantica(lista, todas, vs, descricao, log)
@@ -534,7 +545,7 @@ def sugerir(temas: list[Tema], por_minutos: float = 7.0, juiz=None, log=None, de
             novo = c
             if 0 < r.inicio < len(c.frases):
                 cand = Corte(c.tema, c.frases[r.inicio:], c.pontuacao)
-                if cand.duracao >= MIN_S and admissivel(cand.frases, inicio):
+                if cand.duracao >= MIN_S and admissivel(cand.frases, inicio) and not comeca_no_meio(cand.frases[0]):
                     novo = cand
                     if log:
                         log(f"    início adiantado para a frase {r.inicio + 1}: “{cand.texto[:60]}…”")

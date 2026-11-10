@@ -163,3 +163,20 @@ html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; backgro
   text-shadow: 0 4px 24px rgba(0, 0, 0, 0.45), 0 0 34px rgba(255, 255, 255, 0.3); }
 .leg-p .letra { display: inline; }
 .leg-linha .cursor { font-weight: 300; margin-left: 2px; }
+
+/* ---------- conceito: ilustração em tela cheia só de motion (narração) ---------- */
+.conceito-fundo { background-color: rgba(8, 9, 12, 0.94); }
+.cena-conceito { position: absolute; left: 80px; right: 80px; top: 330px; height: 1180px; z-index: 31; display: flex;
+  flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 34px; }
+.conceito-sobre { font-size: 50px; font-weight: 500; line-height: 1.15; max-width: 860px; letter-spacing: -0.015em; }
+.conceito-sobre span { display: inline-block; }
+.conceito-arte { position: relative; width: 600px; height: 600px; }
+.conceito-anel { position: absolute; inset: 0; overflow: visible; }
+.conceito-anel circle { fill: none; stroke: #fff; stroke-width: 2.5; filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.6)); }
+.conceito-anel circle.fino { stroke-width: 1; opacity: 0.35; }
+.conceito-anel circle.ponto { fill: #fff; stroke: none; }
+.conceito-icone { position: absolute; inset: 150px; display: grid; place-items: center; }
+.conceito-icone svg { width: 300px; height: 300px; stroke: #fff; stroke-width: 1.4; fill: none;
+  filter: drop-shadow(0 0 14px rgba(255, 255, 255, 0.5)); }
+.conceito-chave { font-family: "Playfair Display", serif; font-style: italic; font-weight: 700; font-size: 128px; line-height: 1;
+  text-shadow: 0 0 40px rgba(255, 255, 255, 0.35); }

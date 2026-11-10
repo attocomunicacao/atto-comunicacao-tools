@@ -403,7 +403,7 @@ def cenas_por_regras(palavras: list[Palavra], origem: float) -> list[dict]:
 
 def _espacar(cenas: list[dict], duracao: float) -> list[dict]:
     """Prioriza número/comparação/destaque sobre ícones; respeita o intervalo mínimo e a duração do corte."""
-    ordem = {"citacao": 0, "imagem": 1, "documento": 2, "destaque": 3, "comparacao": 4, "numero": 5, "icone": 6}
+    ordem = {"citacao": 0, "conceito": 1, "imagem": 1, "documento": 2, "destaque": 3, "comparacao": 4, "numero": 5, "icone": 6}
     escolhidas: list[dict] = []
     icones = 0
     for c in sorted(cenas, key=lambda c: (ordem.get(c["tipo"], 9), c.get("_fraca", False), c["ini"])):
@@ -421,7 +421,7 @@ def _espacar(cenas: list[dict], duracao: float) -> list[dict]:
     escolhidas.sort(key=lambda c: c["ini"])
     for k, c in enumerate(escolhidas):
         prox = escolhidas[k + 1]["ini"] if k + 1 < len(escolhidas) else duracao
-        dur = {"numero": 3.4, "comparacao": 3.6, "citacao": 3.8, "pintura": 3.0, "imagem": 3.4, "documento": 4.0}.get(c["tipo"], 2.8)
+        dur = {"numero": 3.4, "comparacao": 3.6, "citacao": 3.8, "conceito": 3.6, "pintura": 3.0, "imagem": 3.4, "documento": 4.0}.get(c["tipo"], 2.8)
         c["fim"] = round(min(c["ini"] + dur, prox - 0.3, duracao - 0.2), 3)
         c["ini"] = round(max(c["ini"] - 0.15, 0.0), 3)  # entra um tiquinho antes da palavra
         c.pop("_fraca", None)
@@ -433,16 +433,16 @@ PEDIDO_LLM = """Você é motion designer de vídeos curtos (Reels/TikTok). Abaix
 
 {frases}
 
-Planeje animações ilustrativas que reforcem o que é dito (no máximo 4), um título-gancho e até {n_imagens} imagens
-(fotos reais) para frases concretas que ficam mais fortes com uma imagem (lugar, objeto, pessoas trabalhando, dinheiro...).
-Para cada imagem, escreva uma busca curta EM INGLÊS (3 a 5 palavras) que descreva a cena concreta DAQUELA frase
-(objetos, lugares, pessoas trabalhando) — nada genérico, nada copiado de exemplo. Evite política partidária, protestos
-e pessoas famosas. Se nenhuma frase pedir imagem, deixe "imagens" vazio.
-IMPORTANTE: "titulo" e todo "texto" SEMPRE em português do Brasil; só "busca" é em inglês.
+Planeje animações ilustrativas que reforcem o que é dito (no máximo 4), um título-gancho e até {n_imagens} "conceitos":
+ilustrações em tela cheia feitas só de motion (sem foto) que NARRAM a ideia central de uma frase — um ícone grande
+desenhado + as palavras da própria frase. Escolha as frases mais concretas e importantes (não as do começo).
+Para cada conceito: "frase" (número), "texto" = 3 a 6 palavras COPIADAS da frase, na ordem; "chave" = a palavra de
+sentido dessas (substantivo/verbo forte); "icone" = um da lista abaixo que represente a ideia.
+IMPORTANTE: "titulo" e todo "texto" SEMPRE em português do Brasil.
 Tipos: "numero" (valor numérico que aparece na fala), "comparacao" (antes -> depois), "icone" (ícone + rótulo curto), "destaque" (2 a 4 palavras de impacto), "citacao" (a frase mais forte, até 10 palavras, literal), "documento" (recorte de matéria/lei/decisão: "texto" = manchete de até 8 palavras, "destaque" = 1 a 3 palavras da manchete para marcar, "rotulo" = chapéu curto, ex.: "DECISÃO DO STF").
 Ícones permitidos: {icones}.
 Responda só JSON:
-{{"titulo": "2 a 4 palavras que resumem o gancho", "imagens": [{{"frase": n, "busca": "english query", "texto": "rótulo de 2 a 4 palavras"}}], "cenas": [{{"frase": número inteiro da frase, "tipo": "...", "texto": "rótulo de até 4 palavras", "valor": número ou null, "sufixo": "% | mi | bi | h | ''", "antes": "", "depois": "", "icone": "Nome"}}]}}"""
+{{"titulo": "2 a 4 palavras que resumem o gancho", "conceitos": [{{"frase": n, "texto": "palavras da frase", "chave": "palavra", "icone": "Nome"}}], "cenas": [{{"frase": número inteiro da frase, "tipo": "...", "texto": "rótulo de até 4 palavras", "valor": número ou null, "sufixo": "% | mi | bi | h | ''", "antes": "", "depois": "", "icone": "Nome"}}]}}"""
 
 
 def cenas_por_llm(llm, frases: list[tuple[float, str]], n_imagens: int = 2) -> tuple[str | None, list[dict]]:
@@ -486,11 +486,22 @@ def cenas_por_llm(llm, frases: list[tuple[float, str]], n_imagens: int = 2) -> t
             cenas.append(base)
         except (TypeError, ValueError):
             continue
-    for im in (d.get("imagens") or [])[:n_imagens]:
-        k = (inteiro_em(im.get("frase")) or 0) - 1
-        busca = str(im.get("busca") or "").strip()
-        if 0 <= k < len(frases) and busca and re.fullmatch(r"[A-Za-z0-9 ,'-]{3,60}", busca):
-            cenas.append({"tipo": "imagem", "ini": frases[k][0] + 0.3, "busca": busca, "texto": str(im.get("texto") or "")[:32]})
+    for co in (d.get("conceitos") or [])[:n_imagens]:
+        k = (inteiro_em(co.get("frase")) or 0) - 1
+        texto = _limpa(str(co.get("texto") or "")).strip()
+        if not (0 <= k < len(frases) and texto):
+            continue
+        # o texto precisa ser da própria frase (narração, não invenção do modelo)
+        da_frase = {_norm(_limpa(w)) for w in frases[k][1].split()}
+        if sum(_norm(w) in da_frase for w in texto.split()) < max(2, int(0.7 * len(texto.split()))):
+            continue
+        chave = _limpa(str(co.get("chave") or "")).strip()
+        icone_ = co.get("icone") if co.get("icone") in ICONES else None
+        if not icone_:
+            continue
+        cenas.append({"tipo": "conceito", "ini": frases[k][0] + 0.3, "texto": texto[:60], "icone": icone_,
+                      "destaque": chave if _norm(chave) in {_norm(w) for w in texto.split()} else "",
+                      "cobreLegenda": True})
     titulo = str(d.get("titulo") or "").strip()[:32] or None
     return titulo, cenas
 
@@ -562,7 +573,7 @@ def com_imagens(cenas: list[dict], log=None) -> list[dict]:
     return saida
 
 
-def planejar(trechos: list[tuple[float, float, list[Palavra]]], llm=None, log=None, pinturas: bool = True) -> PlanoMotion:
+def planejar(trechos: list[tuple[float, float, list[Palavra]]], llm=None, log=None, pinturas: bool = False) -> PlanoMotion:
     """Plano de um corte formado por 1+ trechos do vídeo (ex.: gancho "cold open" + corpo).
 
     `trechos`: (início no vídeo, fim no vídeo, palavras). Os tempos do plano são do corte montado (trechos em sequência)."""
@@ -585,7 +596,7 @@ def planejar(trechos: list[tuple[float, float, list[Palavra]]], llm=None, log=No
         if k == 0 and len(trechos) > 1 and ws:
             # cold open: a frase de impacto aparece como citação em destaque (aspas, texto escrito no centro)
             citacao = {"tipo": "citacao", "ini": 0.05, "fim": round(fim - ini - 0.05, 3),
-                       "texto": trecho_citacao(ws), "cobreLegenda": True}
+                       "texto": trecho_citacao(ws), "cobreLegenda": True, "gancho": True}
         else:
             cenas += cenas_por_regras(ws, origem)
             cenas += documentos_por_regras(ws, origem)
@@ -698,10 +709,11 @@ def escolher_presets(grupos: list[dict], fim_gancho: float = 4.5) -> None:
 
 # ---------------------------------------------------------------- motor de intercalação (narração ilustrada)
 
-DOMINANTES = ("imagem", "pintura", "citacao")   # cobrem o quadro: o locutor some
+DOMINANTES = ("conceito", "citacao", "imagem", "pintura")   # cobrem o quadro: o locutor some
 MIN_LOCUTOR = 0.60        # fração mínima do corte com o locutor visível (pedido: a animação não ocupa 100%)
 MAX_DOMINANTE_SEGUIDO = 4.2
 RESPIRO_LIMPO = 4.0       # s de locutor limpo (sem nada) entre duas dominantes
+GANCHO_LIVRE_S = 5.0      # nenhuma ilustração nos primeiros 5 s (o gancho precisa do rosto e da fala)
 
 
 def intercalar(cenas: list[dict], duracao: float, log=None) -> list[dict]:
@@ -717,9 +729,11 @@ def intercalar(cenas: list[dict], duracao: float, log=None) -> list[dict]:
     ultima_dom_fim = -1e9
     saida: list[dict] = []
     for c in sorted(cenas, key=lambda c: c["ini"]):
+        if c["ini"] < GANCHO_LIVRE_S and not c.get("gancho"):
+            continue                          # os primeiros segundos são do gancho: locutor + legenda, nada por cima
         if c["tipo"] in DOMINANTES:
             dur = min(c["fim"] - c["ini"], MAX_DOMINANTE_SEGUIDO)
-            if c.get("cobreLegenda"):           # citação do gancho: já é o começo do corte, entra sempre
+            if c.get("gancho"):                 # citação do gancho: já é o começo do corte, entra sempre
                 dur = c["fim"] - c["ini"]
             elif usado + dur > orcamento or c["ini"] - ultima_dom_fim < RESPIRO_LIMPO:
                 continue

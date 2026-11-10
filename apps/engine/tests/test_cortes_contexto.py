@@ -78,7 +78,7 @@ def test_cold_open_usa_oracao_curta_de_frase_longa():
     def f(t, ini, passo=0.33):
         return Frase([Palavra(w, ini + i * passo, ini + i * passo + 0.3) for i, w in enumerate(t.split())])
     a = f("A reforma começou no ano passado e o setor ficou parado esperando por meses sem saber o que fazer.", 0)
-    b = f("Então, são 75 milhões de pessoas que vão perder renda, e ninguém fala disso no Congresso, porque é um tema que não dá voto.", 30)
+    b = f("Então, são 75 milhões de pessoas que vão perder renda. E ninguém fala disso no Congresso, porque é um tema que não dá voto.", 30)
     c = Corte("t", [a, b, f("conteúdo " * 20 + ".", 60)], 1.0)
     r = cortes.teaser_heuristico(c)
     assert r.teaser is not None and r.teaser.texto.startswith("são 75 milhões")  # sem o "Então," solto

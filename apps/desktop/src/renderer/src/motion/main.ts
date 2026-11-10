@@ -303,19 +303,65 @@ function fundoCheio(t: gsap.core.Timeline, c: Cena) {
   t.to(f, { opacity: 0, filter: 'blur(16px)', duration: 0.45, ease: 'power2.in' }, c.fim - 0.4)
 }
 
+/**
+ * Conceito (v0.7, narração ilustrada — videoplayback (3).mp4): a frase vira uma ilustração em tela cheia feita só de
+ * motion (sem foto): fundo texturizado escuro, um ícone grande desenhado traço a traço dentro de um anel que gira,
+ * a frase falada em cima (pequena) e a palavra-chave embaixo em serifa. Entra e sai em desfoque; a câmera aproxima.
+ */
+function cenaConceito(t: gsap.core.Timeline, c: Cena) {
+  const fundo = el('div', 'citacao-fundo conceito-fundo')
+  const caixa = el('div', 'cena-conceito')
+  const sobre = el('div', 'conceito-sobre')
+  const palavras = (c.texto ?? '').split(/\s+/).filter(Boolean)
+  palavras.forEach((p) => sobre.append(el('span', 'sans', p.toLowerCase()), document.createTextNode(' ')))
+  const arte = el('div', 'conceito-arte')
+  const anel = svgEl('svg', { viewBox: '0 0 600 600', width: 600, height: 600, class: 'conceito-anel' })
+  const circ = svgEl('circle', { cx: 300, cy: 300, r: 270 })
+  const circ2 = svgEl('circle', { cx: 300, cy: 300, r: 228, class: 'fino' })
+  const ponto = svgEl('circle', { cx: 300, cy: 30, r: 9, class: 'ponto' })
+  anel.append(circ, circ2, ponto)
+  const ic = el('div', 'conceito-icone')
+  ic.innerHTML = icone(c.icone)
+  arte.append(anel, ic)
+  const chave = el('div', 'conceito-chave', (c.destaque || palavras[palavras.length - 1] || '').toLowerCase())
+  caixa.append(sobre, arte, chave)
+  palco.append(fundo, caixa)
+  gsap.set([fundo, caixa, ponto], { opacity: 0 })
+  const d = c.fim - c.ini
+  t.fromTo(fundo, { opacity: 0 }, { opacity: 1, duration: 0.35, ease: 'power2.out', immediateRender: false }, c.ini)
+  t.fromTo(caixa, { opacity: 0, scale: 1.08, filter: 'blur(18px)' },
+    { opacity: 1, scale: 1, filter: 'blur(0px)', duration: 0.55, ease: 'expo.out', immediateRender: false }, c.ini)
+  t.to(tracos(anel), { strokeDashoffset: 0, duration: 1.0, ease: 'power2.inOut', stagger: 0.12 }, c.ini + 0.1)
+  t.to(ponto, { opacity: 1, duration: 0.2 }, c.ini + 0.9)
+  t.fromTo(anel, { rotate: -30 }, { rotate: 120, duration: d, ease: 'none', immediateRender: false }, c.ini)
+  const svgIc = ic.querySelector('svg')
+  if (svgIc) {
+    t.to(tracos(svgIc), { strokeDashoffset: 0, duration: 1.1, ease: 'power2.inOut', stagger: 0.08 }, c.ini + 0.25)
+    t.fromTo(svgIc, { scale: 0.85 }, { scale: 1, duration: 1.2, ease: 'expo.out', immediateRender: false }, c.ini + 0.25)
+  }
+  const passo = Math.min(0.16, (d * 0.4) / Math.max(palavras.length, 1))
+  t.fromTo(sobre.children, { opacity: 0, y: 16, filter: 'blur(8px)' },
+    { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.35, ease: 'power3.out', stagger: passo, immediateRender: false }, c.ini + 0.15)
+  t.fromTo(chave, { opacity: 0, letterSpacing: '0.08em', filter: 'blur(14px)' },
+    { opacity: 1, letterSpacing: '0em', filter: 'blur(0px)', duration: 0.6, ease: 'power2.out', immediateRender: false }, c.ini + 0.55)
+  t.fromTo(caixa, { y: 0 }, { y: -18, duration: d, ease: 'none', immediateRender: false }, c.ini)
+  t.to([fundo, caixa], { opacity: 0, filter: 'blur(16px)', duration: 0.3, ease: 'power2.in' }, c.fim - 0.3)
+}
+
 async function cenas(job: JobMotion, t: gsap.core.Timeline) {
   for (const c of job.cenas) {
     if (c.telaCheia) fundoCheio(t, c)
     const antes = new Set(palco.children)
     if (c.tipo === 'imagem' && c.img) await cenaImagem3D(palco, t, c, desenhos)
     else if (c.tipo === 'citacao') cenaCitacao(t, c)
+    else if (c.tipo === 'conceito') cenaConceito(t, c)
     else if (c.tipo === 'pintura' && c.img) cenaPintura(t, c)
     else if (c.tipo === 'numero' || c.tipo === 'comparacao') cenaGrafico(t, c)
     else if (c.tipo === 'icone') cenaIcone(t, c)
     else if (c.tipo === 'documento') cenaDocumento(t, c)
     else cenaLinha(t, c)
     // cenas que não são tela cheia vão para a caixa livre de rostos (mapa de espaço)
-    if (c.caixa && !['imagem', 'pintura', 'citacao'].includes(c.tipo)) {
+    if (c.caixa && !['imagem', 'pintura', 'citacao', 'conceito'].includes(c.tipo)) {
       for (const novo of [...palco.children].filter((x) => !antes.has(x)) as HTMLElement[]) {
         if (novo.classList.contains('fundo-cheio')) continue
         if (novo.classList.contains('vinheta')) {

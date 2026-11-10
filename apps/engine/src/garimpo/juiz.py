@@ -104,16 +104,18 @@ class Juiz:
     def avaliar(self, c: Corte, antes=None, depois=None, descricao: str = "") -> Avaliacao:
         from . import cache
         pedido = montar_prompt(c, antes, depois, descricao) + " /no_think"
-        k = cache.chave("juiz-v2", pedido)
+        k = cache.chave("juiz-v3", pedido)
         guardado = cache.ler_json("juiz", k)  # reteste do mesmo vídeo: mesma nota, sem rodar o LLM de novo
-        if guardado:
+        if guardado and '"gancho"' in guardado:
             return interpretar(guardado, len(c.frases))
         try:
             r = self.llm.create_chat_completion(
                 messages=[{"role": "system", "content": SISTEMA}, {"role": "user", "content": pedido}],
-                response_format={"type": "json_object"}, temperature=0.1, max_tokens=200)
+                # sem gramática JSON: com ela o Qwen3-4B responde "{}" em pedidos longos (como o de cenas)
+                temperature=0.1, max_tokens=260)
             texto = r["choices"][0]["message"]["content"]
-            cache.gravar_json("juiz", k, texto)
+            if '"gancho"' in texto:      # só guarda resposta válida
+                cache.gravar_json("juiz", k, texto)
             return interpretar(texto, len(c.frases))
         except Exception:
             return Avaliacao(5, 5, 5, 5, False, 0, 0, 5)

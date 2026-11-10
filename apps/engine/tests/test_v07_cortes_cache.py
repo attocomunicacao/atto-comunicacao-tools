@@ -90,3 +90,12 @@ def test_refinar_tempos_puxa_fim_para_onde_a_voz_acaba():
     transcricao.refinar_tempos(ws, {"sr": sr, "x": x}, 30.0)
     assert abs(ws[0].fim - 1.4) < 0.05
     assert abs(ws[0].ini - 0.5) < 0.05
+
+
+def test_gancho_nunca_e_frase_pela_metade():
+    from garimpo.modelos import Corte
+    a = frase("A conversa de hoje é sobre como o setor produtivo se organiza diante das novas regras.", 0, 10)
+    b = frase("Você tem, sempre quando você tem uma nova lei, um período de adaptação para todo mundo.", 12, 8)
+    c = Corte("t", [a, b, frase("conteúdo " * 30 + ".", 22, 20)], 1.0)
+    r = cortes.com_teaser(c, b)
+    assert r.teaser is None or r.teaser.texto.rstrip().endswith((".", "?", "!"))

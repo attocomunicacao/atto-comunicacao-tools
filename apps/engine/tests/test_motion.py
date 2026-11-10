@@ -149,3 +149,23 @@ def test_sem_espaco_a_cena_vira_tela_cheia():
     cenas = [{"tipo": "icone", "ini": 0, "fim": 1}]
     espaco.aplicar(m, [], cenas)
     assert cenas[0]["telaCheia"] and cenas[0]["zona"] == "cheia"
+
+
+def test_gancho_sem_ilustracao_e_imagem_politica_bloqueada():
+    from garimpo import imagens
+    out = motion.intercalar([{"tipo": "imagem", "ini": 0.5, "fim": 4}, {"tipo": "icone", "ini": 3, "fim": 5},
+                             {"tipo": "citacao", "ini": 0.05, "fim": 4, "cobreLegenda": True, "gancho": True}], 60.0)
+    assert [c["tipo"] for c in out] == ["citacao"]
+    assert not imagens._relevante("President Ronald Reagan meets with dialogue partners", "dialogue meeting")
+
+
+def test_conceitos_vem_da_frase_e_cobrem_legenda():
+    class LLM:
+        def create_chat_completion(self, **k):
+            return {"choices": [{"message": {"content": '{"titulo": "x", "cenas": [], "conceitos": ['
+                    '{"frase": 2, "texto": "a lei muda o caixa", "chave": "caixa", "icone": "Scale"},'
+                    '{"frase": 2, "texto": "palavras inventadas aqui agora", "chave": "x", "icone": "Scale"}]}'}}]}
+    frases = [(0.0, "Bom dia."), (6.0, "Na prática a lei muda o caixa da empresa.")]
+    _, cenas = motion.cenas_por_llm(LLM(), frases, n_imagens=2)
+    con = [c for c in cenas if c["tipo"] == "conceito"]
+    assert len(con) == 1 and con[0]["destaque"] == "caixa" and con[0]["cobreLegenda"]

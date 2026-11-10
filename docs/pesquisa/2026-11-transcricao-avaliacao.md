@@ -41,6 +41,12 @@
   locutor continua vindo do vídeo (rostos).
 - Fontes: [WhisperX — guia](https://localaimaster.com/blog/whisperx-guide), [Fora Soft — WhisperX e tempos por palavra](https://www.forasoft.com/learn/ai-for-video-engineering/articles-ai/whisperx-diarization-word-level-timestamps), [faster-whisper — guia](https://cdn.localaimaster.com/blog/faster-whisper-guide).
 
+- **Beam 3** (mesmo trecho): 420 s, mas a pontuação desaba na 2ª metade ("nacional a gente que acompanha
+  diariamente a comissão do trabalho né que é..."). **Mantido beam 5.**
+- **Configuração nova** (prompt + filtro + refino): 874 palavras, texto igual ou melhor que o atual, pontuação
+  preservada; o refino custa < 1 s. Medida feita em paralelo com outra análise (CPU dividida), por isso 433 s;
+  o custo do Whisper em si não mudou.
+
 ## 5. O que entrou (v0.7)
 P1 `cache.py` + `pipeline.transcrever(refazer=)` + app; P2 `transcricao.refinar_tempos`; P3 `_alucinado`;
 P4 `PROMPT_INICIAL`. Testes: `tests/test_v07_cortes_cache.py`. Reteste do mesmo vídeo: etapa de transcrição pula

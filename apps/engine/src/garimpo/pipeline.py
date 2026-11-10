@@ -275,7 +275,7 @@ def exportar(video: Path, pasta: Path, aprovados: list[int], logo: Path | None =
         for j, (a, b, _) in enumerate(partes):
             zooms = [z - deslocamento for z in plano.zooms if deslocamento <= z < deslocamento + (b - a) - 2]
             # cache por conteúdo: reeditar só a animação não refaz o reenquadramento (ATTO_MANTER_TMP=1)
-            chave = hashlib.sha1(json.dumps([video.name, a, b, zooms, j == 0, "v3"]).encode()).hexdigest()[:10]
+            chave = hashlib.sha1(json.dumps([video.name, a, b, zooms, j == 0, "v4"]).encode()).hexdigest()[:10]
             arq = tmp / f"{nome}-{j}-{chave}.mkv"
             cache_flash = arq.with_suffix(".flash.json")
             if not (manter and arq.exists() and cache_flash.exists()):

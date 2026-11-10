@@ -10,7 +10,7 @@ export interface Grupo {
 }
 
 export interface Cena {
-  tipo: 'numero' | 'comparacao' | 'icone' | 'destaque' | 'citacao' | 'pintura' | 'imagem' | 'documento'
+  tipo: 'numero' | 'comparacao' | 'icone' | 'destaque' | 'citacao' | 'pintura' | 'imagem' | 'documento' | 'conceito'
   ini: number
   fim: number
   texto?: string

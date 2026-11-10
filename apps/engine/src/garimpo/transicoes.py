@@ -23,8 +23,10 @@ FLASH_ANTES = 0.4    # s antes do corte
 FLASH_DEPOIS = 0.4   # s depois do corte
 # Medido em videoplayback (2).mp4 (27,2-28,4 s, quadro a quadro): o 1º quadro é um borrão ampliado (~250%),
 # em 0,3 s já está em ~140% e assenta em 100% perto de 1 s — "ease out" com a curva puxada, obturador 360°.
-ZOOM_INICIAL = 2.5   # escala no 1º quadro do plano que entra
-ZOOM_DURACAO = 1.0   # s até assentar em 100%
+# v0.7 (retorno do cliente): 250% em 1 s com tmix ficou com "fantasmas" e lento demais. Agora é um punch-in
+# curto e limpo: 145% → 100% em 0,45 s, ease-out exponencial, sem mistura de quadros.
+ZOOM_INICIAL = 1.45  # escala no 1º quadro do plano que entra
+ZOOM_DURACAO = 0.45  # s até assentar em 100%
 
 # Padrão QUADRO A QUADRO (v0.7, medido em videoplayback (1).mp4, 0,5-1,35 s a 24 fps): a silhueta branca pisca
 # um quadro sim, um não; A = plano que sai, B = plano que entra, "w" = silhueta. Termina limpo em B.
