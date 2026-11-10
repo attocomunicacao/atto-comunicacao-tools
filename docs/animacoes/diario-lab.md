@@ -45,3 +45,9 @@ Nova medida `lab.medir_zoom` (escala por quadro via ORB + afim). Nosso corte: 1,
 A referência não mede bem automaticamente (texto e desfoque por cima); vale a leitura visual (~1 s até assentar).
 Mudança: 0,7 s e expoente -7 (curva: 1,19 @0,1 s · 1,03 @0,3 s · 1,0 @0,7 s). Cache dos trechos v5.
 Validar no próximo corte exportado com `lab.medir_zoom(corte, 0, 1.2)`.
+
+## Ciclo 9 — transições num corte real (00:00)
+corte-02 exportado. **Zoom inicial**: 1,43 → ~1,05 em 0,35 s, cauda suave (ok). **Flash cut**: alternância quadro a
+quadro com silhueta branca, igual à referência; no plano lateral a mesa/notebook entram na silhueta (a segmentação
+marca a base do quadro com 0,73-0,93). Tentativas: maior contorno + âncora no rosto → sem ganho, revertidas.
+Ideia registrada no banco: trocar o modelo de segmentação (multiclasse/matting). Próximo: pesquisar o modelo.

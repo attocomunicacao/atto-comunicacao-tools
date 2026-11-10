@@ -1083,6 +1083,28 @@
     },
     "fora": []
    }
+  },
+  "flash_cut": {
+   "categoria": "transicao",
+   "ultima": {
+    "rodada": "ciclo 9",
+    "nota": 8.0,
+    "metricas": {
+     "padrao": "quadro a quadro, igual à referência",
+     "defeito": "objetos na silhueta em plano lateral"
+    }
+   }
+  },
+  "zoom_inicial": {
+   "categoria": "transicao",
+   "ultima": {
+    "rodada": "ciclo 9",
+    "nota": 9.0,
+    "metricas": {
+     "escala_inicial": 1.43,
+     "assenta_s": 0.37
+    }
+   }
   }
  },
  "rodadas": [
@@ -1193,6 +1215,15 @@
    "media": 10.0,
    "nota": "ciclo 7: conceito sai em 0,4 s power1.inOut",
    "cenarios": 2
+  }
+ ],
+ "ideias": [
+  {
+   "nome": "silhueta do flash sem objetos",
+   "categoria": "transicao",
+   "como": "trocar MediaPipe Selfie Segmentation por modelo multiclasse (ex.: MediaPipe selfie_multiclass, só a classe pessoa/pele/cabelo/roupa) ou matting (RVM, MODNet - checar licença)",
+   "por_que": "no plano lateral a mesa/notebook entram na silhueta com prob. 0,73-0,93 (ciclo 9)",
+   "status": "pendente"
   }
  ]
 }
