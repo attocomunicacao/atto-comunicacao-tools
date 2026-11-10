@@ -83,17 +83,21 @@
     {
      "rodada": "20261110-002922",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-003108",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-002922",
+    "rodada": "20261110-003108",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.2,
      "montagem_s": 3.367,
      "saida_s": 0.1,
      "salto": 0.021,
-     "tremor": 0.377,
+     "tremor": 0.347,
      "deriva_px": 8.0,
      "cobertura": 0.017
     },
@@ -237,23 +241,25 @@
     {
      "rodada": "20261110-002922",
      "nota": 8.3
+    },
+    {
+     "rodada": "20261110-003108",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-002922",
-    "nota": 8.3,
+    "rodada": "20261110-003108",
+    "nota": 10.0,
     "metricas": {
-     "entrada_s": 0.133,
-     "montagem_s": 3.3,
+     "entrada_s": 0.167,
+     "montagem_s": 3.333,
      "saida_s": 0.1,
-     "salto": 0.026,
-     "tremor": 0.355,
-     "deriva_px": 4.0,
+     "salto": 0.019,
+     "tremor": 0.366,
+     "deriva_px": 8.0,
      "cobertura": 0.017
     },
-    "fora": [
-     "entrada_s=0.133 (alvo 0.15-0.45)"
-    ]
+    "fora": []
    }
   },
   "maquina": {
@@ -1511,6 +1517,12 @@
    "rodada": "20261110-002922",
    "media": 9.15,
    "nota": "ciclo 19: palavras pequenas peso 600",
+   "cenarios": 2
+  },
+  {
+   "rodada": "20261110-003108",
+   "media": 10.0,
+   "nota": "ciclo 20: cinematico com acende padrao",
    "cenarios": 2
   }
  ],

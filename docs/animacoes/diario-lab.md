@@ -98,3 +98,6 @@ Folhas de contato: documento ok; gráfico de número encostava na borda direita 
 ## Ciclo 19 — tipografia da legenda (00:29)
 Lado a lado com a referência (videoplayback.mp4 3,9 s): composição em escada igual; a referência usa palavras pequenas
 mais pesadas e justas. Inter 500 → 600, tracking -0,015 → -0,03 em. Métricas iguais (sobe 10), visual mais próximo.
+
+## Ciclo 20 — cinematico (00:31)
+Palavras pequenas usavam fade próprio (0,3 s power2) → `acende` padrão + movimento 0,4 s. cinematico 8,3 → 10.

@@ -162,7 +162,8 @@ const cinematicoE: Entrada = (t, w, p, _o, tam, chave) => {
     t.fromTo(w, { opacity: 0, letterSpacing: '0.06em', scale: 1.05, filter: 'blur(14px)' },
       { opacity: 1, letterSpacing: '0em', scale: 1, filter: 'blur(0px)', duration: 0.55, ease: 'power2.out', ...O }, p.ini)
   } else {
-    t.fromTo(w, { opacity: 0, y: tam * 0.2, filter: 'blur(5px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.3, ease: 'power2.out', ...O }, p.ini)
+    acende(t, w, p.ini)
+    t.fromTo(w, { y: tam * 0.2, filter: 'blur(5px)' }, { y: 0, filter: 'blur(0px)', duration: 0.4, ease: 'power2.out', ...O }, p.ini)
   }
 }
 /** Elástico (referência: um risco de luz que se comprime até a palavra). Sem quique: compressão expo. */
