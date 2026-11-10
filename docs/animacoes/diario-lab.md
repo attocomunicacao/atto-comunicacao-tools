@@ -68,3 +68,7 @@ Próximo: "subtle scale" na entrada das palavras.
 12a: escala 0,96 → 1 no "sobe" (ideia do banco) → neutro (8,3 = 8,3) → revertido pela regra.
 12b: `acende` 0,30 → 0,36 s → rodada completa **9,34** (sobe, desce, direita, impacto = 10; maquina 8,3).
 Pendentes: elastico (a chave entra na janela de 0,6 s — rever cenário), revelacao 0,07 s, glitch 0,1 s.
+
+## Ciclo 13 — elastico e ganchos (00:05)
+Métrica v7: janela de entrada 0,5 s → elastico 8,3 → 10. Ganchos com `acende` padrão (0,36 s): glitch 8,3 → 10,
+revelacao 0,067 → 0,1 s (8,3; o wipe por máscara revela mais rápido que o fade). maquina tremor 2,50 (na borda).

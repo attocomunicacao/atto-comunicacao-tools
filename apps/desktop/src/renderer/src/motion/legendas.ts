@@ -226,7 +226,7 @@ function impacto(palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) {
 function revelacao(palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) {
   porPalavra(palco, t, g, prox, (tl, w, p) => {
     const dur = Math.min(0.42, Math.max(p.fim - p.ini, 0.22))
-    acende(tl, w, p.ini, 0.22)
+    acende(tl, w, p.ini)
     tl.fromTo(w, { clipPath: 'inset(-20% 100% -20% 0%)', filter: 'blur(3px)' },
       { clipPath: 'inset(-20% -5% -20% 0%)', filter: 'blur(0px)', duration: dur, ease: 'power3.inOut', ...O }, p.ini)
   }, 1)
@@ -235,7 +235,7 @@ function revelacao(palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) {
 /** Glitch (monocromático, referência "LINK NA BIO"): cópias fantasmas deslocadas que convergem em ~0,3 s. */
 function glitch(palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) {
   porPalavra(palco, t, g, prox, (tl, w, p) => {
-    acende(tl, w, p.ini, 0.2)
+    acende(tl, w, p.ini)
     const q = { v: 0 }
     tl.to(q, { v: 1, duration: 0.3, ease: 'none', onUpdate: () => {
       const a = (1 - q.v) * 18

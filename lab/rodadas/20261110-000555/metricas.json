@@ -1,0 +1,32 @@
+{
+ "impacto": {
+  "nota": 10.0,
+  "entrada_s": 0.2,
+  "montagem_s": 3.367,
+  "saida_s": 0.1,
+  "salto": 0.022,
+  "tremor": 0.507,
+  "deriva_px": 8.0,
+  "cobertura": 0.016
+ },
+ "revelacao": {
+  "nota": 8.3,
+  "entrada_s": 0.1,
+  "montagem_s": 3.3,
+  "saida_s": 0.1,
+  "salto": 0.009,
+  "tremor": 0.322,
+  "deriva_px": 8.0,
+  "cobertura": 0.016
+ },
+ "glitch": {
+  "nota": 10.0,
+  "entrada_s": 0.2,
+  "montagem_s": 3.367,
+  "saida_s": 0.1,
+  "salto": 0.017,
+  "tremor": 0.417,
+  "deriva_px": 4.0,
+  "cobertura": 0.016
+ }
+}

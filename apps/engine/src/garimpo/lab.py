@@ -130,7 +130,7 @@ def medir(arq: Path, fundo: Path) -> dict:
     cheio = np.nonzero(area >= 0.95 * pico)[0]
     c0, c1 = int(cheio[0]), int(cheio[-1])
     # entrada do 1º elemento: do 1º quadro visível até 90% do nível que ele tem 0,6 s depois (antes do 2º)
-    nivel = area[min(a0 + int(0.6 * FPS), n - 1)]
+    nivel = area[min(a0 + int(0.5 * FPS), n - 1)]  # 0,5 s: cobre o alvo (≤ 0,45) sem pegar a 2ª palavra
     e1 = next((k for k in range(a0, n) if area[k] >= 0.9 * nivel), a0)
     # saída: do último quadro com 90% do nível de 0,6 s antes do fim até sumir
     nivel_s = area[max(a1 - int(0.6 * FPS), 0)]
