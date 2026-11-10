@@ -55,17 +55,21 @@
     {
      "rodada": "20261109-232807",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261109-233211",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261109-232807",
+    "rodada": "20261109-233211",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.167,
      "montagem_s": 3.333,
      "saida_s": 0.1,
      "salto": 0.019,
-     "tremor": 0.369,
+     "tremor": 0.346,
      "deriva_px": 8.0,
      "cobertura": 0.016
     },
@@ -175,17 +179,21 @@
     {
      "rodada": "20261109-232807",
      "nota": 8.3
+    },
+    {
+     "rodada": "20261109-233211",
+     "nota": 8.3
     }
    ],
    "ultima": {
-    "rodada": "20261109-232807",
+    "rodada": "20261109-233211",
     "nota": 8.3,
     "metricas": {
      "entrada_s": 0.133,
      "montagem_s": 3.3,
      "saida_s": 0.1,
      "salto": 0.026,
-     "tremor": 0.377,
+     "tremor": 0.351,
      "deriva_px": 8.0,
      "cobertura": 0.016
     },
@@ -228,23 +236,31 @@
     {
      "rodada": "20261109-232807",
      "nota": 6.7
+    },
+    {
+     "rodada": "20261109-233211",
+     "nota": 6.7
+    },
+    {
+     "rodada": "20261109-233245",
+     "nota": 6.7
     }
    ],
    "ultima": {
-    "rodada": "20261109-232807",
+    "rodada": "20261109-233245",
     "nota": 6.7,
     "metricas": {
      "entrada_s": 0.133,
      "montagem_s": 3.533,
      "saida_s": 0.067,
-     "salto": 0.063,
-     "tremor": 3.255,
+     "salto": 0.033,
+     "tremor": 2.756,
      "deriva_px": 8.0,
      "cobertura": 0.026
     },
     "fora": [
      "entrada_s=0.133 (alvo 0.15-0.45)",
-     "tremor=3.255 (alvo 0.0-2.5)"
+     "tremor=2.756 (alvo 0.0-2.5)"
     ]
    }
   },
@@ -1047,6 +1063,18 @@
    "media": 9.16,
    "nota": "metrica v5: deriva pelo topo; ciclo 4 aplicado",
    "cenarios": 18
+  },
+  {
+   "rodada": "20261109-233211",
+   "media": 8.33,
+   "nota": "ciclo 5: cursor com pulso suave",
+   "cenarios": 3
+  },
+  {
+   "rodada": "20261109-233245",
+   "media": 6.7,
+   "nota": "ciclo 5b: letras acendem em 0,1 s",
+   "cenarios": 1
   }
  ]
 }

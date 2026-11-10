@@ -206,7 +206,7 @@ function maquina(palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) {
   const pisca = { v: 0 }
   const d = Math.max(g.fim - fimDigitacao, 0.3)
   t.to(pisca, { v: 1, duration: d, ease: 'none', onUpdate: () => {
-    cursor.style.opacity = Math.floor(pisca.v * d * 2) % 2 === 0 ? '1' : '0.15'
+    cursor.style.opacity = String(0.675 + 0.325 * Math.cos(pisca.v * d * Math.PI * 2)) // pulso suave, sem degrau
   } }, fimDigitacao)
   viver(t, c, g, prox, letras.length ? letras[letras.length - 1][1] : g.ini)
 }

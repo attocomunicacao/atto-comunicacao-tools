@@ -26,3 +26,7 @@ Mudança: `viver` deriva y −10 → −18 px e escala 2,2% → 3%, curva sine.o
 A deriva medida antes usava só o trecho com o bloco completo (curto); métrica v5 mede o topo do 1º elemento por 1 s.
 Média 8,33 → **9,16**. Restam: elastico (entrada 0,7 s), maquina (tremor 3,3), revelacao/glitch (entrada < 0,1 s),
 conceito (saída 0,07 s).
+
+## Ciclo 5 — maquina, cursor (23:32)
+Prompt: lab/prompts/20261109-2333-maquina-cursor.md. 5a: cursor com pulso senoidal (sem degrau) → tremor 3,26 → 2,68 ✔.
+5b: letras com fade de 0,1 s → 2,76 (ruído) ✘ revertido. Próximo: elastico (entrada 0,7 s).
