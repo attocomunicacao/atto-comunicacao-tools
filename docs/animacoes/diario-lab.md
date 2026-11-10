@@ -120,3 +120,7 @@ fica escura em serifa. Nota 10 no laboratório; entrou no rodízio do motor (`mo
 
 ### Rodada completa 01:06 — média 9,77 (19 de 22 em 10)
 Restantes (maquina, esquerda, revelacao) a 1 quadro do alvo (0,133 vs 0,15 s). Sem regressão do preset "marca".
+
+## Ciclo 24 — revelacao (01:29)
+Wipe mínimo 0,3 → 0,4 s: entrada 0,133 → 0,1 (piorou: o wipe longo deixa a palavra "acesa" antes de revelar). Revertido.
+Hipótese para o próximo: amarrar o acender ao avanço do wipe (opacidade segue a máscara).

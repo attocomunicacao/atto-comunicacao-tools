@@ -825,17 +825,21 @@
     {
      "rodada": "20261110-010609",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-012911",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-010609",
+    "rodada": "20261110-012911",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.2,
      "montagem_s": 3.367,
      "saida_s": 0.1,
-     "salto": 0.021,
-     "tremor": 0.405,
+     "salto": 0.019,
+     "tremor": 0.324,
      "deriva_px": 8.0,
      "cobertura": 0.017
     },
@@ -900,22 +904,26 @@
     {
      "rodada": "20261110-010609",
      "nota": 8.3
+    },
+    {
+     "rodada": "20261110-012911",
+     "nota": 8.3
     }
    ],
    "ultima": {
-    "rodada": "20261110-010609",
+    "rodada": "20261110-012911",
     "nota": 8.3,
     "metricas": {
-     "entrada_s": 0.133,
+     "entrada_s": 0.1,
      "montagem_s": 3.3,
      "saida_s": 0.1,
-     "salto": 0.037,
-     "tremor": 0.496,
+     "salto": 0.03,
+     "tremor": 0.461,
      "deriva_px": 8.0,
      "cobertura": 0.017
     },
     "fora": [
-     "entrada_s=0.133 (alvo 0.15-0.45)"
+     "entrada_s=0.1 (alvo 0.15-0.45)"
     ]
    }
   },
@@ -1755,6 +1763,12 @@
    "media": 9.77,
    "nota": "rodada completa ciclo 23",
    "cenarios": 22
+  },
+  {
+   "rodada": "20261110-012911",
+   "media": 9.15,
+   "nota": "ciclo 24: revelacao min 0,4 s",
+   "cenarios": 2
   }
  ],
  "ideias": [
