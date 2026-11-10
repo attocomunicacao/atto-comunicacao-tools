@@ -150,12 +150,17 @@ def zona_livre(mapa: MapaRostos | None, ini: float, fim: float, tipo: str) -> st
     return caixa_livre(mapa, ini, fim, tipo)[0]
 
 
+# tamanho de projeto de cada cena (igual a PROJETO em motion/main.ts)
+PROJETO = {"destaque": (1080, 600), "numero": (820, 700), "comparacao": (820, 700), "icone": (1080, 640),
+           "documento": (860, 640)}
+
+
 def aplicar(mapa: MapaRostos | None, grupos: list[dict], cenas: list[dict], log=None) -> None:
     """Grava `zona` (nome) e `caixa` (x, y, w, h) de cada linha de legenda e de cada cena."""
     for g in grupos:
         g["zona"], g["caixa"] = caixa_livre(mapa, g["ini"], g["fim"], "legenda")
     for c in cenas:
-        if c.get("tipo") in ("imagem", "pintura", "citacao"):
+        if c.get("tipo") in ("imagem", "pintura", "citacao", "conceito"):
             c["zona"] = "cheia"
             continue
         c["zona"], c["caixa"] = caixa_livre(mapa, c["ini"], c["fim"], "cena")
@@ -176,6 +181,14 @@ def aplicar(mapa: MapaRostos | None, grupos: list[dict], cenas: list[dict], log=
                 meio = cx[3] // 2
                 c["caixa"] = (cx[0], cx[1], cx[2], meio - 10)
                 g["caixa"] = (gx[0], cx[1] + meio, gx[2], max(gx[1] + gx[3] - (cx[1] + meio), 200))
+    # lab ciclo 15: cena que teria de encolher abaixo de 60% para caber vira tela cheia (cartão minúsculo é ilegível)
+    for c in cenas:
+        cx = c.get("caixa")
+        if not cx or c.get("telaCheia"):
+            continue
+        dw, dh = PROJETO.get(c.get("tipo"), (1080, 600))
+        if min(cx[2] / dw, cx[3] / dh) < 0.6:
+            c["zona"], c["caixa"], c["telaCheia"] = "cheia", (40, 240, 1000, 1000), True
     if log:
         uso: dict[str, int] = {}
         for x in grupos:

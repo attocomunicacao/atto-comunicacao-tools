@@ -477,6 +477,11 @@ def cenas_por_llm(llm, frases: list[tuple[float, str]], n_imagens: int = 2) -> t
             elif tipo == "destaque" and base["texto"]:
                 pass
             elif tipo == "citacao" and base["texto"]:
+                # lab ciclo 15: citação é a FALA LITERAL (o 4B às vezes parafraseia) e só uma por corte
+                txt = _limpa(str(c.get("texto")))
+                da_frase = {_norm(_limpa(w)) for w in frases[k][1].split()}
+                if any(x["tipo"] == "citacao" for x in cenas) or                         sum(_norm(w) in da_frase for w in txt.split()) < 0.85 * max(len(txt.split()), 1):
+                    continue
                 base["texto"] = str(c.get("texto"))[:80]
             elif tipo == "documento" and base["texto"]:
                 base.update(texto=str(c.get("texto"))[:70], destaque=str(c.get("destaque") or "")[:30],
@@ -623,6 +628,8 @@ def planejar(trechos: list[tuple[float, float, list[Palavra]]], llm=None, log=No
     if citacao:
         inicio_corpo = transicoes[0] if transicoes else 0
         cenas = [c for c in cenas if c["ini"] > inicio_corpo + 1.0]
+    if not any(c["tipo"] == "conceito" for c in cenas):
+        cenas = conceito_por_regra(cenas, palavras_rel)
     escolher_presets(grupos, fim_gancho=(transicoes[0] if transicoes else 4.5))
     escolhidas = intercalar(_espacar(cenas, duracao), duracao, log)
     if pinturas:
@@ -630,6 +637,7 @@ def planejar(trechos: list[tuple[float, float, list[Palavra]]], llm=None, log=No
     if citacao:
         escolhidas = [citacao] + escolhidas
     zooms = [c["ini"] + 0.1 for c in escolhidas if c["tipo"] in ("numero", "comparacao", "destaque", "icone")]
+    zooms += [c["fim"] + 0.05 for c in escolhidas if c["tipo"] == "conceito"]  # punch-in na volta do locutor
     zooms += [p["ini"] for p in palavras_rel if p["enfase"]]
     zooms_finais: list[float] = []
     for z in sorted(zooms):
@@ -749,3 +757,21 @@ def intercalar(cenas: list[dict], duracao: float, log=None) -> list[dict]:
         log(f"Intercalação: {parc} parcial(is), {len(saida) - parc} dominante(s) ({usado / max(duracao, 1):.0%} do corte; "
             f"locutor visível {1 - usado / max(duracao, 1):.0%})")
     return saida
+
+
+def conceito_por_regra(cenas: list[dict], palavras_rel: list[dict]) -> list[dict]:
+    """Sem conceito do LLM: o 1º ícone depois do gancho vira cena "conceito" (tela cheia, só motion) com as palavras
+    da própria frase em volta da palavra do ícone (narração ilustrada, lab ciclo 15)."""
+    for c in sorted(cenas, key=lambda c: c["ini"]):
+        if c["tipo"] != "icone" or c["ini"] < GANCHO_LIVRE_S + 0.5:
+            continue
+        if any(o["tipo"] in ("numero", "comparacao") and abs(o["ini"] - c["ini"]) < INTERVALO_MIN for o in cenas):
+            continue  # perto de número/comparação: o gráfico já ilustra
+        i = min(range(len(palavras_rel)), key=lambda k: abs(palavras_rel[k]["ini"] - c["ini"])) if palavras_rel else 0
+        trecho = [p["t"].lower() for p in palavras_rel[max(0, i - 2):i + 4]]
+        if len(trecho) < 3:
+            continue
+        chave = _limpa(palavras_rel[i]["t"]).lower() if palavras_rel else ""
+        c.update(tipo="conceito", texto=" ".join(_limpa(t) for t in trecho)[:60], destaque=chave, cobreLegenda=True)
+        break
+    return cenas
