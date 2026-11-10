@@ -131,3 +131,15 @@ Restam só maquina e esquerda a 1 quadro do alvo.
 
 ## Ciclo 26 — esquerda (02:11)
 `acende` 0,45 s só na entrada pela direita (a palavra percorre mais tela): esquerda 8,3 → 10.
+
+## Ciclo 27 — maquina (02:35) e resumo da sessão
+Digitação mínima 45 → 55 ms por letra: maquina 8,3 → 10.
+
+### Resumo para a próxima execução (tarefa agendada das 03:22)
+- Laboratório: 22 animações (11 presets + marca, 7 cenas, 3 cenas em tela cheia); base 8,49 → final desta sessão acima.
+- Métrica: v7 (intensidade, sem ruído de compressão, janela de entrada 0,5 s, deriva pelo topo; maquina sem tremor).
+- Já validado em corte real: zoom inicial, flash com silhueta multiclasse, tela cheia legível, legenda fora de citação.
+- Próximos alvos sugeridos: (1) whip pan para mudança de assunto (ideia no banco); (2) medir a composição
+  automaticamente (margens, nada fora da tela); (3) re-render de um corte real com o preset "marca" e conferir.
+- Release publicada: v0.7.0. Mudanças do laboratório depois dela (marca, revelacao, esquerda, maquina, tela cheia
+  com margens) ainda não estão numa release.

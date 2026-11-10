@@ -103,10 +103,14 @@
     {
      "rodada": "20261110-021136",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-023530",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-021136",
+    "rodada": "20261110-023530",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.2,
@@ -186,17 +190,21 @@
     {
      "rodada": "20261110-021136",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-023530",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-021136",
+    "rodada": "20261110-023530",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.067,
      "montagem_s": 0.233,
-     "saida_s": 0.267,
+     "saida_s": 0.233,
      "salto": 0.049,
-     "tremor": 0.408,
+     "tremor": 0.349,
      "deriva_px": 0.0,
      "cobertura": 0.988
     },
@@ -285,10 +293,14 @@
     {
      "rodada": "20261110-021136",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-023530",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-021136",
+    "rodada": "20261110-023530",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.167,
@@ -376,10 +388,18 @@
     {
      "rodada": "20261110-021136",
      "nota": 8.3
+    },
+    {
+     "rodada": "20261110-023510",
+     "nota": 10.0
+    },
+    {
+     "rodada": "20261110-023530",
+     "nota": 8.3
     }
    ],
    "ultima": {
-    "rodada": "20261110-021136",
+    "rodada": "20261110-023530",
     "nota": 8.3,
     "metricas": {
      "entrada_s": 0.133,
@@ -456,17 +476,21 @@
     {
      "rodada": "20261110-021136",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-023530",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-021136",
+    "rodada": "20261110-023530",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.2,
      "montagem_s": 3.367,
      "saida_s": 0.1,
-     "salto": 0.025,
-     "tremor": 0.348,
+     "salto": 0.026,
+     "tremor": 0.312,
      "deriva_px": 4.0,
      "cobertura": 0.017
     },
@@ -543,10 +567,14 @@
     {
      "rodada": "20261110-021136",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-023530",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-021136",
+    "rodada": "20261110-023530",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.233,
@@ -630,10 +658,14 @@
     {
      "rodada": "20261110-021136",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-023530",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-021136",
+    "rodada": "20261110-023530",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.2,
@@ -705,10 +737,14 @@
     {
      "rodada": "20261110-021136",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-023530",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-021136",
+    "rodada": "20261110-023530",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.167,
@@ -780,17 +816,21 @@
     {
      "rodada": "20261110-021136",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-023530",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-021136",
+    "rodada": "20261110-023530",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.167,
      "montagem_s": 3.333,
      "saida_s": 0.1,
      "salto": 0.022,
-     "tremor": 0.322,
+     "tremor": 0.409,
      "deriva_px": 8.0,
      "cobertura": 0.017
     },
@@ -879,17 +919,21 @@
     {
      "rodada": "20261110-021136",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-023530",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-021136",
+    "rodada": "20261110-023530",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.2,
      "montagem_s": 3.367,
      "saida_s": 0.1,
-     "salto": 0.021,
-     "tremor": 0.386,
+     "salto": 0.022,
+     "tremor": 0.406,
      "deriva_px": 8.0,
      "cobertura": 0.017
     },
@@ -966,17 +1010,21 @@
     {
      "rodada": "20261110-021136",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-023530",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-021136",
+    "rodada": "20261110-023530",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.167,
      "montagem_s": 3.333,
      "saida_s": 0.1,
-     "salto": 0.022,
-     "tremor": 0.305,
+     "salto": 0.021,
+     "tremor": 0.352,
      "deriva_px": 8.0,
      "cobertura": 0.017
     },
@@ -1045,17 +1093,21 @@
     {
      "rodada": "20261110-021136",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-023530",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-021136",
+    "rodada": "20261110-023530",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.2,
      "montagem_s": 3.367,
      "saida_s": 0.1,
-     "salto": 0.02,
-     "tremor": 0.308,
+     "salto": 0.027,
+     "tremor": 0.399,
      "deriva_px": 4.0,
      "cobertura": 0.017
     },
@@ -1116,17 +1168,21 @@
     {
      "rodada": "20261110-021136",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-023530",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-021136",
+    "rodada": "20261110-023530",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.3,
      "montagem_s": 0.367,
      "saida_s": 0.2,
      "salto": 0.072,
-     "tremor": 0.718,
+     "tremor": 0.751,
      "deriva_px": 64.0,
      "cobertura": 0.084
     },
@@ -1183,17 +1239,21 @@
     {
      "rodada": "20261110-021136",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-023530",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-021136",
+    "rodada": "20261110-023530",
     "nota": 10.0,
     "metricas": {
-     "entrada_s": 0.267,
-     "montagem_s": 0.767,
+     "entrada_s": 0.3,
+     "montagem_s": 0.733,
      "saida_s": 0.2,
-     "salto": 0.022,
-     "tremor": 1.447,
+     "salto": 0.021,
+     "tremor": 1.354,
      "deriva_px": 12.0,
      "cobertura": 0.098
     },
@@ -1250,17 +1310,21 @@
     {
      "rodada": "20261110-021136",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-023530",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-021136",
+    "rodada": "20261110-023530",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.333,
      "montagem_s": 0.433,
      "saida_s": 0.233,
      "salto": 0.063,
-     "tremor": 1.358,
+     "tremor": 1.351,
      "deriva_px": 12.0,
      "cobertura": 0.097
     },
@@ -1325,17 +1389,21 @@
     {
      "rodada": "20261110-021136",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-023530",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-021136",
+    "rodada": "20261110-023530",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.3,
      "montagem_s": 0.8,
      "saida_s": 0.2,
-     "salto": 0.015,
-     "tremor": 0.39,
+     "salto": 0.017,
+     "tremor": 0.34,
      "deriva_px": 76.0,
      "cobertura": 0.087
     },
@@ -1392,17 +1460,21 @@
     {
      "rodada": "20261110-021136",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-023530",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-021136",
+    "rodada": "20261110-023530",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.3,
      "montagem_s": 1.633,
      "saida_s": 0.233,
-     "salto": 0.029,
-     "tremor": 0.77,
+     "salto": 0.01,
+     "tremor": 0.635,
      "deriva_px": 12.0,
      "cobertura": 0.25
     },
@@ -1463,19 +1535,23 @@
     {
      "rodada": "20261110-021136",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-023530",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-021136",
+    "rodada": "20261110-023530",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.167,
      "montagem_s": 0.267,
      "saida_s": 0.1,
-     "salto": 0.045,
-     "tremor": 0.258,
+     "salto": 0.053,
+     "tremor": 0.217,
      "deriva_px": 0.0,
-     "cobertura": 0.985
+     "cobertura": 0.984
     },
     "fora": []
    }
@@ -1524,17 +1600,21 @@
     {
      "rodada": "20261110-021136",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-023530",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-021136",
+    "rodada": "20261110-023530",
     "nota": 10.0,
     "metricas": {
-     "entrada_s": 0.3,
-     "montagem_s": 1.667,
+     "entrada_s": 0.267,
+     "montagem_s": 1.633,
      "saida_s": 0.233,
      "salto": 0.04,
-     "tremor": 1.808,
+     "tremor": 1.964,
      "deriva_px": 0.0,
      "cobertura": 0.891
     },
@@ -1567,17 +1647,21 @@
     {
      "rodada": "20261110-021136",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-023530",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-021136",
+    "rodada": "20261110-023530",
     "nota": 10.0,
     "metricas": {
-     "entrada_s": 0.033,
-     "montagem_s": 0.767,
+     "entrada_s": 0.067,
+     "montagem_s": 0.233,
      "saida_s": 0.2,
-     "salto": 0.062,
-     "tremor": 0.071,
+     "salto": 0.049,
+     "tremor": 0.177,
      "deriva_px": 0.0,
      "cobertura": 0.993
     },
@@ -1610,17 +1694,21 @@
     {
      "rodada": "20261110-021136",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-023530",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-021136",
+    "rodada": "20261110-023530",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.067,
      "montagem_s": 0.133,
      "saida_s": 0.1,
      "salto": 0.057,
-     "tremor": 1.035,
+     "tremor": 1.068,
      "deriva_px": 0.0,
      "cobertura": 0.704
     },
@@ -1641,17 +1729,21 @@
     {
      "rodada": "20261110-021136",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-023530",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-021136",
+    "rodada": "20261110-023530",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.2,
      "montagem_s": 3.367,
      "saida_s": 0.1,
-     "salto": 0.017,
-     "tremor": 0.251,
+     "salto": 0.018,
+     "tremor": 0.237,
      "deriva_px": 8.0,
      "cobertura": 0.026
     },
@@ -1886,6 +1978,18 @@
    "rodada": "20261110-021136",
    "media": 9.92,
    "nota": "rodada completa ciclo 26",
+   "cenarios": 22
+  },
+  {
+   "rodada": "20261110-023510",
+   "media": 10.0,
+   "nota": "ciclo 27: digitacao 55 ms/letra",
+   "cenarios": 1
+  },
+  {
+   "rodada": "20261110-023530",
+   "media": 9.92,
+   "nota": "rodada final da sessao (02:35)",
    "cenarios": 22
   }
  ],

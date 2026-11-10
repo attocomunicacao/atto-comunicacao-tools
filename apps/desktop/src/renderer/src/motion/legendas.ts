@@ -190,7 +190,7 @@ function maquina(palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) {
     const txt = x.e.textContent ?? ''
     x.e.textContent = ''
     // referência: digitação rápida e regular (≤ 55% da palavra falada, nunca mais de 1 letra por quadro)
-    const dur = Math.max(Math.min((x.p.fim - x.p.ini) * 0.55, txt.length * 0.045), txt.length / 30)
+    const dur = Math.max(Math.min((x.p.fim - x.p.ini) * 0.6, txt.length * 0.055), txt.length / 30)
     ;[...txt].forEach((ch, j) => {
       const l = el('span', 'letra', ch)
       x.e.append(l)

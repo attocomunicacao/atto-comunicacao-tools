@@ -1,0 +1,11 @@
+{
+ "maquina": {
+  "nota": 10.0,
+  "entrada_s": 0.167,
+  "montagem_s": 3.567,
+  "saida_s": 0.067,
+  "salto": 0.018,
+  "deriva_px": 8.0,
+  "cobertura": 0.026
+ }
+}
