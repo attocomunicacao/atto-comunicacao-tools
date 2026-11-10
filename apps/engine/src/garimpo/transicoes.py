@@ -18,7 +18,10 @@ import numpy as np
 
 from . import recursos
 
-SEGMENTACAO = ("onnx-community/mediapipe_selfie_segmentation", "onnx/model.onnx")
+# lab ciclo 10: o modelo multiclasse separa pessoa (cabelo, pele, rosto, roupa) de objetos — o binário punha mesa e
+# notebook dentro da silhueta. MediaPipe Selfie Multiclass 256x256 (Apache-2.0), conversão ONNX.
+SEGMENTACAO = ("FreeHugsForRobots/ps-skin-seg", "selfie_multiclass_256x256.onnx")
+CLASSES_PESSOA = (1, 2, 3, 4)  # 0 fundo · 1 cabelo · 2 pele do corpo · 3 rosto · 4 roupa · 5 outros
 FLASH_ANTES = 0.4    # s antes do corte
 FLASH_DEPOIS = 0.4   # s depois do corte
 # Medido em videoplayback (2).mp4 (27,2-28,4 s, quadro a quadro): o 1º quadro é um borrão ampliado (~250%),
@@ -41,7 +44,7 @@ def _segmentador():
     if _sessao is None:
         import onnxruntime as ort
         repo, arquivo = SEGMENTACAO
-        modelo = recursos.pasta_cache() / "segmentacao" / "mediapipe_selfie.onnx"
+        modelo = recursos.pasta_cache() / "segmentacao" / "selfie_multiclass_256.onnx"
         recursos.baixar(repo, arquivo, modelo)
         _sessao = ort.InferenceSession(str(modelo), providers=["CPUExecutionProvider"])
     return _sessao
@@ -61,8 +64,12 @@ def mascara_pessoa(quadro: np.ndarray) -> np.ndarray:
     x = cv2.resize(cv2.cvtColor(quadro, cv2.COLOR_BGR2RGB), (w_in, h_in)).astype(np.float32) / 255.0
     x = x.transpose(2, 0, 1)[None] if nchw else x[None]
     y = np.squeeze(s.run(None, {entrada.name: x})[0])
-    if y.ndim == 3:  # canais: pega o de "pessoa" (último) se vier mais de um
-        y = y[..., -1] if y.shape[-1] <= 4 else y[-1]
+    if y.ndim == 3:  # multiclasse (H, W, 6): probabilidade de "pessoa" = soma das classes de pessoa (softmax)
+        if y.shape[-1] != 6 and y.shape[0] == 6:
+            y = np.moveaxis(y, 0, -1)
+        e = np.exp(y - y.max(-1, keepdims=True))
+        pr = e / e.sum(-1, keepdims=True) if (y.min() < 0 or y.max() > 1.001) else y
+        y = pr[..., list(CLASSES_PESSOA)].sum(-1)
     m = cv2.resize(y.astype(np.float32), (quadro.shape[1], quadro.shape[0]), interpolation=cv2.INTER_LINEAR)
     m = np.clip((m - 0.35) / 0.3, 0, 1)
     return cv2.GaussianBlur(m, (0, 0), 2.5)

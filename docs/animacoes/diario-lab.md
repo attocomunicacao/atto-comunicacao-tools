@@ -51,3 +51,9 @@ corte-02 exportado. **Zoom inicial**: 1,43 → ~1,05 em 0,35 s, cauda suave (ok)
 quadro com silhueta branca, igual à referência; no plano lateral a mesa/notebook entram na silhueta (a segmentação
 marca a base do quadro com 0,73-0,93). Tentativas: maior contorno + âncora no rosto → sem ganho, revertidas.
 Ideia registrada no banco: trocar o modelo de segmentação (multiclasse/matting). Próximo: pesquisar o modelo.
+
+## Ciclo 10 — silhueta do flash (23:55-23:58)
+Pesquisa: MediaPipe Selfie Multiclass 256x256 em ONNX ([ps-skin-seg](https://huggingface.co/FreeHugsForRobots/ps-skin-seg),
+Apache-2.0; classes fundo/cabelo/pele/rosto/roupa/outros). Silhueta = soma das probabilidades de pessoa (borda suave).
+Nos quadros do corte-02: mesa, notebook, copo e microfone saem da silhueta; só a pessoa vira branca, como na referência.
+Flash 8 → 9,5. Próximo: varredura de transições em alta (whip/blur pan, light leak) para o banco.
