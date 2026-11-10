@@ -1,0 +1,22 @@
+{
+ "cinematico": {
+  "nota": 8.3,
+  "entrada_s": 0.133,
+  "montagem_s": 3.3,
+  "saida_s": 0.1,
+  "salto": 0.026,
+  "tremor": 0.355,
+  "deriva_px": 4.0,
+  "cobertura": 0.017
+ },
+ "sobe": {
+  "nota": 10.0,
+  "entrada_s": 0.2,
+  "montagem_s": 3.367,
+  "saida_s": 0.1,
+  "salto": 0.021,
+  "tremor": 0.377,
+  "deriva_px": 8.0,
+  "cobertura": 0.017
+ }
+}

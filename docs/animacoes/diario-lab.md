@@ -94,3 +94,7 @@ Lição: além das métricas, o avaliador precisa olhar a folha de contato (comp
 ## Ciclo 18 — composição em tela cheia (00:26)
 Folhas de contato: documento ok; gráfico de número encostava na borda direita (caixa de 1000 px). Caixa de tela cheia
 → (110, 300, 860, 860): margem de ~110 px dos dois lados e termina em 1160 (a legenda começa em 1180). Todas 10.
+
+## Ciclo 19 — tipografia da legenda (00:29)
+Lado a lado com a referência (videoplayback.mp4 3,9 s): composição em escada igual; a referência usa palavras pequenas
+mais pesadas e justas. Inter 500 → 600, tracking -0,015 → -0,03 em. Métricas iguais (sobe 10), visual mais próximo.

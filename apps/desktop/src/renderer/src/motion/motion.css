@@ -154,7 +154,7 @@ html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; backgro
 /* ---------- legenda v0.7: bloco em escada (referência "7 animações de texto") ---------- */
 .leg-caixa { position: absolute; display: flex; align-items: center; justify-content: center; z-index: 20; pointer-events: none; }
 .leg-bloco { display: flex; flex-direction: column; align-items: center; will-change: transform, filter, opacity; transform-origin: 50% 50%; }
-.leg-linha { display: flex; gap: 0.26em; line-height: 0.92; white-space: nowrap; font-weight: 500; letter-spacing: -0.015em;
+.leg-linha { display: flex; gap: 0.24em; line-height: 0.92; white-space: nowrap; font-weight: 600; letter-spacing: -0.03em;
   text-shadow: 0 2px 18px rgba(0, 0, 0, 0.5), 0 0 22px rgba(255, 255, 255, 0.14); }
 .leg-p { display: inline-block; will-change: transform, filter, opacity; }
 .leg-chave { font-family: "Playfair Display", serif; font-style: italic; font-weight: 700; line-height: 0.95; letter-spacing: -0.01em;
