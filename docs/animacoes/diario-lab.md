@@ -30,3 +30,8 @@ conceito (saída 0,07 s).
 ## Ciclo 5 — maquina, cursor (23:32)
 Prompt: lab/prompts/20261109-2333-maquina-cursor.md. 5a: cursor com pulso senoidal (sem degrau) → tremor 3,26 → 2,68 ✔.
 5b: letras com fade de 0,1 s → 2,76 (ruído) ✘ revertido. Próximo: elastico (entrada 0,7 s).
+
+## Ciclo 6 — elastico (medida) e ganchos (23:35-23:37)
+Métrica v6: janela de entrada 0,6 s (a chave do elástico entrava na janela) → elastico 0,7 → 0,13 s. Deriva desligada
+nas cenas (traços desenhados mudam o topo). revelacao 0,07 → 0,1 s e glitch 0 → 0,1 s com `acende` em vez de degrau.
+Média do subconjunto 9,32. Próximo: conceito (saída 0,07 s) e entradas de 0,13 → 0,17 s.

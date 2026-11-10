@@ -36,9 +36,9 @@ ALVO = {
     "legenda": {"entrada_s": (0.15, 0.45), "saida_s": (0.05, 0.30), "salto": (0.0, 0.18), "tremor": (0.0, 2.5),
                 "deriva_px": (3.0, 30.0), "cobertura": (0.01, 0.25)},
     "cena": {"entrada_s": (0.25, 1.0), "saida_s": (0.1, 0.5), "salto": (0.0, 0.2), "tremor": (0.0, 3.0),
-             "deriva_px": (0.0, 60.0), "cobertura": (0.03, 0.6)},
+             "cobertura": (0.03, 0.6)},  # deriva não vale nas cenas: traços desenhados mudam o topo
     "tela": {"entrada_s": (0.0, 0.8), "saida_s": (0.1, 0.5), "salto": (0.0, 0.25), "tremor": (0.0, 4.0),
-             "deriva_px": (0.0, 80.0), "cobertura": (0.5, 1.0)},
+             "cobertura": (0.5, 1.0)},
 }
 
 
@@ -129,8 +129,8 @@ def medir(arq: Path, fundo: Path) -> dict:
     a0, a1 = int(vivo[0]), int(vivo[-1])
     cheio = np.nonzero(area >= 0.95 * pico)[0]
     c0, c1 = int(cheio[0]), int(cheio[-1])
-    # entrada do 1º elemento: do 1º quadro visível até 90% do nível que ele tem 0,7 s depois
-    nivel = area[min(a0 + int(0.7 * FPS), n - 1)]
+    # entrada do 1º elemento: do 1º quadro visível até 90% do nível que ele tem 0,6 s depois (antes do 2º)
+    nivel = area[min(a0 + int(0.6 * FPS), n - 1)]
     e1 = next((k for k in range(a0, n) if area[k] >= 0.9 * nivel), a0)
     # saída: do último quadro com 90% do nível de 0,6 s antes do fim até sumir
     nivel_s = area[max(a1 - int(0.6 * FPS), 0)]

@@ -1,0 +1,52 @@
+{
+ "impacto": {
+  "nota": 10.0,
+  "entrada_s": 0.167,
+  "montagem_s": 3.333,
+  "saida_s": 0.1,
+  "salto": 0.016,
+  "tremor": 0.314,
+  "deriva_px": 8.0,
+  "cobertura": 0.016
+ },
+ "revelacao": {
+  "nota": 8.3,
+  "entrada_s": 0.1,
+  "montagem_s": 3.267,
+  "saida_s": 0.1,
+  "salto": 0.025,
+  "tremor": 0.533,
+  "deriva_px": 4.0,
+  "cobertura": 0.016
+ },
+ "glitch": {
+  "nota": 8.3,
+  "entrada_s": 0.1,
+  "montagem_s": 3.267,
+  "saida_s": 0.1,
+  "salto": 0.045,
+  "tremor": 0.425,
+  "deriva_px": 8.0,
+  "cobertura": 0.016
+ },
+ "destaque": {
+  "nota": 10.0,
+  "entrada_s": 0.3,
+  "montagem_s": 0.367,
+  "saida_s": 0.2,
+  "salto": 0.072,
+  "tremor": 0.829,
+  "deriva_px": 36.0,
+  "cobertura": 0.084
+ },
+ "icone": {
+  "nota": 10.0,
+  "entrada_s": 0.3,
+  "montagem_s": 0.8,
+  "saida_s": 0.2,
+  "salto": 0.017,
+  "tremor": 0.291,
+  "deriva_px": 76.0,
+  "cobertura": 0.087
+ }
+}
