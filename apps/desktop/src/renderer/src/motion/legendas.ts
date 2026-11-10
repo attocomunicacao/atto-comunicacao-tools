@@ -201,7 +201,7 @@ function maquina(palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) {
   cursor.style.fontSize = `${c.palavras[c.palavras.length - 1]?.tam ?? 60}px`
   c.palavras[c.palavras.length - 1]?.e.parentElement?.append(cursor)
   gsap.set(letras.map(([l]) => l), { opacity: 0 })
-  for (const [l, quando] of letras) t.fromTo(l, { opacity: 0 }, { opacity: 1, duration: 0.03, ...O }, quando)
+  for (const [l, quando] of letras) t.fromTo(l, { opacity: 0 }, { opacity: 1, duration: 0.08, ease: 'power1.out', ...O }, quando) // a letra acende (2-3 quadros), não estala
   // cursor aceso enquanto digita; depois pisca devagar (1 Hz), como na referência
   const fimDigitacao = letras.length ? letras[letras.length - 1][1] : g.ini
   const pisca = { v: 0 }

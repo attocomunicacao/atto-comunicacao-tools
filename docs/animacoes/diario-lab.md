@@ -143,3 +143,17 @@ Digitação mínima 45 → 55 ms por letra: maquina 8,3 → 10.
   automaticamente (margens, nada fora da tela); (3) re-render de um corte real com o preset "marca" e conferir.
 - Release publicada: v0.7.0. Mudanças do laboratório depois dela (marca, revelacao, esquerda, maquina, tela cheia
   com margens) ainda não estão numa release.
+
+## Ciclo 28 — maquina (03:24, tarefa agendada)
+Alvo: maquina (oscilava 8,3 ↔ 10 com o mesmo código: entrada 0,133 s, borda do alvo de 0,15).
+Varredura (typewriter profissional): 2 ideias novas no banco — letra com fade curto + desfoque; cursor que segue e some.
+Prompt: `lab/prompts/20261110-0330-maquina-fade-letra.md`. Mudança: cada letra acende em 0,08 s power1.out (antes
+estalava em 0,03 s, 1 quadro). Resultado: entrada 0,133 → 0,167 s, salto 0,018 → 0,015; maquina 10, vizinhos
+cinematico e sobe 10 (rodada 20261110-032407). Mantido.
+
+### Resumo para a próxima execução
+- Todas as 22 animações de legenda/cena estão em 10; maquina agora tem folga de 1 quadro em vez de estar na borda.
+- Ideias novas ainda não testadas: desfoque 2 px → 0 na letra do maquina; cursor que para de piscar e sai em fade.
+- Próximo alvo: as transições, que não passam pela métrica automática — zoom_inicial (9,0) e flash_cut (9,5). Antes de mexer
+  nelas, criar uma medida para elas no `garimpo.lab`. Depois: whip pan para mudança de assunto, medição automática da composição.
+- Mudanças desde a v0.7.0 continuam fora de release (não publicar sem o pedido do cliente).

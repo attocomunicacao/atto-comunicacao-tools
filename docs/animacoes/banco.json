@@ -107,17 +107,21 @@
     {
      "rodada": "20261110-023530",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-032407",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-023530",
+    "rodada": "20261110-032407",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.2,
      "montagem_s": 3.367,
      "saida_s": 0.1,
      "salto": 0.021,
-     "tremor": 0.377,
+     "tremor": 0.428,
      "deriva_px": 8.0,
      "cobertura": 0.017
     },
@@ -297,17 +301,21 @@
     {
      "rodada": "20261110-023530",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-032407",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-023530",
+    "rodada": "20261110-032407",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.167,
      "montagem_s": 3.333,
      "saida_s": 0.1,
      "salto": 0.019,
-     "tremor": 0.427,
+     "tremor": 0.317,
      "deriva_px": 8.0,
      "cobertura": 0.017
     },
@@ -396,22 +404,24 @@
     {
      "rodada": "20261110-023530",
      "nota": 8.3
+    },
+    {
+     "rodada": "20261110-032407",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-023530",
-    "nota": 8.3,
+    "rodada": "20261110-032407",
+    "nota": 10.0,
     "metricas": {
-     "entrada_s": 0.133,
-     "montagem_s": 3.533,
+     "entrada_s": 0.167,
+     "montagem_s": 3.6,
      "saida_s": 0.067,
-     "salto": 0.018,
+     "salto": 0.015,
      "deriva_px": 8.0,
      "cobertura": 0.026
     },
-    "fora": [
-     "entrada_s=0.133 (alvo 0.15-0.45)"
-    ]
+    "fora": []
    }
   },
   "desce": {
@@ -1991,6 +2001,12 @@
    "media": 9.92,
    "nota": "rodada final da sessao (02:35)",
    "cenarios": 22
+  },
+  {
+   "rodada": "20261110-032407",
+   "media": 10.0,
+   "nota": "ciclo 28: letra do maquina com fade 0,08 s power1.out",
+   "cenarios": 3
   }
  ],
  "ideias": [
@@ -2042,6 +2058,22 @@
    "fonte": "https://www.clipspeed.ai/blog/11-caption-styles-ranked-viral-performance-2026.html",
    "como": "faixa branca 0,32 s power3.inOut atrás da chave; texto da chave escurece",
    "status": "aplicada (ciclo 22): preset 'marca' no rodízio"
+  },
+  {
+   "nome": "maquina: letra com fade curto + desfoque",
+   "categoria": "legenda",
+   "fonte": "https://www.framer.com/marketplace/components/typewriter-with-blur/",
+   "como": "cada letra entra com opacity 0->1 em 2-3 quadros (0,07-0,1 s, power1.out) e blur 2px->0 no mesmo tempo, sem deslocamento; stagger 40-55 ms por letra, as letras se sobrepõem (a próxima começa antes da anterior acabar)",
+   "por_que": "o estalo de 1 quadro por letra parece serrilhado a 30 fps; o fade sobreposto vira uma onda contínua e mantém a leitura de digitação (ref. stagger 0,02-0,05 s com duração curta, GSAP SplitText)",
+   "status": "nova"
+  },
+  {
+   "nome": "maquina: cursor que segue e some",
+   "categoria": "legenda",
+   "fonte": "https://gsap.com/docs/v3/Plugins/SplitText/",
+   "como": "barra branca fina (2-3 px, altura da Inter) colada à última letra visível, sem piscar enquanto digita; ao fim da linha pisca 1 ciclo (steps, 0,5 s) e sai com fade 0,2 s; pausa extra de ~1 stagger entre palavras; palavra-chave Playfair digitada 1,3x mais lenta",
+   "por_que": "cursor fixo fica descolado do texto; cursor que acompanha dá ritmo e o fade de saída evita sobra na tela; a pausa por palavra imita digitação humana sem quique",
+   "status": "nova"
   }
  ]
 }
