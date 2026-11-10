@@ -101,3 +101,6 @@ mais pesadas e justas. Inter 500 → 600, tracking -0,015 → -0,03 em. Métrica
 
 ## Ciclo 20 — cinematico (00:31)
 Palavras pequenas usavam fade próprio (0,3 s power2) → `acende` padrão + movimento 0,4 s. cinematico 8,3 → 10.
+
+### Rodada completa 00:31 — média 9,68 (base 23:07: 8,49)
+18 de 21 em 10. Pendentes: maquina (tremor da digitação ~2,8), esquerda e revelacao (entrada 0,133 s, borda do alvo).
