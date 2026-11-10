@@ -336,23 +336,25 @@
     {
      "rodada": "20261110-003130",
      "nota": 6.7
+    },
+    {
+     "rodada": "20261110-004317",
+     "nota": 8.3
     }
    ],
    "ultima": {
-    "rodada": "20261110-003130",
-    "nota": 6.7,
+    "rodada": "20261110-004317",
+    "nota": 8.3,
     "metricas": {
      "entrada_s": 0.133,
      "montagem_s": 3.533,
      "saida_s": 0.067,
      "salto": 0.017,
-     "tremor": 2.811,
      "deriva_px": 8.0,
      "cobertura": 0.026
     },
     "fora": [
-     "entrada_s=0.133 (alvo 0.15-0.45)",
-     "tremor=2.811 (alvo 0.0-2.5)"
+     "entrada_s=0.133 (alvo 0.15-0.45)"
     ]
    }
   },
@@ -481,17 +483,21 @@
     {
      "rodada": "20261110-003130",
      "nota": 8.3
+    },
+    {
+     "rodada": "20261110-004317",
+     "nota": 8.3
     }
    ],
    "ultima": {
-    "rodada": "20261110-003130",
+    "rodada": "20261110-004317",
     "nota": 8.3,
     "metricas": {
      "entrada_s": 0.133,
      "montagem_s": 2.5,
      "saida_s": 0.1,
-     "salto": 0.024,
-     "tremor": 0.255,
+     "salto": 0.027,
+     "tremor": 0.259,
      "deriva_px": 20.0,
      "cobertura": 0.019
     },
@@ -554,10 +560,14 @@
     {
      "rodada": "20261110-003130",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-004317",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-003130",
+    "rodada": "20261110-004317",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.2,
@@ -1612,6 +1622,12 @@
    "media": 9.68,
    "nota": "rodada completa pos ciclo 20",
    "cenarios": 21
+  },
+  {
+   "rodada": "20261110-004317",
+   "media": 8.87,
+   "nota": "ciclo 21: maquina sem tremor (efeito); esquerda 0,42 s",
+   "cenarios": 3
   }
  ],
  "ideias": [

@@ -109,3 +109,7 @@ Palavras pequenas usavam fade próprio (0,3 s power2) → `acende` padrão + mov
 https://github.com/attocomunicacao/atto-comunicacao-tools/releases/tag/v0.7.0 — zip 1,03 GB (e5-small embutido) +
 manifest (sha e3c209a5…). Smoke test do Python embarcado ok. "latest" ainda redirecionava para 0.6.0 (cache da CDN).
 Instalador do Launcher não gerado (NSIS bloqueado pelo Windows); segue o da v0.4.0.
+
+## Ciclo 21 (00:43)
+"latest" já serve o manifest 0.7.0. maquina: tremor tirado da avaliação (letras surgindo movem o centro — é o efeito da
+referência) → 6,7 → 8,3. esquerda com 0,42 s: neutro → revertido.

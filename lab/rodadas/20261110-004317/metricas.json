@@ -1,0 +1,31 @@
+{
+ "maquina": {
+  "nota": 8.3,
+  "entrada_s": 0.133,
+  "montagem_s": 3.533,
+  "saida_s": 0.067,
+  "salto": 0.017,
+  "deriva_px": 8.0,
+  "cobertura": 0.026
+ },
+ "esquerda": {
+  "nota": 8.3,
+  "entrada_s": 0.133,
+  "montagem_s": 2.5,
+  "saida_s": 0.1,
+  "salto": 0.027,
+  "tremor": 0.259,
+  "deriva_px": 20.0,
+  "cobertura": 0.019
+ },
+ "direita": {
+  "nota": 10.0,
+  "entrada_s": 0.2,
+  "montagem_s": 3.3,
+  "saida_s": 0.1,
+  "salto": 0.017,
+  "tremor": 0.293,
+  "deriva_px": 8.0,
+  "cobertura": 0.025
+ }
+}

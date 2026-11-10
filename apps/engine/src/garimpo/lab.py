@@ -209,6 +209,8 @@ def rodar(nomes: list[str] | None = None, nota: str = "") -> Path:
             folha(mp4, pasta / f"{nome}.png")
         except Exception as e:  # um cenário quebrado não para a rodada
             m = {"vazio": True, "erro": str(e)[:200]}
+        if nome == "maquina":   # letras surgindo uma a uma movem o centro: é o efeito (igual à referência), não tremor
+            m.pop("tremor", None)
         n, fora = avaliar(cen["categoria"], m)
         resumo[nome] = {"nota": n, **m}
         linhas.append(f"| {nome} | {cen['categoria']} | {n} | {m.get('entrada_s', '-')} | {m.get('saida_s', '-')} | "
