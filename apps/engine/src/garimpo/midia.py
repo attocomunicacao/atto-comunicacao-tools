@@ -137,7 +137,8 @@ def _expr_zoom(zooms: list[float], fps: float) -> str:
 
 
 def trecho_vertical(video: Path, ini: float, fim: float, saida: Path, zooms: list[float] | None = None,
-                    log=None, aoProgresso=None, cortes_flash: list[float] | None = None) -> Path:
+                    log=None, aoProgresso=None, cortes_flash: list[float] | None = None,
+                    zoom_inicio: bool = False) -> Path:
     """Um trecho do vídeo em 1080x1920: reenquadrado (rosto/tela dividida), com zooms suaves de ênfase.
 
     Intermediário de alta qualidade (CRF 12); a legenda, as ilustrações e a logo entram depois."""
@@ -148,7 +149,7 @@ def trecho_vertical(video: Path, ini: float, fim: float, saida: Path, zooms: lis
     dur = fim - ini
     segmentos = enquadramento.analisar(video, ini, fim, info["largura"], info["altura"], log)
     estilos = enquadramento.estilos_troca(len(segmentos))
-    comp = enquadramento.filtro(segmentos, info["largura"], info["altura"], fps, estilos)
+    comp = enquadramento.filtro(segmentos, info["largura"], info["altura"], fps, estilos, zoom_inicio)
     if cortes_flash is not None:
         # trocas em flash cut: o clipe de transição é encaixado na montagem (instantes locais do trecho)
         cortes_flash += [segmentos[k + 1].ini for k, e in enumerate(estilos) if e == "flash"]

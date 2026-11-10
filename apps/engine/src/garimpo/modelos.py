@@ -72,6 +72,7 @@ class Corte:
     frases: list[Frase]
     pontuacao: float
     teaser: Frase | None = None  # "cold open": frase de maior impacto repetida no início, antes do corte
+    relevancia: float = 0.0  # z-score de relevância para a descrição do usuário (camada semântica)
 
     @property
     def ini(self) -> float:

@@ -7,9 +7,17 @@ Seleção em 3 camadas (o mesmo desenho das ferramentas de corte automático: fi
    frase que depende da anterior. Tudo o que vem antes do último sinal de bastidor dos primeiros minutos é ignorado.
 2. Pontuação heurística (rápida, em todas as janelas): **gancho nos 5 primeiros segundos** (peso maior), vocabulário
    raro (TF-IDF), conteúdo concreto (números, exemplos, perguntas, ênfase), duração perto de 1 min.
-3. Juiz LLM local (Qwen3-4B em CPU, ver `juiz.py`): relê os melhores candidatos e dá notas de gancho, contexto
-   próprio, valor e fechamento, além de poder adiantar o início para a frase mais forte. Sem o modelo, fica a
-   pontuação heurística.
+3. Juiz LLM local (Qwen3-4B em CPU, ver `juiz.py`): relê os melhores candidatos (com a frase de antes e a de
+   depois, e a descrição do usuário) e dá notas de gancho, contexto próprio, valor, fechamento e relevância, além
+   de poder adiantar o início para a frase mais forte. Sem o modelo, fica a pontuação heurística.
+
+v0.7 (falhas da v0.6: ganchos fracos, fim cortando a fala, contexto fraco):
+- **Fechamento é filtro duro** (`fecha_bem`): o corte só termina em fim de frase, com pausa real depois, e nunca
+  antes de uma frase que continua a ideia ("porém", "mas", "então", "por isso"...).
+- **Camada semântica** (`semantica.py`): relevância para a descrição do vídeo, coesão (uma ideia só) e
+  centralidade da oração escolhida como gancho.
+- **Gancho**: se a abertura não prende (nota do juiz < 7 ou heurística fraca), o cold open passa a ser obrigatório
+  com a oração mais forte e mais central do próprio corte.
 """
 from __future__ import annotations
 
@@ -69,6 +77,12 @@ VICIOS_INICIO = ("ne ", "eh ", "e ", "entao ", "bom ", "olha ", "assim ", "tipo 
 ZONA_BASTIDOR_S = 300.0  # o bastidor costuma estar nos 5 primeiros minutos
 JANELA_GANCHO_S = 5.0
 PAUSA_CONTEXTO_S = 1.6   # só junta a frase anterior se ela vier logo antes
+PAUSA_FIM_S = 0.45       # depois da última frase precisa haver silêncio de verdade (senão a fala é cortada)
+PAUSA_FIM_FORTE_S = 1.2  # com pausa assim, nem um "mas" depois impede o fim
+# A frase seguinte começa assim: a ideia continua, o corte não pode terminar antes dela.
+CONTINUA = ("porem", "mas", "entao", "por isso", "so que", "porque", "pois", "ou seja", "inclusive", "alem disso",
+            "e ai", "e", "tanto que", "portanto", "logo", "ai", "agora", "contudo", "entretanto", "inclusive",
+            "isso", "nisso", "dai", "ou", "senao", "como", "por exemplo", "tipo", "quer dizer")
 
 _NUMEROS = {"zero": 0, "um": 1, "uma": 1, "dois": 2, "duas": 2, "tres": 3, "quatro": 4, "cinco": 5, "seis": 6,
             "sete": 7, "oito": 8, "nove": 9, "dez": 10}
@@ -237,6 +251,28 @@ def _termina_frase(f: Frase) -> bool:
     return f.palavras[-1].texto.rstrip().endswith((".", "?", "!", "…"))
 
 
+def continua_ideia(f: Frase) -> bool:
+    """A frase começa retomando a anterior ("Porém...", "E aí...", "Isso..."): a ideia ainda não acabou."""
+    lt = _limpo(f.texto).strip()
+    return any(lt == c or lt.startswith(c + " ") for c in CONTINUA)
+
+
+def fecha_bem(ultima: Frase, seguinte: Frase | None) -> bool:
+    """O corte pode terminar depois de `ultima`? (filtro duro contra "vídeo encerrado cortando a fala")
+
+    - termina em pontuação final;
+    - há silêncio real depois (>= PAUSA_FIM_S) — sem isso o locutor (ou outro) já está falando;
+    - a próxima frase não continua a ideia, a menos que venha depois de uma pausa longa."""
+    if not _termina_frase(ultima):
+        return False
+    if seguinte is None:
+        return True
+    pausa = seguinte.ini - ultima.fim
+    if pausa < PAUSA_FIM_S:
+        return False
+    return pausa >= PAUSA_FIM_FORTE_S or not continua_ideia(seguinte)
+
+
 def completar_contexto(c: Corte, todas: list[Frase], limite_ini: float = 0.0) -> Corte:
     """Garante um corte que abre com a ideia inteira e fecha em frase completa.
 
@@ -265,9 +301,19 @@ def completar_contexto(c: Corte, todas: list[Frase], limite_ini: float = 0.0) ->
     while e_dependente(fs[0]) and len(fs) > 1 and fs[-1].fim - fs[1].ini >= MIN_S:
         fs.pop(0)
     j = pos.get(id(fs[-1]), None)
-    while j is not None and not _termina_frase(fs[-1]) and j + 1 < len(todas)             and todas[j + 1].ini - fs[-1].fim <= PAUSA_CONTEXTO_S and todas[j + 1].fim - fs[0].ini <= MAX_S:
-        j += 1
-        fs.append(todas[j])
+    if j is not None:
+        seg = lambda k: todas[k + 1] if k + 1 < len(todas) else None  # noqa: E731
+        # fim: avança até um ponto em que a ideia fecha (sem passar de MAX_S) ...
+        k = j
+        while not fecha_bem(todas[k], seg(k)) and k + 1 < len(todas) and todas[k + 1].fim - fs[0].ini <= MAX_S \
+                and not e_ruido(todas[k + 1]):
+            k += 1
+        if fecha_bem(todas[k], seg(k)):
+            fs += todas[j + 1:k + 1]
+        else:
+            # ... ou recua até o último ponto que fecha, mantendo a duração mínima
+            while len(fs) > 1 and not fecha_bem(fs[-1], seg(pos[id(fs[-1])])) and fs[-2].fim - fs[0].ini >= MIN_S:
+                fs.pop()
     return Corte(c.tema, fs, c.pontuacao)
 
 
@@ -312,11 +358,11 @@ def ajustar_limites(ini: float, fim: float, ant_fim: float | None, prox_ini: flo
         if len(e):
             ref = max(float(np.percentile(_energia(wav, fim - 0.6, fim)[1], 80)), 1.0)
             calmo = [k for k in range(len(e)) if e[k] < 0.12 * ref and t0 + k * 0.01 >= fim + 0.02]
-            novo_fim = (t0 + min(calmo) * 0.01 + 0.10) if calmo else fim + 0.35
+            novo_fim = (t0 + min(calmo) * 0.01 + 0.25) if calmo else fim + 0.40
     if ant_fim is not None:
         novo_ini = max(novo_ini, ant_fim - 0.02) if ant_fim < ini else novo_ini
     if prox_ini is not None and prox_ini > fim:
-        novo_fim = min(novo_fim, prox_ini - 0.02)
+        novo_fim = min(novo_fim, prox_ini - 0.08)
     return max(novo_ini, 0.0), max(novo_fim, fim)
 
 
@@ -350,6 +396,16 @@ def oracoes(f: Frase) -> list[Frase]:
     return [o for o in saida if o.fim - o.ini <= TEASER_S[1] and len(o.palavras) >= 5]
 
 
+def _centralidade(o: Frase, c: Corte) -> float:
+    """0-1: quanto a oração resume o corte (cosseno com o centro do corte, na escala do e5)."""
+    from . import semantica
+    emb = semantica.carregar()
+    if emb is None:
+        return 0.5
+    vo, vc = emb.vetores([o.texto, c.texto])
+    return max(0.0, min(1.0, (float(vo @ vc) - 0.75) / 0.2))
+
+
 def com_teaser(c: Corte, frase: Frase, log=None, exigir_melhor: bool = False) -> Corte:
     """Põe uma oração de impacto como "cold open" (os primeiros segundos que seguram), sem passar de MAX_S.
 
@@ -360,7 +416,7 @@ def com_teaser(c: Corte, frase: Frase, log=None, exigir_melhor: bool = False) ->
                   and o.ini >= c.ini + 3.0 and o.fim <= c.fim]
     if not candidatas:
         return c
-    o = max(candidatas, key=lambda x: (nota_gancho([x]), -abs((x.fim - x.ini) - 4.5)))
+    o = max(candidatas, key=lambda x: (nota_gancho([x]) + 0.4 * _centralidade(x, c) - 0.05 * abs((x.fim - x.ini) - 4.5)))
     if exigir_melhor and nota_gancho([o]) <= nota_gancho(c.frases):
         return c  # heurística: só vale se o gancho prende mais do que a abertura original
     dur = o.fim - o.ini
@@ -374,12 +430,15 @@ def com_teaser(c: Corte, frase: Frase, log=None, exigir_melhor: bool = False) ->
     return Corte(c.tema, fs, c.pontuacao, teaser=o)
 
 
-def teaser_heuristico(c: Corte, log=None) -> Corte:
-    """Sem indicação do juiz: a oração (após os 8 s iniciais) com o gancho mais forte, se prender mais que a abertura."""
+def teaser_heuristico(c: Corte, log=None, forcar: bool = False) -> Corte:
+    """A oração (após os 8 s iniciais) com o gancho mais forte e mais central. Por padrão só entra se prender mais
+    que a abertura; com `forcar` (abertura fraca segundo o juiz) entra sempre que houver uma oração boa."""
     ors = [o for f in c.frases for o in oracoes(f) if o.ini - c.ini >= 8]
     if not ors:
         return c
-    melhor = max(ors, key=lambda o: nota_gancho([o]))
+    melhor = max(ors, key=lambda o: nota_gancho([o]) + 0.3 * _centralidade(o, c))
+    if forcar and nota_gancho([melhor]) >= 0.45:
+        return com_teaser(c, melhor, log)
     return com_teaser(c, melhor, log, exigir_melhor=True)
 
 
@@ -387,10 +446,42 @@ def _sobrepoe(a: Corte, b: Corte, folga: float = 0.0) -> bool:
     return not (a.fim <= b.ini + folga or a.ini >= b.fim - folga)
 
 
-def sugerir(temas: list[Tema], por_minutos: float = 7.0, juiz=None, log=None) -> list[Corte]:
-    """Escolhe os cortes: filtros duros -> heurística em todas as janelas -> juiz LLM nos melhores.
+def _semantica(lista: list[Corte], todas: list[Frase], vs, descricao: str, log=None) -> None:
+    """Soma à pontuação: relevância para a descrição do usuário (peso 3) e coesão do trecho (peso 1,5)."""
+    import numpy as np
 
-    Quantidade: 1 por tema e mais 1 a cada `por_minutos` de tema; no máximo 2 do mesmo tema entre os finais."""
+    from . import semantica
+    if vs is None or not lista:
+        return
+    idx = {id(f): i for i, f in enumerate(todas)}
+    q = None
+    if descricao.strip():
+        emb = semantica.carregar()
+        q = emb.vetores([descricao], "query")[0] if emb else None
+    rel = []
+    for c in lista:
+        v = vs[[idx[id(f)] for f in c.frases if id(f) in idx]]
+        if not len(v):
+            rel.append(0.0)
+            continue
+        c.pontuacao += 1.5 * max(0.0, (semantica.coesao(v) - 0.8) / 0.15)
+        rel.append(float(semantica.centro(v) @ q) if q is not None else 0.0)
+    if q is not None:
+        r = np.array(rel)
+        z = (r - r.mean()) / max(float(r.std()), 1e-6)
+        for c, zi in zip(lista, z):
+            c.pontuacao += 1.0 * float(np.clip(zi, -2, 2))
+            c.relevancia = float(zi)
+        if log:
+            log(f"Relevância para a descrição calculada em {len(lista)} janelas")
+
+
+def sugerir(temas: list[Tema], por_minutos: float = 7.0, juiz=None, log=None, descricao: str = "",
+            vs=None) -> list[Corte]:
+    """Escolhe os cortes: filtros duros -> heurística (+ semântica) em todas as janelas -> juiz LLM nos melhores.
+
+    `descricao`: o que o usuário escreveu sobre o vídeo (tema, público, objetivo) — guia a relevância.
+    `vs`: vetores das frases (mesma ordem das frases dos temas), da camada semântica."""
     todas = [f for t in temas for f in t.frases]
     if not todas:
         return []
@@ -407,7 +498,14 @@ def sugerir(temas: list[Tema], por_minutos: float = 7.0, juiz=None, log=None) ->
     lista: list[Corte] = []
     for t in temas:
         lista += [completar_contexto(c, todas, inicio) for c in candidatos(t, idf, total, t0, inicio)]
-    lista = [c for c in lista if admissivel(c.frases, inicio) and MIN_S <= c.duracao <= MAX_S]
+    pos = {id(f): i for i, f in enumerate(todas)}
+    seguinte = lambda f: todas[pos[id(f)] + 1] if pos[id(f)] + 1 < len(todas) else None  # noqa: E731
+    antes = len(lista)
+    lista = [c for c in lista if admissivel(c.frases, inicio) and MIN_S <= c.duracao <= MAX_S
+             and fecha_bem(c.frases[-1], seguinte(c.frases[-1]))]
+    if log:
+        log(f"{antes - len(lista)} janela(s) descartada(s) por não fechar a ideia ou cortar a fala")
+    _semantica(lista, todas, vs, descricao, log)
     lista.sort(key=lambda c: -c.pontuacao)
     curtos: list[Corte] = []
     vaga = min(max(quota + 6, int(quota * 1.3)), 24) if juiz else quota  # ~15 s por finalista em CPU
@@ -425,11 +523,13 @@ def sugerir(temas: list[Tema], por_minutos: float = 7.0, juiz=None, log=None) ->
     if juiz and curtos:
         avaliados = []
         for k, c in enumerate(curtos, 1):
-            r = juiz.avaliar(c)
+            i0 = pos[id(c.frases[0])]
+            r = juiz.avaliar(c, antes=todas[i0 - 1] if i0 > 0 else None, depois=seguinte(c.frases[-1]),
+                             descricao=descricao)
             if log:
-                log(f"  Juiz {k}/{len(curtos)}: nota {r.nota:.1f} (gancho {r.gancho}, contexto {r.contexto}, valor {r.valor}, fim {r.fechamento})"
+                log(f"  Juiz {k}/{len(curtos)}: nota {r.nota:.1f} (gancho {r.gancho}, contexto {r.contexto}, valor {r.valor}, fim {r.fechamento}, relevância {r.relevancia})"
                     + (" [bastidor]" if r.bastidor else "") + f" — “{c.texto[:70]}…”")
-            if r.bastidor:
+            if r.bastidor or r.fechamento < 4:
                 continue
             novo = c
             if 0 < r.inicio < len(c.frases):
@@ -440,10 +540,11 @@ def sugerir(temas: list[Tema], por_minutos: float = 7.0, juiz=None, log=None) ->
                         log(f"    início adiantado para a frase {r.inicio + 1}: “{cand.texto[:60]}…”")
             novo.pontuacao = r.nota + 0.1 * c.pontuacao
             impacto = c.frases[r.impacto] if 0 <= r.impacto < len(c.frases) else None
+            # gancho fraco na abertura: o cold open é obrigatório (oração mais forte e central do corte)
             if impacto is not None and impacto is not novo.frases[0]:
-                novo = com_teaser(novo, impacto, log)
+                novo = com_teaser(novo, impacto, log, exigir_melhor=r.gancho >= 7)
             if novo.teaser is None:
-                novo = teaser_heuristico(novo, log)
+                novo = teaser_heuristico(novo, log, forcar=r.gancho < 7)
             avaliados.append(novo)
         curtos = sorted(avaliados, key=lambda c: -c.pontuacao)
         # nota mínima: só passa o que o juiz considera bom (mantém ao menos 3)

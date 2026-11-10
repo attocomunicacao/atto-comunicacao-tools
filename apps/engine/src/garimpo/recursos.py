@@ -84,6 +84,23 @@ def llm(log=None, progresso=None) -> Path:
     return _hf_local(repo, arquivo) or baixar(repo, arquivo, pasta_cache() / "llm" / arquivo, log, progresso)
 
 
+# multilingual-e5-small (MIT), ONNX int8 (~120 MB): embeddings de frase para temas, relevância e coesão
+EMBEDDINGS = ("intfloat/multilingual-e5-small", ["onnx/model_qint8_avx512_vnni.onnx", "onnx/tokenizer.json"])
+
+
+def embeddings(log=None) -> Path:
+    """Pasta com `model.onnx` e `tokenizer.json` do e5-small (embutido, cache do usuário ou download)."""
+    embutido = Path(os.environ.get("ATTO_MODELOS", "")) / "e5-small"
+    if os.environ.get("ATTO_MODELOS") and (embutido / "model.onnx").exists():
+        return embutido
+    repo, arquivos = EMBEDDINGS
+    pasta = pasta_cache() / "e5-small"
+    for a in arquivos:
+        nome = "model.onnx" if a.endswith(".onnx") else Path(a).name
+        baixar(repo, a, pasta / nome, log)
+    return pasta
+
+
 # ---------------------------------------------------------------- pinturas em domínio público (Met Museum, CC0)
 
 MET = "https://collectionapi.metmuseum.org/public/collection"

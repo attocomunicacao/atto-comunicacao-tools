@@ -25,21 +25,26 @@ SISTEMA = (
     "Você é editor de vídeos curtos (Reels, TikTok, Shorts) e avalia trechos de podcasts e palestras em português. "
     "Responda apenas com JSON."
 )
-PEDIDO = """Avalie o trecho abaixo para virar um vídeo curto. As frases estão numeradas; [0-5s] marca o que se ouve nos 5 primeiros segundos.
+PEDIDO = """Avalie o trecho abaixo para virar um vídeo curto.{descricao}
+As frases do trecho estão numeradas; [0-5s] marca o que se ouve nos 5 primeiros segundos.
+ANTES e DEPOIS são as falas vizinhas, que NÃO entram no vídeo (servem para você julgar contexto e fechamento).
 
+ANTES: {antes}
 {frases}
+DEPOIS: {depois}
 
-Dê notas de 0 a 10:
-- "gancho": os primeiros 5 segundos fazem a pessoa parar de rolar o feed? (abertura do programa, cumprimento, "então", "né" = nota baixa)
-- "contexto": dá para entender sem ter visto o que veio antes?
+Dê notas de 0 a 10, com rigor (7+ só para o que um editor profissional publicaria):
+- "gancho": ouvindo SÓ os 5 primeiros segundos, a pessoa para de rolar o feed? Precisa ser uma frase completa e forte: afirmação surpreendente, pergunta, número, conflito, promessa. Abertura do programa, cumprimento, "então", "né", frase pela metade = 0 a 3.
+- "contexto": quem não viu o ANTES entende tudo? Pronome sem referência ("ele", "isso", "essa lei"), resposta sem a pergunta ou continuação de raciocínio = nota baixa.
 - "valor": ensina algo, surpreende, emociona ou traz opinião forte?
-- "fechamento": termina com a ideia concluída?
+- "fechamento": a última frase conclui a ideia? Se o DEPOIS continua o mesmo raciocínio ("porém", "mas", "e aí", conclusão que ficou de fora), ou se outra pessoa responde a uma pergunta, nota baixa.
+- "relevancia": quanto o trecho serve ao objetivo descrito pelo usuário (sem descrição, 5).
 Também:
 - "bastidor": true se houver conversa de gravação (contagem 1 2 3 / 5 4 3, "gravando", "pronto", teste de som, combinações da equipe).
 - "inicio": número da frase onde o corte deveria começar para ter o melhor gancho mantendo o sentido (1 = como está).
 - "impacto": número da frase mais forte, surpreendente ou polêmica do trecho, que funcionaria sozinha como chamada nos primeiros segundos do vídeo.
 
-JSON: {{"gancho": n, "contexto": n, "valor": n, "fechamento": n, "bastidor": bool, "inicio": n, "impacto": n}}"""
+JSON: {{"gancho": n, "contexto": n, "valor": n, "fechamento": n, "relevancia": n, "bastidor": bool, "inicio": n, "impacto": n}}"""
 
 
 @dataclass
@@ -51,11 +56,14 @@ class Avaliacao:
     bastidor: bool
     inicio: int  # índice (0 = primeira frase)
     impacto: int = 0  # índice da frase mais forte (candidata a "cold open")
+    relevancia: float = 5.0
 
     @property
     def nota(self) -> float:
-        # o gancho pesa mais: são os 5 primeiros segundos que seguram a audiência
-        return 0.4 * self.gancho + 0.25 * self.contexto + 0.25 * self.valor + 0.1 * self.fechamento
+        # o gancho pesa mais (os 5 primeiros segundos seguram a audiência); fechamento e contexto vêm em seguida,
+        # porque as falhas da v0.6 foram fim cortando a fala e corte que não se sustenta sozinho
+        return (0.32 * self.gancho + 0.2 * self.contexto + 0.18 * self.valor + 0.18 * self.fechamento
+                + 0.12 * self.relevancia)
 
 
 def _num(v, padrao: float = 5.0) -> float:
@@ -72,16 +80,20 @@ def interpretar(texto: str, n_frases: int) -> Avaliacao:
     ini = int(_num(d.get("inicio", 1), 1)) - 1
     imp = int(_num(d.get("impacto", 1), 1)) - 1
     return Avaliacao(_num(d.get("gancho")), _num(d.get("contexto")), _num(d.get("valor")), _num(d.get("fechamento")),
-                     bool(d.get("bastidor", False)), max(0, min(ini, n_frases - 1)), max(0, min(imp, n_frases - 1)))
+                     bool(d.get("bastidor", False)), max(0, min(ini, n_frases - 1)), max(0, min(imp, n_frases - 1)),
+                     _num(d.get("relevancia")))
 
 
-def montar_prompt(c: Corte) -> str:
+def montar_prompt(c: Corte, antes=None, depois=None, descricao: str = "") -> str:
     ini = c.ini
     linhas = []
     for k, f in enumerate(c.frases[:14], 1):
         marca = " [0-5s]" if f.ini < ini + 5 else ""
         linhas.append(f"{k}.{marca} {f.texto.strip()}")
-    return PEDIDO.format(frases="\n".join(linhas))
+    desc = f"\nObjetivo do usuário para os cortes: {descricao.strip()[:400]}" if descricao.strip() else ""
+    return PEDIDO.format(frases="\n".join(linhas), descricao=desc,
+                         antes=antes.texto.strip()[:300] if antes else "(início da gravação)",
+                         depois=depois.texto.strip()[:300] if depois else "(fim da gravação)")
 
 
 class Juiz:
@@ -89,14 +101,22 @@ class Juiz:
         from llama_cpp import Llama
         self.llm = Llama(model_path=caminho_modelo, n_ctx=4096, n_threads=os.cpu_count() or 8, verbose=False)
 
-    def avaliar(self, c: Corte) -> Avaliacao:
+    def avaliar(self, c: Corte, antes=None, depois=None, descricao: str = "") -> Avaliacao:
+        from . import cache
+        pedido = montar_prompt(c, antes, depois, descricao) + " /no_think"
+        k = cache.chave("juiz-v2", pedido)
+        guardado = cache.ler_json("juiz", k)  # reteste do mesmo vídeo: mesma nota, sem rodar o LLM de novo
+        if guardado:
+            return interpretar(guardado, len(c.frases))
         try:
             r = self.llm.create_chat_completion(
-                messages=[{"role": "system", "content": SISTEMA}, {"role": "user", "content": montar_prompt(c) + " /no_think"}],
+                messages=[{"role": "system", "content": SISTEMA}, {"role": "user", "content": pedido}],
                 response_format={"type": "json_object"}, temperature=0.1, max_tokens=200)
-            return interpretar(r["choices"][0]["message"]["content"], len(c.frases))
+            texto = r["choices"][0]["message"]["content"]
+            cache.gravar_json("juiz", k, texto)
+            return interpretar(texto, len(c.frases))
         except Exception:
-            return Avaliacao(5, 5, 5, 5, False, 0, 0)
+            return Avaliacao(5, 5, 5, 5, False, 0, 0, 5)
 
 
 def carregar(log=None) -> Juiz | None:

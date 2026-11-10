@@ -149,44 +149,106 @@ def _peso_chave(texto: str, meio_de_frase: bool = False) -> float:
     return p
 
 
+# Quebra das linhas da legenda (v0.7): segmentação ótima por programação dinâmica, como um diagramador.
+# Custo de quebrar ENTRE duas palavras: barato depois de ponto/vírgula/pausa, caro depois de palavra de função
+# ("de", "o", "que"), de adjetivo que pede o substantivo ("nova | lei") e no meio de número+unidade ou nome próprio.
+FUNCAO = {"a", "o", "as", "os", "um", "uma", "uns", "umas", "de", "do", "da", "dos", "das", "em", "no", "na", "nos",
+          "nas", "por", "pelo", "pela", "pelos", "pelas", "para", "pra", "pro", "com", "sem", "que", "se", "e", "ou",
+          "mas", "como", "ao", "aos", "a", "as", "num", "numa", "seu", "sua", "seus", "suas", "meu", "minha", "teu",
+          "tua", "nosso", "nossa", "esse", "essa", "este", "esta", "aquele", "aquela", "isso", "lhe", "me", "te",
+          "nao", "tao", "mais", "muito", "muita", "bem", "e", "ja", "so", "quando", "onde", "qual", "quais", "cujo",
+          "entre", "sobre", "ate", "desde", "apos", "contra", "perante", "sob", "porque", "pois", "nem", "la", "eu",
+          "ele", "ela", "eles", "elas", "voce", "voces", "gente", "desse", "dessa", "deste", "desta", "nesse",
+          "nessa", "neste", "nesta", "daquele", "daquela", "naquele", "naquela", "dessas", "desses", "nessas", "nesses",
+          "longo", "acordo", "respeito", "partir", "cerca", "meio", "alem", "antes", "depois", "dentro", "fora"}
+# verbos de ligação/auxiliares: quebrar depois deles é aceitável ("como é que foi | a tua vivência"), mas não ótimo
+VERBOS_AUX = {"estava", "estao", "esta", "foi", "sao", "era", "tem", "tinha", "vai", "vou", "ia", "ser", "estar",
+              "ter", "fazer", "pode", "deve", "precisa", "e"}
+ADJ_ANTES = {"nova", "novo", "novas", "novos", "grande", "grandes", "primeira", "primeiro", "segunda", "segundo",
+             "ultima", "ultimo", "mesmo", "mesma", "outra", "outro", "outras", "outros", "cada", "todo", "toda",
+             "todos", "todas", "certo", "certa", "qualquer", "pequeno", "pequena", "maior", "menor", "melhor", "pior",
+             "alguns", "algumas", "muitos", "muitas", "poucos", "poucas", "varios", "varias", "bom", "boa", "nenhum",
+             "nenhuma", "tanto", "tanta", "proprio", "propria", "emenda", "medida", "projeto", "reforma"}
+UNIDADES_FALA = {"mil", "milhao", "milhoes", "bilhao", "bilhoes", "reais", "real", "dolares", "por", "porcento",
+                 "anos", "ano", "meses", "dias", "horas", "minutos", "vezes", "pessoas", "empresas", "%"}
+PALAVRAS_LINHA = {1: 2.6, 2: 0.7, 3: 0.0, 4: 0.0, 5: 0.5}
+CUSTO_LINHA = 0.8  # cada linha a mais custa: evita picar a fala em pedacinhos
+
+
+def _custo_quebra(a: Palavra, b: Palavra) -> float:
+    """Custo de terminar uma linha em `a` e começar a próxima em `b` (negativo = bom lugar para quebrar)."""
+    ta, tb = a.texto.strip(), b.texto.strip()
+    na, nb = _norm(_limpa(ta)), _norm(_limpa(tb))
+    pausa = max(0.0, b.ini - a.fim)
+    if ta.endswith((".", "?", "!", "…")):
+        return -4.0
+    c = -min(pausa, 0.6) * 4
+    if ta.endswith((",", ";", ":")):
+        return c - 0.8
+    if na in FUNCAO:
+        c += 5.0
+    elif na in VERBOS_AUX:
+        c += 1.5
+    if na in ADJ_ANTES:
+        c += 3.0
+    if re.fullmatch(r"\d+([.,]\d+)?%?", na) and nb in UNIDADES_FALA:
+        c += 4.0
+    if re.fullmatch(r"\d+([.,]\d+)?%?", nb):
+        c += 2.5
+    if ta[:1].isupper() and tb[:1].isupper():   # nome próprio composto ("Reginaldo Lopes")
+        c += 3.0
+    return c
+
+
+def _custo_linha(ws: list[Palavra]) -> float:
+    n = len(ws)
+    c = PALAVRAS_LINHA.get(n, 99.0) + CUSTO_LINHA
+    dur = ws[-1].fim - ws[0].ini
+    if dur > 2.4:
+        c += (dur - 2.4) * 1.5
+    if sum(len(_limpa(w.texto)) for w in ws) + n - 1 > 30:
+        c += 1.0
+    for x, y in zip(ws, ws[1:]):     # nunca atravessa fim de frase nem pausa longa
+        if x.texto.strip().endswith((".", "?", "!", "…")) or y.ini - x.fim > 0.8:
+            c += 100.0
+    return c
+
+
+def segmentar(ws: list[Palavra]) -> list[tuple[int, int]]:
+    """Linhas ótimas (índices [a, b)) de 1 a MAX_GRUPO palavras."""
+    n = len(ws)
+    melhor = [0.0] + [float("inf")] * n
+    volta = [0] * (n + 1)
+    for j in range(1, n + 1):
+        for k in range(1, min(MAX_GRUPO, j) + 1):
+            i = j - k
+            c = melhor[i] + _custo_linha(ws[i:j]) + (_custo_quebra(ws[j - 1], ws[j]) if j < n else 0.0)
+            if c < melhor[j]:
+                melhor[j], volta[j] = c, i
+    linhas, j = [], n
+    while j > 0:
+        linhas.append((volta[j], j))
+        j = volta[j]
+    return linhas[::-1]
+
+
 def grupos_legenda(ws: list[Palavra], origem: float) -> list[dict]:
-    """Legenda em linhas de até 5 palavras (como na referência). Em cada linha, a palavra mais importante é a
-    "chave" (grande, serifada itálica, no centro); as demais ficam pequenas acima/abaixo, em minúsculas."""
-    grupos: list[list[Palavra]] = [[]]
-    for k, p in enumerate(ws):
-        grupos[-1].append(p)
-        prox = ws[k + 1] if k + 1 < len(ws) else None
-        if prox is None:
-            break
-        quebra = (len(grupos[-1]) >= MAX_GRUPO or p.texto.endswith((".", "?", "!", ",", ";", ":"))
-                  or prox.ini - p.fim > 0.35)
-        if quebra and len(grupos[-1]) >= 2 or prox.ini - p.fim > 0.8:
-            # não termina a linha em palavra vazia ("no", "e", "da"): ela passa para a próxima linha
-            pendente = []
-            while len(grupos[-1]) > 2 and _norm(_limpa(grupos[-1][-1].texto)) in STOP and not grupos[-1][-1].texto.endswith((".", "?", "!", ",")):
-                pendente.insert(0, grupos[-1].pop())
-            grupos.append(pendente)
-    juntos: list[list[Palavra]] = []
-    for g in grupos:
-        if not g:
-            continue
-        if juntos and len(juntos[-1]) == 1 and len(juntos[-1]) + len(g) <= MAX_GRUPO + 1:
-            juntos[-1] += g
-        else:
-            juntos.append(g)
-    grupos = juntos
+    """Legenda em linhas de até 5 palavras que formam unidades de sentido (`segmentar`). Em cada linha, a palavra
+    mais importante é a "chave" (grande, serifada itálica); as demais ficam menores, em minúsculas.
+    `pont` guarda a pontuação final da linha (pergunta/exclamação escolhem o preset)."""
     saida = []
-    for g in grupos:
-        if not g:
-            continue
+    for a, b in segmentar(ws):
+        g = ws[a:b]
         chave = max(range(len(g)), key=lambda i: (_peso_chave(g[i].texto, meio_de_frase=i > 0), -_vazia(g[i].texto)))
         palavras = []
         for i, p in enumerate(g):
             t = _limpa(p.texto).lower() or p.texto.lower()
             palavras.append({"t": t, "ini": round(p.ini - origem, 3), "fim": round(p.fim - origem, 3), "chave": i == chave})
-        saida.append({"ini": palavras[0]["ini"], "fim": palavras[-1]["fim"], "palavras": palavras})
-    for a, b in zip(saida, saida[1:]):
-        a["fim"] = round(min(b["ini"] - 0.02, a["fim"] + 0.6), 3)   # a linha fica até a próxima (respiro curto)
+        fim_txt = g[-1].texto.strip()
+        saida.append({"ini": palavras[0]["ini"], "fim": palavras[-1]["fim"], "palavras": palavras,
+                      "pont": fim_txt[-1] if fim_txt[-1:] in "?!.," else ""})
+    for x, y in zip(saida, saida[1:]):
+        x["fim"] = round(min(y["ini"] - 0.02, x["fim"] + 0.6), 3)   # a linha fica até a próxima (respiro curto)
     if saida:
         saida[-1]["fim"] = round(saida[-1]["fim"] + 0.5, 3)
     return saida
@@ -541,7 +603,7 @@ def planejar(trechos: list[tuple[float, float, list[Palavra]]], llm=None, log=No
             transicoes.append(round(deslocamento, 3))
     duracao = deslocamento
     if llm is not None:
-        titulo, extra = cenas_por_llm(llm, frases, n_imagens=1 if deslocamento < 40 else 2)
+        titulo, extra = cenas_por_llm(llm, frases, n_imagens=2 if deslocamento < 45 else 3)
         if log:
             log(f"Motion: LLM sugeriu {len(extra)} cena(s)" + (f" e o título “{titulo}”" if titulo else ""))
         cenas = extra + cenas
@@ -551,7 +613,7 @@ def planejar(trechos: list[tuple[float, float, list[Palavra]]], llm=None, log=No
         inicio_corpo = transicoes[0] if transicoes else 0
         cenas = [c for c in cenas if c["ini"] > inicio_corpo + 1.0]
     escolher_presets(grupos, fim_gancho=(transicoes[0] if transicoes else 4.5))
-    escolhidas = _espacar(cenas, duracao)
+    escolhidas = intercalar(_espacar(cenas, duracao), duracao, log)
     if pinturas:
         escolhidas = com_imagens(escolhidas, log)
     if citacao:
@@ -615,7 +677,7 @@ def escolher_presets(grupos: list[dict], fim_gancho: float = 4.5) -> None:
         if g["ini"] < fim_gancho and g_idx < len(GANCHOS):
             p = GANCHOS[g_idx]
             g_idx += 1
-        elif "?" in texto:
+        elif g.get("pont") == "?":
             p = "maquina"
         elif re.search(r"\d", texto):
             p = "elastico"
@@ -632,3 +694,44 @@ def escolher_presets(grupos: list[dict], fim_gancho: float = 4.5) -> None:
             giro += 1
         g["preset"] = p
         anterior = p
+
+
+# ---------------------------------------------------------------- motor de intercalação (narração ilustrada)
+
+DOMINANTES = ("imagem", "pintura", "citacao")   # cobrem o quadro: o locutor some
+MIN_LOCUTOR = 0.60        # fração mínima do corte com o locutor visível (pedido: a animação não ocupa 100%)
+MAX_DOMINANTE_SEGUIDO = 4.2
+RESPIRO_LIMPO = 4.0       # s de locutor limpo (sem nada) entre duas dominantes
+
+
+def intercalar(cenas: list[dict], duracao: float, log=None) -> list[dict]:
+    """Decide, cena a cena, o ritmo da narração ilustrada (videoplayback (3).mp4): o locutor alterna entre
+    **limpo**, **com ilustração parcial** (texto/ícone/gráfico/documento na caixa livre) e **ilustração dominante**
+    curta (imagem 3D, pintura, citação). Regras:
+    - dominantes somam no máximo (1 − MIN_LOCUTOR) do corte e cada uma dura até MAX_DOMINANTE_SEGUIDO s;
+    - entre duas dominantes há pelo menos RESPIRO_LIMPO s só de locutor;
+    - as parciais também não emendam: uma a cada INTERVALO_MIN s (já garantido em `_espacar`);
+    - quem perde a vaga é descartado por ordem de chegada (a 1ª cena do corte e a citação do gancho têm prioridade)."""
+    orcamento = (1.0 - MIN_LOCUTOR) * duracao
+    usado = 0.0
+    ultima_dom_fim = -1e9
+    saida: list[dict] = []
+    for c in sorted(cenas, key=lambda c: c["ini"]):
+        if c["tipo"] in DOMINANTES:
+            dur = min(c["fim"] - c["ini"], MAX_DOMINANTE_SEGUIDO)
+            if c.get("cobreLegenda"):           # citação do gancho: já é o começo do corte, entra sempre
+                dur = c["fim"] - c["ini"]
+            elif usado + dur > orcamento or c["ini"] - ultima_dom_fim < RESPIRO_LIMPO:
+                continue
+            c["fim"] = round(c["ini"] + dur, 3)
+            usado += dur
+            ultima_dom_fim = c["fim"]
+            c["modo"] = "dominante"
+        else:
+            c["modo"] = "parcial"
+        saida.append(c)
+    if log:
+        parc = sum(1 for c in saida if c["modo"] == "parcial")
+        log(f"Intercalação: {parc} parcial(is), {len(saida) - parc} dominante(s) ({usado / max(duracao, 1):.0%} do corte; "
+            f"locutor visível {1 - usado / max(duracao, 1):.0%})")
+    return saida

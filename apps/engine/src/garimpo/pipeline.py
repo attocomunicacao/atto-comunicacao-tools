@@ -58,8 +58,12 @@ def _carregar_palavras(pasta: Path) -> tuple[list[Palavra], float]:
     return transcricao.carregar(pasta / "transcricao.json")
 
 
-def transcrever(video: Path, pasta: Path, modelo: str) -> None:
-    """Etapas 1-2 e levantamento das dúvidas de escrita (etapa 3)."""
+def transcrever(video: Path, pasta: Path, modelo: str, refazer: bool = False) -> None:
+    """Etapas 1-2 e levantamento das dúvidas de escrita (etapa 3).
+
+    A transcrição fica no cache global por conteúdo (`cache.py`): o mesmo vídeo, em qualquer projeto novo, não é
+    transcrito de novo. `refazer` (botão "Transcrever de novo") ignora o cache."""
+    from . import cache
     pasta.mkdir(parents=True, exist_ok=True)
     info = midia.informacoes(video)
     fps = info["fps"]
@@ -71,6 +75,17 @@ def transcrever(video: Path, pasta: Path, modelo: str) -> None:
         midia.extrair_wav(video, wav)
         _log(f"Áudio extraído ({wav.stat().st_size / 1e6:.0f} MB)")
     json_tr = pasta / "transcricao.json"
+    termos = list(Dicionario.carregar().termos.keys())
+    k = cache.chave_transcricao(video, modelo, termos)
+    guardada = None if refazer else cache.ler_json("transcricoes", k)
+    if guardada and not json_tr.exists():
+        _etapa(2, 3, "Transcrição reaproveitada")
+        json_tr.write_text(json.dumps(guardada, ensure_ascii=False), encoding="utf-8")
+        _log(f"Transcrição reaproveitada do cache ({len(guardada['palavras'])} palavras): este vídeo já foi transcrito")
+        print("CACHE transcricao", flush=True)
+        _pct(1)
+    if refazer and json_tr.exists():
+        json_tr.unlink()
     if not json_tr.exists():
         _etapa(2, 3, "Transcrevendo (pode demorar em CPU)")
         _log(f"Whisper '{modelo}' no processador (int8, beam 5), idioma pt, tempo por palavra")
@@ -82,12 +97,12 @@ def transcrever(video: Path, pasta: Path, modelo: str) -> None:
                 ultimo[0] = t
                 _log(f"{int(t // 60)}:{int(t % 60):02d} de {int(total // 60)}:{int(total % 60):02d}  “{texto[:90]}”")
 
-        termos = list(Dicionario.carregar().termos.keys())
         if termos:
             _log(f"Termos do seu dicionário como dica para o Whisper: {', '.join(termos[:12])}")
         palavras = transcricao.transcrever(wav, fps, modelo, progresso, hotwords=termos, log=_log)
         transcricao.salvar(palavras, json_tr, fps)
-        _log(f"Transcrição pronta: {len(palavras)} palavras")
+        cache.gravar_json("transcricoes", k, json.loads(json_tr.read_text(encoding="utf-8")))
+        _log(f"Transcrição pronta: {len(palavras)} palavras (guardada no cache para os próximos testes)")
     palavras, fps = _carregar_palavras(pasta)
     _etapa(3, 3, "Procurando dúvidas de escrita")
     texto = " ".join(p.texto for p in palavras)
@@ -106,8 +121,10 @@ def transcrever(video: Path, pasta: Path, modelo: str) -> None:
     print(f"RESULTADO {len(itens)} duvidas", flush=True)
 
 
-def estruturar(video: Path, pasta: Path, aprovadas: list[int]) -> list[Corte]:
-    """Etapas 4-9: aplica as correções aprovadas, aprende com elas e gera .md, temas, cortes e prévias."""
+def estruturar(video: Path, pasta: Path, aprovadas: list[int], descricao: str = "") -> list[Corte]:
+    """Etapas 4-9: aplica as correções aprovadas, aprende com elas e gera .md, temas, cortes e prévias.
+
+    `descricao`: o que o usuário escreveu sobre o vídeo (tema, público, objetivo); guia a relevância dos cortes."""
     palavras, fps = _carregar_palavras(pasta)
     itens = json.loads((pasta / "duvidas.json").read_text(encoding="utf-8"))
     dic = Dicionario.carregar()
@@ -123,14 +140,21 @@ def estruturar(video: Path, pasta: Path, aprovadas: list[int]) -> list[Corte]:
     palavras = _aplicar(palavras, escolhidas)
     exportar_md.transcricao(palavras, pasta / "transcricao.md")
     _etapa(2, 3, "Separando frases, parágrafos e temas")
-    fs = estrutura.frases(palavras)
-    ps = estrutura.paragrafos(fs)
-    ts = estrutura.temas(ps)
-    _log(f"{len(fs)} frases, {len(ps)} parágrafos, {len(ts)} temas")
-    _log("Pontuando trechos (vocabulário raro, gancho, exemplos), sem teste de som e com contexto completo")
+    from . import semantica
+    emb = semantica.carregar(_log)
+    fs, ps, ts, vs = estrutura.estruturar(palavras, emb, _log)
+    _log(f"{len(fs)} frases, {len(ps)} parágrafos, {len(ts)} temas"
+         + (" (pausas + sentido)" if vs is not None else " (pausas + vocabulário)"))
+    if descricao.strip():
+        (pasta / "descricao.txt").write_text(descricao, encoding="utf-8")
+        _log(f"Descrição do vídeo como guia: “{descricao.strip()[:100]}”")
+    _log("Pontuando trechos: gancho, fechamento sem cortar a fala, contexto, relevância e coesão")
     from . import juiz as mod_juiz
     juiz = mod_juiz.carregar(_log)
-    cs = mod_cortes.sugerir(ts, juiz=juiz, log=_log)
+    ordem = {id(f): i for i, f in enumerate(fs)}
+    todas_t = [f for t in ts for f in t.frases]
+    vs_t = vs[[ordem[id(f)] for f in todas_t]] if vs is not None else None
+    cs = mod_cortes.sugerir(ts, juiz=juiz, log=_log, descricao=descricao, vs=vs_t)
     _log(f"{len(cs)} corte(s) escolhido(s)")
     exportar_md.frases(fs, pasta / "frases.md", fps)
     exportar_md.paragrafos(ps, pasta / "paragrafos.md", fps)
@@ -166,10 +190,11 @@ def estruturar(video: Path, pasta: Path, aprovadas: list[int]) -> list[Corte]:
     return cs
 
 
-def analisar(video: Path, pasta: Path, modelo: str, aceitar_todas: bool) -> None:
-    transcrever(video, pasta, modelo)
+def analisar(video: Path, pasta: Path, modelo: str, aceitar_todas: bool, descricao: str = "",
+             refazer: bool = False) -> None:
+    transcrever(video, pasta, modelo, refazer)
     itens = json.loads((pasta / "duvidas.json").read_text(encoding="utf-8"))
-    estruturar(video, pasta, [d["id"] for d in itens] if aceitar_todas else [])
+    estruturar(video, pasta, [d["id"] for d in itens] if aceitar_todas else [], descricao)
 
 
 def transicoes_da_montagem(arquivos: list[Path], flashes: list[list[float]], tmp: Path, nome: str, log) -> list:
@@ -250,13 +275,13 @@ def exportar(video: Path, pasta: Path, aprovados: list[int], logo: Path | None =
         for j, (a, b, _) in enumerate(partes):
             zooms = [z - deslocamento for z in plano.zooms if deslocamento <= z < deslocamento + (b - a) - 2]
             # cache por conteúdo: reeditar só a animação não refaz o reenquadramento (ATTO_MANTER_TMP=1)
-            chave = hashlib.sha1(json.dumps([video.name, a, b, zooms, "v2"]).encode()).hexdigest()[:10]
+            chave = hashlib.sha1(json.dumps([video.name, a, b, zooms, j == 0, "v3"]).encode()).hexdigest()[:10]
             arq = tmp / f"{nome}-{j}-{chave}.mkv"
             cache_flash = arq.with_suffix(".flash.json")
             if not (manter and arq.exists() and cache_flash.exists()):
                 internos: list[float] = []
                 midia.trecho_vertical(video, a, b, arq, zooms, _log, lambda f, j=j: _pct(0.45 * (j + f) / len(partes)),
-                                      cortes_flash=internos)
+                                      cortes_flash=internos, zoom_inicio=(j == 0))  # todo corte abre com zoom in
                 cache_flash.write_text(json.dumps(internos), encoding="utf-8")
             else:
                 _log(f"Trecho {j + 1} reaproveitado do cache")
@@ -316,11 +341,17 @@ def main() -> None:
         p.add_argument("--pasta", type=Path, required=True)
         return p
 
-    com_video("transcrever", "etapas 1-2 e dúvidas de escrita").add_argument("--modelo", default=transcricao.MODELO_PADRAO)
-    com_video("estruturar", "etapas 4-9").add_argument("--aprovadas", default="", help="ids de dúvidas, ex.: 0,2")
+    t = com_video("transcrever", "etapas 1-2 e dúvidas de escrita")
+    t.add_argument("--modelo", default=transcricao.MODELO_PADRAO)
+    t.add_argument("--refazer", action="store_true", help="ignora a transcrição guardada no cache")
+    es = com_video("estruturar", "etapas 4-9")
+    es.add_argument("--aprovadas", default="", help="ids de dúvidas, ex.: 0,2")
+    es.add_argument("--descricao", default="", help="tema, público e objetivo do vídeo (guia a escolha)")
     a = com_video("analisar", "tudo até os cortes sugeridos")
     a.add_argument("--modelo", default=transcricao.MODELO_PADRAO)
     a.add_argument("--aceitar-todas", action="store_true")
+    a.add_argument("--descricao", default="")
+    a.add_argument("--refazer", action="store_true")
     e = com_video("exportar", "corta e legenda os aprovados")
     e.add_argument("--aprovados", required=True)
     e.add_argument("--logo", type=Path, default=None, help="imagem para o fim de cada corte")
@@ -331,11 +362,11 @@ def main() -> None:
     args = ap.parse_args()
     ids = lambda s: [int(x) for x in s.split(",") if x.strip()]  # noqa: E731
     if args.cmd == "transcrever":
-        transcrever(args.video, args.pasta, args.modelo)
+        transcrever(args.video, args.pasta, args.modelo, args.refazer)
     elif args.cmd == "estruturar":
-        estruturar(args.video, args.pasta, ids(args.aprovadas))
+        estruturar(args.video, args.pasta, ids(args.aprovadas), args.descricao)
     elif args.cmd == "analisar":
-        analisar(args.video, args.pasta, args.modelo, args.aceitar_todas)
+        analisar(args.video, args.pasta, args.modelo, args.aceitar_todas, args.descricao, args.refazer)
     elif args.cmd == "exportar":
         exportar(args.video, args.pasta, ids(args.aprovados), args.logo)
     else:

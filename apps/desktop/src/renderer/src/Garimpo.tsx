@@ -26,6 +26,9 @@ export function Garimpo() {
   const [cortes, setCortes] = useState<Corte[]>([])
   const [escolhidos, setEscolhidos] = useState<Set<number>>(new Set())
   const [gerados, setGerados] = useState<string[]>([])
+  const [descricao, setDescricao] = useState(() => { try { return localStorage.getItem('garimpo.descricao') ?? '' } catch { return '' } })
+  const [refazer, setRefazer] = useState(false)
+  const [reaproveitada, setReaproveitada] = useState(false)
   const andamento = useAndamento()
 
   const rodar = async (cmd: string, args: string[], aoLinha?: (l: string) => void) => {
@@ -53,7 +56,11 @@ export function Garimpo() {
       const p = await window.atto.criarProjeto(video)
       setPasta(p)
       setEtapa('transcricao')
-      await rodar('transcrever', [video, '--pasta', p])
+      setReaproveitada(false)
+      try { localStorage.setItem('garimpo.descricao', descricao) } catch { /* sem armazenamento */ }
+      await rodar('transcrever', [video, '--pasta', p, ...(refazer ? ['--refazer'] : [])], (l) => {
+        if (l.startsWith('CACHE transcricao')) setReaproveitada(true)
+      })
       const itens = await window.atto.lerJson<Duvida[]>(p, 'duvidas.json')
       setDuvidas(itens)
       setAprovadas(new Set(itens.filter((d) => d.confianca >= 0.9).map((d) => d.id)))
@@ -65,7 +72,7 @@ export function Garimpo() {
     if (!video || !pasta) return
     try {
       setEtapa('estrutura')
-      await rodar('estruturar', [video, '--pasta', pasta, '--aprovadas', [...aprovadas].join(',')])
+      await rodar('estruturar', [video, '--pasta', pasta, '--aprovadas', [...aprovadas].join(','), '--descricao', descricao.trim()])
       const cs = await window.atto.lerJson<Corte[]>(pasta, 'cortes.json')
       setCortes(cs)
       setEscolhidos(new Set())
@@ -116,6 +123,15 @@ export function Garimpo() {
               <button className="btn" onClick={comecar} disabled={!video}>Começar</button>
             </div>
             {video && <p className="caminho">{video}</p>}
+            <label className="campo">
+              <span className="campo-titulo">Descrição do vídeo <span className="meta">(opcional, guia a escolha dos cortes)</span></span>
+              <textarea rows={3} value={descricao} onChange={(e) => setDescricao(e.target.value)}
+                placeholder="Ex.: podcast sobre reforma tributária para donos de pequenas empresas; quero cortes que expliquem o que muda na prática." />
+            </label>
+            <label className="opcao">
+              <input type="checkbox" checked={refazer} onChange={(e) => setRefazer(e.target.checked)} />
+              Transcrever de novo <span className="meta">(ignora a transcrição já guardada deste vídeo)</span>
+            </label>
             <LogoFinal />
           </>
         )}
@@ -128,6 +144,7 @@ export function Garimpo() {
 
         {etapa === 'duvidas' && (
           <>
+            {reaproveitada && <p className="aviso-ok">Transcrição reaproveitada: este vídeo já tinha sido transcrito.</p>}
             <h2 style={{ margin: '0 0 6px', fontWeight: 500 }}>Dúvidas de escrita</h2>
             <p className="sub" style={{ marginBottom: 18 }}>Aprove as correções corretas. Elas entram no seu dicionário e serão aplicadas sozinhas da próxima vez.</p>
             {duvidas.length === 0 ? (

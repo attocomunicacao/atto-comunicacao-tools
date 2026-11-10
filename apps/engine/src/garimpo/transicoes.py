@@ -21,8 +21,10 @@ from . import recursos
 SEGMENTACAO = ("onnx-community/mediapipe_selfie_segmentation", "onnx/model.onnx")
 FLASH_ANTES = 0.4    # s antes do corte
 FLASH_DEPOIS = 0.4   # s depois do corte
-ZOOM_INICIAL = 2.3   # escala no 1º quadro do plano que entra
-ZOOM_DURACAO = 0.5   # s até assentar em 100%
+# Medido em videoplayback (2).mp4 (27,2-28,4 s, quadro a quadro): o 1º quadro é um borrão ampliado (~250%),
+# em 0,3 s já está em ~140% e assenta em 100% perto de 1 s — "ease out" com a curva puxada, obturador 360°.
+ZOOM_INICIAL = 2.5   # escala no 1º quadro do plano que entra
+ZOOM_DURACAO = 1.0   # s até assentar em 100%
 
 # Padrão em blocos de 2 quadros (lido quadro a quadro na referência): A = plano que sai, B = plano que entra,
 # "w" = silhueta branca. Antes do corte domina A, depois domina B; termina limpo em B.

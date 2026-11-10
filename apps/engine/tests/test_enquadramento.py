@@ -89,3 +89,11 @@ def test_concat_de_modos_diferentes_com_pixel_nao_quadrado(tmp_path):
     r = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height,sample_aspect_ratio",
                         "-of", "csv=p=0", str(saida)], capture_output=True, text=True)
     assert r.stdout.strip().startswith("1080,1920,1:1")
+
+
+def test_v07_zoom_no_inicio_e_flash_em_toda_troca():
+    assert e.estilos_troca(4) == ["flash", "flash", "flash"]
+    um = e.filtro([e.Segmento(0, 5, "unico", [900])], 1920, 1080, 30.0, [], zoom_inicio=True)
+    assert "zoompan" in um and "[cv]" in um            # trecho de 1 plano também abre com zoom
+    dois = e.filtro([e.Segmento(0, 4, "unico", [900]), e.Segmento(4, 8, "unico", [1500])], 1920, 1080, 30.0, ["flash"], zoom_inicio=True)
+    assert dois.count("zoompan") == 1 and "xfade" not in dois   # zoom só no 1º; troca = corte seco (flash na montagem)

@@ -1,16 +1,26 @@
 /**
- * Motor de presets da legenda. Cada linha (até 5 palavras) chega do motor com `preset` e `caixa` (zona livre de
- * rostos, ver garimpo/espaco.py). Presets lidos quadro a quadro das referências (docs/pesquisa/2026-11-referencias-edicao.md):
+ * Motor de presets da legenda (v0.7). Referência: videoplayback.mp4 ("7 animações de texto"), medida quadro a
+ * quadro em docs/pesquisa/2026-11-referencias-v07.md.
  *
- * Linha:   cinematico · maquina (máquina de escrever) · sobe · desce · esquerda · direita · elastico · deslocamento
- * Gancho:  impacto · revelacao · glitch
+ * O que a referência faz e a v0.6 não fazia (por isso parecia amadora):
+ * 1. COMPOSIÇÃO: as palavras formam um BLOCO compacto em escada — linhas encostadas (entrelinha ~0,9, quase se
+ *    tocando), cada linha deslocada um degrau, tamanho CRESCENTE até a palavra-chave. Nada de palavras soltas
+ *    espalhadas numa caixa larga.
+ * 2. MOVIMENTO CURTO: cada palavra entra em 5-6 quadros (~0,2-0,35 s), deslocando menos de meia altura de letra,
+ *    com desfoque de movimento; nada de tremida, quique elástico ou voo de 60 px.
+ * 3. O BLOCO NUNCA PARA: deriva devagar (sobe ~10 px e cresce ~2%) enquanto está na tela.
+ * 4. SAÍDA LIMPA: o bloco inteiro some em desfoque em 4-5 quadros, encostando na entrada do próximo.
  *
- * Tudo branco. Palavra-chave em Playfair Display itálico (números em Inter 800). Sempre determinístico.
+ * Presets (só muda o movimento de entrada; a composição é a mesma):
+ *   cinematico · maquina · sobe · desce · esquerda · direita · elastico · deslocamento  +  gancho: impacto · revelacao · glitch
+ * Tudo branco. Palavra-chave em Playfair Display itálico (números e "elástico" em Inter 800). Determinístico.
  */
 import gsap from 'gsap'
 import type { Grupo, JobMotion, PalavraGrupo } from './tipos'
 
 type T = gsap.core.Timeline
+type Entrada = (t: T, w: HTMLElement, p: PalavraGrupo, ordem: number, tam: number, chave: boolean) => void
+
 const el = (tag: string, cls: string, txt?: string) => {
   const e = document.createElement(tag)
   e.className = cls
@@ -18,253 +28,214 @@ const el = (tag: string, cls: string, txt?: string) => {
   return e
 }
 
-function tamanhoChave(t: string, larg: number): number {
-  return Math.max(76, Math.min(150, larg / Math.max(t.length * 0.52, 1)))
+const SAIDA = 0.16 // s: o bloco se desfaz em ~5 quadros
+const ANTECIPA = 0.04 // a palavra começa a surgir um tiquinho antes de ser dita
+
+interface Composicao {
+  caixa: HTMLElement // área livre de rostos (do mapa de espaço)
+  bloco: HTMLElement // o bloco em escada (é ele que deriva e sai)
+  palavras: { e: HTMLElement; p: PalavraGrupo; chave: boolean; tam: number }[]
 }
 
-/** Bloco posicionado na caixa livre (centralizado verticalmente nela). */
-function bloco(palco: HTMLElement, g: Grupo, extra = ''): HTMLElement {
+/** Medidas: a chave ocupa até ~86% da largura livre; as menores seguem a hierarquia da referência (1 : 1,2 : 1,6+). */
+function medidas(g: Grupo, larg: number, chave: PalavraGrupo | undefined, maiusc = false) {
+  const lk = chave ? chave.t.length : 6
+  const fator = maiusc ? 0.66 : chave && /\d/.test(chave.t) ? 0.58 : 0.5
+  const K = Math.round(Math.max(88, Math.min(156, (larg * 0.86) / Math.max(lk * fator, 1))))
+  const S = Math.round(Math.max(42, Math.min(60, K * 0.44)))
+  return { K, S, M: Math.round(S * 1.2) }
+}
+
+/**
+ * Monta o bloco em escada. `escada`: 1 = degraus para a direita (desce para a direita), -1 = para a esquerda.
+ * Linhas: [antes da chave] (pequena) → [chave] (grande) → [depois] (média). Sem chave: 2 linhas equilibradas.
+ */
+function compor(palco: HTMLElement, g: Grupo, escada: 1 | -1 = 1, opc: { maiusc?: boolean; chaveSans?: boolean } = {}): Composicao {
   const [x, y, w, h] = g.caixa ?? [60, 1270, 960, 450]
-  const b = el('div', 'grupo ' + extra)
-  Object.assign(b.style, { left: `${x}px`, top: `${y}px`, width: `${w}px`, height: `${h}px` })
-  palco.appendChild(b)
-  return b
-}
+  const caixa = el('div', 'leg-caixa')
+  Object.assign(caixa.style, { left: `${x}px`, top: `${y}px`, width: `${w}px`, height: `${h}px` })
+  const bloco = el('div', 'leg-bloco')
+  caixa.append(bloco)
+  palco.appendChild(caixa)
 
-function chaveEl(p: PalavraGrupo, larg: number, escala = 1): HTMLElement {
-  const num = /\d/.test(p.t)
-  const e = el('span', num ? 'chave chave-sans' : 'chave', p.t)
-  e.style.fontSize = `${tamanhoChave(p.t, larg) * (num ? 0.9 : 1) * escala}px`
-  return e
-}
-
-/** Saída comum: a linha inteira se desfaz em desfoque antes da próxima. */
-function sair(t: T, b: HTMLElement, g: Grupo, prox: Grupo | undefined, desde: number) {
-  const sai = Math.min(g.fim, prox ? prox.ini : g.fim) - 0.26
-  t.to(b, { opacity: 0, filter: 'blur(12px)', y: '-=18', duration: 0.28, ease: 'power2.in' }, Math.max(sai, desde + 0.25))
-}
-
-function ki(g: Grupo) {
-  return g.palavras.findIndex((p) => p.chave)
-}
-
-// ---------------------------------------------------------------- presets de linha
-
-/** Cinematográfico (referência minimal): pequenas acima/abaixo surgem na fala; chave revela com desfoque longo. */
-function cinematico(palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) {
-  const b = bloco(palco, g)
-  const k = ki(g)
-  const larg = (g.caixa?.[2] ?? 960) - 40
-  const antes = el('div', 'linha-peq'), depois = el('div', 'linha-peq')
-  const peqs: [HTMLElement, number][] = []
-  let chave: HTMLElement | null = null
-  g.palavras.forEach((p, i) => {
-    if (i === k) { chave = chaveEl(p, larg); return }
-    const s = el('span', 'peq', p.t)
-    ;(k < 0 || i < k ? antes : depois).append(s, document.createTextNode(' '))
-    peqs.push([s, p.ini])
-  })
-  if (antes.childNodes.length) b.append(antes)
-  if (chave) b.append(chave)
-  if (depois.childNodes.length) b.append(depois)
-  gsap.set(peqs.map(([s]) => s), { opacity: 0 })
-  for (const [s, ini] of peqs) {
-    t.fromTo(s, { opacity: 0, y: 14, filter: 'blur(8px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.45, ease: 'power3.out', immediateRender: false }, ini - 0.04)
+  const k = g.palavras.findIndex((p) => p.chave)
+  const { K, S, M } = medidas(g, w - 40, k >= 0 ? g.palavras[k] : undefined, opc.maiusc)
+  let linhas: { idx: number[]; tam: number }[]
+  if (k >= 0) {
+    linhas = [
+      { idx: g.palavras.map((_, i) => i).filter((i) => i < k), tam: S },
+      { idx: [k], tam: K },
+      { idx: g.palavras.map((_, i) => i).filter((i) => i > k), tam: M }
+    ].filter((l) => l.idx.length)
+  } else {
+    const n = g.palavras.length
+    const meio = Math.ceil(n / 2)
+    const T2 = Math.round(Math.min(96, Math.max(64, (w * 0.8) / Math.max(g.palavras.slice(meio).map((p) => p.t).join(' ').length * 0.5, 1))))
+    linhas = [{ idx: [...Array(meio).keys()], tam: Math.round(T2 * 0.8) }, { idx: [...Array(n - meio).keys()].map((i) => i + meio), tam: T2 }]
+      .filter((l) => l.idx.length)
   }
+  const palavras: Composicao['palavras'] = []
+  const degrau = Math.round(K * 0.16)
+  linhas.forEach((l, li) => {
+    const linha = el('div', 'leg-linha')
+    linha.style.fontSize = `${l.tam}px`
+    // degrau: cada linha anda um pouco para o lado (escada), como na referência
+    const passo = (li - (linhas.length - 1) / 2) * degrau * escada
+    linha.style.transform = `translateX(${Math.round(passo)}px)`
+    if (li > 0) linha.style.marginTop = `${-Math.round(l.tam * 0.1)}px`
+    for (const i of l.idx) {
+      const p = g.palavras[i]
+      const ehChave = i === k
+      const num = /\d/.test(p.t)
+      const cls = ehChave ? (opc.chaveSans || num || opc.maiusc ? 'leg-p leg-chave-sans' : 'leg-p leg-chave') : 'leg-p'
+      const e = el('span', cls, opc.maiusc && ehChave ? p.t.toUpperCase() : p.t)
+      linha.append(e)
+      palavras.push({ e, p, chave: ehChave, tam: l.tam })
+    }
+    bloco.append(linha)
+  })
+  return { caixa, bloco, palavras }
+}
+
+/** Deriva contínua + saída em desfoque (comuns a todos os presets). */
+function viver(t: T, c: Composicao, g: Grupo, prox: Grupo | undefined, ultimaEntrada: number) {
+  const fimVisivel = Math.max(Math.min(g.fim, prox ? prox.ini : g.fim), ultimaEntrada + 0.35)
+  const ini = c.palavras[0]?.p.ini ?? g.ini
+  t.fromTo(c.bloco, { y: 0, scale: 1 }, { y: -10, scale: 1.022, duration: Math.max(fimVisivel - ini, 0.3), ease: 'none', immediateRender: false }, ini)
+  t.to(c.bloco, { opacity: 0, filter: 'blur(10px)', scale: '+=0.012', duration: SAIDA, ease: 'power2.in' }, fimVisivel - SAIDA)
+}
+
+/** Aplica uma entrada palavra a palavra, no tempo da fala. */
+function porPalavra(palco: HTMLElement, t: T, g: Grupo, prox: Grupo | undefined, entrada: Entrada, escada: 1 | -1 = 1,
+  opc: { maiusc?: boolean; chaveSans?: boolean } = {}) {
+  const c = compor(palco, g, escada, opc)
+  gsap.set(c.palavras.map((x) => x.e), { opacity: 0 })
+  let ultima = g.ini
+  c.palavras.forEach((x, i) => {
+    const quando = x.p.ini - ANTECIPA
+    entrada(t, x.e, { ...x.p, ini: quando }, i, x.tam, x.chave)
+    ultima = Math.max(ultima, quando)
+  })
+  viver(t, c, g, prox, ultima)
+}
+
+// ---------------------------------------------------------------- entradas (medidas na referência)
+
+const O = { immediateRender: false }
+
+/** Desliza pra cima: sobe ~0,4 da altura da letra, de 0 a 100% de opacidade, desfoque de movimento curto. */
+const sobe: Entrada = (t, w, p, _o, tam) => {
+  t.fromTo(w, { opacity: 0, y: tam * 0.42, filter: 'blur(6px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.32, ease: 'expo.out', ...O }, p.ini)
+}
+/** Desliza pra baixo: vem de cima com rastro vertical (scaleY) que assenta. */
+const desce: Entrada = (t, w, p, _o, tam) => {
+  t.fromTo(w, { opacity: 0, y: -tam * 0.42, scaleY: 1.18, filter: 'blur(7px)', transformOrigin: '50% 0%' },
+    { opacity: 1, y: 0, scaleY: 1, filter: 'blur(0px)', duration: 0.34, ease: 'expo.out', ...O }, p.ini)
+}
+/** Desliza pra esquerda: entra pela direita com rastro horizontal. */
+const esquerda: Entrada = (t, w, p, _o, tam) => {
+  t.fromTo(w, { opacity: 0, x: tam * 0.6, scaleX: 1.12, filter: 'blur(8px)', transformOrigin: '0% 50%' },
+    { opacity: 1, x: 0, scaleX: 1, filter: 'blur(0px)', duration: 0.34, ease: 'expo.out', ...O }, p.ini)
+}
+/** Desliza pra direita: espelho. */
+const direita: Entrada = (t, w, p, _o, tam) => {
+  t.fromTo(w, { opacity: 0, x: -tam * 0.6, scaleX: 1.12, filter: 'blur(8px)', transformOrigin: '100% 50%' },
+    { opacity: 1, x: 0, scaleX: 1, filter: 'blur(0px)', duration: 0.34, ease: 'expo.out', ...O }, p.ini)
+}
+/** Entrada com desfoque/deslocamento: chega muito desfocada, levemente maior e de lado, e assenta. */
+const comDesfoque: Entrada = (t, w, p, o, tam) => {
+  t.fromTo(w, { opacity: 0, x: (o % 2 ? -1 : 1) * tam * 0.35, y: tam * 0.18, scale: 1.1, filter: 'blur(16px)' },
+    { opacity: 1, x: 0, y: 0, scale: 1, filter: 'blur(0px)', duration: 0.42, ease: 'power3.out', ...O }, p.ini)
+}
+/** Cinemático (minimal premium): pequenas surgem em fade suave; a chave abre o espaçamento e foca. */
+const cinematicoE: Entrada = (t, w, p, _o, tam, chave) => {
   if (chave) {
-    gsap.set(chave, { opacity: 0 })
-    t.fromTo(chave, { opacity: 0, y: -60, scale: 1.1, letterSpacing: '0.08em', filter: 'blur(18px)' },
-      { opacity: 1, y: 0, scale: 1, letterSpacing: '0em', filter: 'blur(0px)', duration: 0.85, ease: 'expo.out', immediateRender: false }, g.palavras[k].ini - 0.06)
+    t.fromTo(w, { opacity: 0, letterSpacing: '0.06em', scale: 1.05, filter: 'blur(14px)' },
+      { opacity: 1, letterSpacing: '0em', scale: 1, filter: 'blur(0px)', duration: 0.55, ease: 'power2.out', ...O }, p.ini)
+  } else {
+    t.fromTo(w, { opacity: 0, y: tam * 0.2, filter: 'blur(5px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.3, ease: 'power2.out', ...O }, p.ini)
   }
-  t.fromTo(b, { y: 0 }, { y: -10, duration: Math.max(g.fim - g.ini, 0.4), ease: 'sine.inOut', immediateRender: false }, g.ini)
-  sair(t, b, g, prox, g.ini)
+}
+/** Elástico (referência: um risco de luz que se comprime até a palavra). Sem quique: compressão expo. */
+const elasticoE: Entrada = (t, w, p, o, tam, chave) => {
+  if (!chave) return sobe(t, w, p, o, tam, chave)
+  t.fromTo(w, { opacity: 0.95, scaleX: 2.6, scaleY: 0.07, filter: 'blur(9px) brightness(2.2)' },
+    { scaleX: 1, scaleY: 1, filter: 'blur(0px) brightness(1)', duration: 0.42, ease: 'expo.out', ...O }, p.ini - 0.06)
+  t.set(w, { opacity: 1 }, p.ini - 0.06)
 }
 
-/** Máquina de escrever: letra por letra no ritmo da fala, cursor piscando; chave em serifa. */
+function cinematico(palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) { porPalavra(palco, t, g, prox, cinematicoE, 1) }
+function sobeP(palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) { porPalavra(palco, t, g, prox, sobe, 1) }
+function desceP(palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) { porPalavra(palco, t, g, prox, desce, -1) }
+function esquerdaP(palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) { porPalavra(palco, t, g, prox, esquerda, -1) }
+function direitaP(palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) { porPalavra(palco, t, g, prox, direita, 1) }
+function deslocamento(palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) { porPalavra(palco, t, g, prox, comDesfoque, 1) }
+function elastico(palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) { porPalavra(palco, t, g, prox, elasticoE, 1, { maiusc: true }) }
+
+/** Máquina de escrever: letra por letra no ritmo da fala, com cursor que pisca e acompanha a última letra. */
 function maquina(palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) {
-  const b = bloco(palco, g)
-  const linha = el('div', 'linha-maquina')
-  const k = ki(g)
+  const c = compor(palco, g, 1)
   const letras: [HTMLElement, number][] = []
-  g.palavras.forEach((p, i) => {
-    const w = el('span', i === k ? 'serif maq-chave' : 'maq')
-    const dur = Math.max(p.fim - p.ini, 0.12)
-    ;[...p.t].forEach((ch, j) => {
+  for (const x of c.palavras) {
+    const txt = x.e.textContent ?? ''
+    x.e.textContent = ''
+    const dur = Math.max(x.p.fim - x.p.ini, 0.12) * 0.85
+    ;[...txt].forEach((ch, j) => {
       const l = el('span', 'letra', ch)
-      w.append(l)
-      letras.push([l, p.ini + (j / Math.max(p.t.length, 1)) * dur * 0.9])
+      x.e.append(l)
+      letras.push([l, x.p.ini - ANTECIPA + (j / Math.max(txt.length, 1)) * dur])
     })
-    linha.append(w, document.createTextNode(' '))
-  })
-  const cursor = el('span', 'cursor', '|')
-  linha.append(cursor)
-  b.append(linha)
-  gsap.set(letras.map(([l]) => l), { opacity: 0 })
-  for (const [l, quando] of letras) t.to(l, { opacity: 1, duration: 0.01 }, quando)
-  // cursor pisca (função do tempo, sem repeat infinito)
-  const pisca = { v: 0 }
-  t.to(pisca, { v: 1, duration: g.fim - g.ini, ease: 'none', onUpdate: () => {
-    cursor.style.opacity = Math.floor(pisca.v * (g.fim - g.ini) * 2.2) % 2 === 0 ? '1' : '0'
-  } }, g.ini)
-  sair(t, b, g, prox, g.ini)
-}
-
-/** Desliza (cima/baixo/esquerda/direita): palavras empilhadas entram por máscara, com desfoque de movimento. */
-function desliza(direcao: 'sobe' | 'desce' | 'esquerda' | 'direita') {
-  return (palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) => {
-    const b = bloco(palco, g, 'pilha')
-    const k = ki(g)
-    const larg = (g.caixa?.[2] ?? 960) - 40
-    const linhas: HTMLElement[] = []
-    // até 3 linhas: agrupa as palavras pequenas em volta da chave
-    let atual = el('div', 'pilha-linha')
-    g.palavras.forEach((p, i) => {
-      const masc = el('span', 'mascara')
-      const s = i === k ? chaveEl(p, larg, 0.85) : el('span', 'peq-grande', p.t)
-      masc.append(s)
-      if (i === k) {
-        if (atual.childNodes.length) linhas.push(atual)
-        const lk = el('div', 'pilha-linha')
-        lk.append(masc)
-        linhas.push(lk)
-        atual = el('div', 'pilha-linha')
-      } else atual.append(masc, document.createTextNode(' '))
-      const de = direcao === 'sobe' ? { yPercent: 110 } : direcao === 'desce' ? { yPercent: -110 } : direcao === 'esquerda' ? { xPercent: 70 } : { xPercent: -70 }
-      const borrao = direcao === 'sobe' || direcao === 'desce' ? { scaleY: 1.35 } : { scaleX: 1.45 }
-      gsap.set(s, { opacity: 0 })
-      t.fromTo(s, { ...de, ...borrao, opacity: 0, filter: 'blur(10px)' },
-        { xPercent: 0, yPercent: 0, scaleX: 1, scaleY: 1, opacity: 1, filter: 'blur(0px)', duration: 0.5, ease: 'expo.out', immediateRender: false }, p.ini - 0.05)
-    })
-    if (atual.childNodes.length) linhas.push(atual)
-    b.append(...linhas)
-    sair(t, b, g, prox, g.ini)
   }
+  const cursor = el('span', 'cursor', '|')
+  cursor.style.fontSize = `${c.palavras[c.palavras.length - 1]?.tam ?? 60}px`
+  c.palavras[c.palavras.length - 1]?.e.parentElement?.append(cursor)
+  gsap.set(letras.map(([l]) => l), { opacity: 0 })
+  for (const [l, quando] of letras) t.fromTo(l, { opacity: 0 }, { opacity: 1, duration: 0.03, ...O }, quando)
+  const pisca = { v: 0 }
+  const d = Math.max(g.fim - g.ini, 0.3)
+  t.to(pisca, { v: 1, duration: d, ease: 'none', onUpdate: () => {
+    cursor.style.opacity = Math.floor(pisca.v * d * 2.4) % 2 === 0 ? '1' : '0'
+  } }, g.ini)
+  viver(t, c, g, prox, letras.length ? letras[letras.length - 1][1] : g.ini)
 }
 
-/** Texto elástico: nasce como um risco de luz horizontal e se comprime até a palavra (ease elástico). */
-function elastico(palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) {
-  const b = bloco(palco, g)
-  const k = Math.max(ki(g), 0)
-  const larg = (g.caixa?.[2] ?? 960) - 40
-  const antes = el('div', 'linha-peq')
-  g.palavras.forEach((p, i) => { if (i !== k) antes.append(el('span', 'peq', p.t), document.createTextNode(' ')) })
-  const grande = el('div', 'elastica', g.palavras[k].t.toUpperCase())
-  grande.style.fontSize = `${Math.min(150, larg / Math.max(g.palavras[k].t.length * 0.62, 1))}px`
-  b.append(antes, grande)
-  gsap.set([antes, grande], { opacity: 0 })
-  t.fromTo(antes, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4, ease: 'power3.out', immediateRender: false }, g.ini)
-  t.fromTo(grande, { opacity: 1, scaleX: 3.2, scaleY: 0.06, filter: 'blur(6px) brightness(3)' },
-    { scaleX: 1, scaleY: 1, filter: 'blur(0px) brightness(1)', duration: 0.9, ease: 'elastic.out(1, 0.5)', immediateRender: false }, g.palavras[k].ini - 0.1)
-  sair(t, b, g, prox, g.ini)
-}
+// ---------------------------------------------------------------- presets de gancho (primeiros segundos)
 
-/** Entrada com deslocamento: linhas em escada (esquerda, centro, direita), cada uma vem desfocada na diagonal. */
-function deslocamento(palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) {
-  const b = bloco(palco, g, 'escada')
-  const k = ki(g)
-  const larg = (g.caixa?.[2] ?? 960) - 40
-  const partes: HTMLElement[] = []
-  let atual = el('div', 'degrau')
-  g.palavras.forEach((p, i) => {
-    if (i === k) {
-      if (atual.childNodes.length) partes.push(atual)
-      const d = el('div', 'degrau')
-      d.append(chaveEl(p, larg, 0.9))
-      partes.push(d)
-      atual = el('div', 'degrau')
-    } else atual.append(el('span', 'peq-grande', p.t), document.createTextNode(' '))
-  })
-  if (atual.childNodes.length) partes.push(atual)
-  partes.forEach((d, i) => {
-    d.style.alignSelf = ['flex-start', 'center', 'flex-end'][i % 3]
-    b.append(d)
-    gsap.set(d, { opacity: 0 })
-    const quando = g.ini + (i / partes.length) * Math.min(g.fim - g.ini, 1.2)
-    t.fromTo(d, { opacity: 0, x: i % 2 ? 60 : -60, y: 30, filter: 'blur(14px)' },
-      { opacity: 1, x: 0, y: 0, filter: 'blur(0px)', duration: 0.6, ease: 'power3.out', immediateRender: false }, quando)
-  })
-  sair(t, b, g, prox, g.ini)
-}
-
-// ---------------------------------------------------------------- presets de gancho
-
-/** Impacto: a chave bate na tela (escala 2,4 → 1) com tremida curta e pulso de brilho. */
+/** Impacto: a chave chega grande e desfocada e assenta seca (sem tremida), com um pulso de brilho. */
 function impacto(palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) {
-  const b = bloco(palco, g)
-  const k = Math.max(ki(g), 0)
-  const larg = (g.caixa?.[2] ?? 960) - 40
-  const antes = el('div', 'linha-peq'), depois = el('div', 'linha-peq')
-  g.palavras.forEach((p, i) => { if (i !== k) (i < k ? antes : depois).append(el('span', 'peq', p.t), document.createTextNode(' ')) })
-  const chave = chaveEl(g.palavras[k], larg, 1.15)
-  b.append(antes, chave, depois)
-  gsap.set([antes, depois, chave], { opacity: 0 })
-  const tk = g.palavras[k].ini - 0.05
-  t.fromTo(chave, { opacity: 0, scale: 2.4, filter: 'blur(16px)' }, { opacity: 1, scale: 1, filter: 'blur(0px)', duration: 0.38, ease: 'expo.out', immediateRender: false }, tk)
-  const tremida = { v: 0 }
-  t.to(tremida, { v: 1, duration: 0.35, ease: 'none', onUpdate: () => {
-    const a = (1 - tremida.v) * 9
-    gsap.set(b, { x: Math.sin(tremida.v * 60) * a, y: Math.cos(tremida.v * 47) * a * 0.6 })
-  } }, tk + 0.3)
-  t.fromTo(chave, { textShadow: '0 0 90px rgba(255,255,255,1)' }, { textShadow: '0 0 34px rgba(255,255,255,0.35)', duration: 0.8, ease: 'power2.out', immediateRender: false }, tk + 0.1)
-  t.fromTo([antes, depois], { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.4, ease: 'power3.out', stagger: 0.1, immediateRender: false }, tk + 0.25)
-  sair(t, b, g, prox, tk + 0.4)
+  porPalavra(palco, t, g, prox, (tl, w, p, o, tam, chave) => {
+    if (!chave) return sobe(tl, w, p, o, tam, chave)
+    tl.fromTo(w, { opacity: 0, scale: 1.5, filter: 'blur(14px)' }, { opacity: 1, scale: 1, filter: 'blur(0px)', duration: 0.3, ease: 'expo.out', ...O }, p.ini)
+    tl.fromTo(w, { textShadow: '0 0 70px rgba(255,255,255,0.95)' }, { textShadow: '0 2px 18px rgba(0,0,0,0.45)', duration: 0.7, ease: 'power2.out', ...O }, p.ini + 0.08)
+  }, 1)
 }
 
-/** Revelação: uma linha fina varre a largura e revela o texto por máscara (wipe), chave em serifa. */
+/** Revelação: cada palavra é revelada da esquerda para a direita por máscara, com um fio de luz na frente. */
 function revelacao(palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) {
-  const b = bloco(palco, g)
-  const k = ki(g)
-  const larg = (g.caixa?.[2] ?? 960) - 40
-  const conteudo = el('div', 'revela')
-  const antes = el('div', 'linha-peq'), depois = el('div', 'linha-peq')
-  let chave: HTMLElement | null = null
-  g.palavras.forEach((p, i) => {
-    if (i === k) chave = chaveEl(p, larg)
-    else (k < 0 || i < k ? antes : depois).append(el('span', 'peq', p.t), document.createTextNode(' '))
-  })
-  conteudo.append(antes)
-  if (chave) conteudo.append(chave)
-  conteudo.append(depois)
-  const risco = el('div', 'risco-revela')
-  b.append(conteudo, risco)
-  const dur = Math.min(0.9, Math.max(g.fim - g.ini - 0.3, 0.4))
-  gsap.set(conteudo, { clipPath: 'inset(0% 100% 0% 0%)' })
-  gsap.set(risco, { opacity: 0 })
-  t.to(conteudo, { clipPath: 'inset(0% 0% 0% 0%)', duration: dur, ease: 'power3.inOut' }, g.ini)
-  t.fromTo(risco, { opacity: 1, left: '0%' }, { left: '100%', duration: dur, ease: 'power3.inOut', immediateRender: false }, g.ini)
-  t.to(risco, { opacity: 0, duration: 0.2 }, g.ini + dur)
-  sair(t, b, g, prox, g.ini + dur)
+  porPalavra(palco, t, g, prox, (tl, w, p) => {
+    const dur = Math.min(0.42, Math.max(p.fim - p.ini, 0.22))
+    tl.set(w, { opacity: 1 }, p.ini)
+    tl.fromTo(w, { clipPath: 'inset(-20% 100% -20% 0%)', filter: 'blur(3px)' },
+      { clipPath: 'inset(-20% -5% -20% 0%)', filter: 'blur(0px)', duration: dur, ease: 'power3.inOut', ...O }, p.ini)
+  }, 1)
 }
 
-/** Glitch (monocromático): palavras grandes empilhadas com cópias fantasmas deslocadas que tremem e assentam. */
+/** Glitch (monocromático, referência "LINK NA BIO"): cópias fantasmas deslocadas que convergem em ~0,3 s. */
 function glitch(palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) {
-  const b = bloco(palco, g, 'pilha')
-  const larg = (g.caixa?.[2] ?? 960) - 40
-  const palavras = g.palavras.filter((p) => p.t.length > 1).slice(0, 3)
-  palavras.forEach((p) => {
-    const linha = el('div', 'glitch-linha')
-    const tam = Math.min(140, larg / Math.max(p.t.length * 0.62, 1))
-    const fantasmas = [el('span', 'glitch-fantasma', p.t.toUpperCase()), el('span', 'glitch-fantasma', p.t.toUpperCase())]
-    const principal = el('span', 'glitch-principal', p.t.toUpperCase())
-    for (const f of [...fantasmas, principal]) f.style.fontSize = `${tam}px`
-    linha.append(...fantasmas, principal)
-    b.append(linha)
-    gsap.set(linha, { opacity: 0 })
-    t.set(linha, { opacity: 1 }, p.ini - 0.05)
+  porPalavra(palco, t, g, prox, (tl, w, p) => {
+    tl.set(w, { opacity: 1 }, p.ini)
     const q = { v: 0 }
-    t.to(q, { v: 1, duration: 0.45, ease: 'none', onUpdate: () => {
-      const a = (1 - q.v) * 26
-      gsap.set(fantasmas[0], { x: Math.round(Math.sin(q.v * 40) * a), opacity: 0.5 * (1 - q.v) + 0.15 })
-      gsap.set(fantasmas[1], { x: -Math.round(Math.cos(q.v * 33) * a), opacity: 0.4 * (1 - q.v) + 0.1 })
-      gsap.set(principal, { clipPath: q.v < 0.6 ? `inset(${Math.round(Math.abs(Math.sin(q.v * 23)) * 40)}% 0 0 0)` : 'inset(0% 0 0 0)' })
-    } }, p.ini - 0.05)
-  })
-  sair(t, b, g, prox, g.ini)
+    tl.to(q, { v: 1, duration: 0.3, ease: 'none', onUpdate: () => {
+      const a = (1 - q.v) * 18
+      w.style.textShadow = `${Math.round(Math.sin(q.v * 31) * a)}px 0 0 rgba(255,255,255,${0.55 * (1 - q.v)}), ${-Math.round(Math.cos(q.v * 27) * a)}px 0 0 rgba(255,255,255,${0.4 * (1 - q.v)}), 0 2px 18px rgba(0,0,0,0.45)`
+      w.style.clipPath = q.v < 0.55 ? `inset(${Math.round(Math.abs(Math.sin(q.v * 19)) * 35)}% 0 0 0)` : 'none'
+    } }, p.ini)
+  }, -1, { maiusc: false })
 }
 
 const PRESETS: Record<string, (palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) => void> = {
-  cinematico, maquina, sobe: desliza('sobe'), desce: desliza('desce'), esquerda: desliza('esquerda'),
-  direita: desliza('direita'), elastico, deslocamento, impacto, revelacao, glitch
+  cinematico, maquina, sobe: sobeP, desce: desceP, esquerda: esquerdaP, direita: direitaP, elastico, deslocamento,
+  impacto, revelacao, glitch
 }
 
 export function legenda(palco: HTMLElement, job: JobMotion, t: T) {

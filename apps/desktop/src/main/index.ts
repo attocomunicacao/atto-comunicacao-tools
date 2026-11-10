@@ -85,6 +85,7 @@ function comandoMotor(args: string[]): { exe: string; args: string[]; env: NodeJ
   const motion = app.isPackaged ? [process.execPath, '--render-motion'] : [process.execPath, app.getAppPath(), '--render-motion']
   const base = {
     ...process.env, PYTHONIOENCODING: 'utf-8', ATTO_CACHE: join(app.getPath('userData'), 'modelos'),
+    ATTO_DADOS: join(app.getPath('userData'), 'cache'), // transcrições, vetores e notas do juiz já calculados
     ATTO_MOTION_CMD: JSON.stringify(motion),
     ATTO_SONS: pastaSons(),
     ATTO_PEXELS_KEY: lerConfig()['pexels'] ?? ''

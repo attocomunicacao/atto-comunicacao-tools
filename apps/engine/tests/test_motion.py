@@ -123,9 +123,24 @@ def test_espaco_evita_rosto():
     assert ly >= ry + rh
 
 
-def test_troca_alterna_zoom_e_flash():
+def test_toda_troca_e_flash():
     from garimpo import enquadramento
-    assert enquadramento.estilos_troca(4) == ["zoom", "flash", "zoom"]
+    assert enquadramento.estilos_troca(4) == ["flash", "flash", "flash"]
+
+
+def test_intercalacao_respeita_locutor_visivel():
+    dur = 60.0
+    cenas = [{"tipo": "imagem", "ini": 2, "fim": 6}, {"tipo": "destaque", "ini": 9, "fim": 12},
+             {"tipo": "imagem", "ini": 8, "fim": 12}, {"tipo": "pintura", "ini": 14, "fim": 18},
+             {"tipo": "imagem", "ini": 24, "fim": 30}, {"tipo": "imagem", "ini": 40, "fim": 48},
+             {"tipo": "citacao", "ini": 52, "fim": 58}, {"tipo": "icone", "ini": 35, "fim": 38}]
+    out = motion.intercalar(cenas, dur)
+    dom = [c for c in out if c["modo"] == "dominante"]
+    assert sum(c["fim"] - c["ini"] for c in dom) <= 0.4 * dur + 1e-6
+    assert all(c["fim"] - c["ini"] <= motion.MAX_DOMINANTE_SEGUIDO + 1e-6 for c in dom)
+    for a, b in zip(dom, dom[1:]):
+        assert b["ini"] - a["fim"] >= motion.RESPIRO_LIMPO - 1e-6
+    assert any(c["tipo"] == "destaque" for c in out) and any(c["tipo"] == "icone" for c in out)
 
 
 def test_sem_espaco_a_cena_vira_tela_cheia():

@@ -232,24 +232,27 @@ def _layout(s: Segmento, i: int, cw_u: int, cw_m: int, largura: int, altura: int
 
 
 def estilos_troca(n_segmentos: int) -> list[str]:
-    """Estilo de cada troca de enquadramento/locutor: alterna zoom e flash cut (a 1ª é zoom)."""
-    return ["zoom" if k % 2 == 0 else "flash" for k in range(max(n_segmentos - 1, 0))]
+    """Estilo de cada troca de enquadramento/locutor. v0.7 (pedido do cliente): TODA troca é flash cut
+    (videoplayback (1).mp4); o zoom in fica para o início de cada corte (`filtro(..., zoom_inicio=True)`)."""
+    return ["flash" for _ in range(max(n_segmentos - 1, 0))]
 
 
 def filtro(segmentos: list[Segmento], largura: int, altura: int, fps: float = 30.0,
-           estilos: list[str] | None = None) -> str:
+           estilos: list[str] | None = None, zoom_inicio: bool = False) -> str:
     """Monta o trecho do filter_complex que produz [cv] (1080x1920) a partir de [0:v].
 
     Com `estilos` (um por troca): "zoom" = o plano que entra começa ampliado e com desfoque de movimento e assenta
     (transicoes.expr_zoom_entrada); "flash" = corte seco aqui, e o flash cut é encaixado depois na montagem.
+    `zoom_inicio`: o 1º plano do trecho entra com o zoom in (início de todo corte, videoplayback (2).mp4).
     Sem `estilos`: dissolução (xfade), comportamento antigo. A duração total nunca muda."""
     cw_u, cw_m = geometria(largura, altura)
-    if estilos is not None and len(segmentos) > 1:
+    if estilos is not None and (len(segmentos) > 1 or zoom_inicio):
         from .transicoes import ZOOM_DURACAO, expr_zoom_entrada
         partes = [_layout(s, i, cw_u, cw_m, largura, altura, fps, s.fim) for i, s in enumerate(segmentos)]
         rotulos = []
         for i in range(len(segmentos)):
-            if i > 0 and estilos[i - 1] == "zoom" and segmentos[i].fim - segmentos[i].ini > ZOOM_DURACAO + 0.3:
+            com_zoom = (i == 0 and zoom_inicio) or (i > 0 and estilos[i - 1] == "zoom")
+            if com_zoom and segmentos[i].fim - segmentos[i].ini > ZOOM_DURACAO + 0.3:
                 d = ZOOM_DURACAO
                 partes.append(
                     f"[s{i}]split=2[h{i}][r{i}];"
@@ -261,7 +264,10 @@ def filtro(segmentos: list[Segmento], largura: int, altura: int, fps: float = 30
                 rotulos.append(f"[z{i}]")
             else:
                 rotulos.append(f"[s{i}]")
-        partes.append(f"{''.join(rotulos)}concat=n={len(rotulos)}:v=1:a=0[cv]")
+        if len(rotulos) == 1:
+            partes.append(f"{rotulos[0]}null[cv]")
+        else:
+            partes.append(f"{''.join(rotulos)}concat=n={len(rotulos)}:v=1:a=0[cv]")
         return ";".join(partes)
     n = len(segmentos)
     d = TRANSICAO_S
