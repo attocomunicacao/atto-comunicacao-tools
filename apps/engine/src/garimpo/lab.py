@@ -246,3 +246,39 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+# ---------------------------------------------------------------- transições (zoom inicial)
+
+def curva_zoom(video: str, ini: float, dur: float, fps: float = 30.0) -> list[float]:
+    """Escala de cada quadro em relação ao último da janela (1,0 = assentado), por ORB + afim parcial."""
+    import cv2
+    r = subprocess.run(["ffmpeg", "-v", "error", "-ss", str(ini), "-t", str(dur), "-i", video, "-vf",
+                        f"fps={fps:g},scale=360:640,format=gray", "-f", "rawvideo", "-"], capture_output=True, check=True)
+    q = np.frombuffer(r.stdout, dtype=np.uint8).reshape(-1, 640, 360)
+    orb = cv2.ORB_create(1500)
+    kb, db = orb.detectAndCompute(q[-1], None)
+    bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+    saida = []
+    for f in q:
+        ka, da = orb.detectAndCompute(f, None)
+        if da is None or db is None:
+            saida.append(float("nan"))
+            continue
+        ms = sorted(bf.match(da, db), key=lambda m: m.distance)[:300]
+        if len(ms) < 12:
+            saida.append(float("nan"))
+            continue
+        a = np.float32([ka[m.queryIdx].pt for m in ms])
+        b = np.float32([kb[m.trainIdx].pt for m in ms])
+        M, _ = cv2.estimateAffinePartial2D(b, a, method=cv2.RANSAC)
+        saida.append(round(float(np.hypot(M[0, 0], M[1, 0])), 3) if M is not None else float("nan"))
+    return saida
+
+
+def medir_zoom(video: str, ini: float, dur: float) -> dict:
+    """tempo até assentar (escala < 1,03) e escala do 1º quadro."""
+    c = curva_zoom(video, ini, dur)
+    validos = [x for x in c if x == x]
+    t = next((k for k, x in enumerate(c) if x == x and x < 1.03), len(c)) / FPS
+    return {"escala_inicial": validos[0] if validos else None, "assenta_s": round(t, 3), "curva": c[:30]}
