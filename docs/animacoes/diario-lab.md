@@ -104,3 +104,8 @@ Palavras pequenas usavam fade próprio (0,3 s power2) → `acende` padrão + mov
 
 ### Rodada completa 00:31 — média 9,68 (base 23:07: 8,49)
 18 de 21 em 10. Pendentes: maquina (tremor da digitação ~2,8), esquerda e revelacao (entrada 0,133 s, borda do alvo).
+
+## Release v0.7.0 publicada (00:39)
+https://github.com/attocomunicacao/atto-comunicacao-tools/releases/tag/v0.7.0 — zip 1,03 GB (e5-small embutido) +
+manifest (sha e3c209a5…). Smoke test do Python embarcado ok. "latest" ainda redirecionava para 0.6.0 (cache da CDN).
+Instalador do Launcher não gerado (NSIS bloqueado pelo Windows); segue o da v0.4.0.
