@@ -49,7 +49,7 @@ def _palavras(frase: str, ini: float, passo: float = 0.32) -> list[dict]:
 
 
 def _grupo(frase: str, ini: float, preset: str, pont: str = "") -> dict:
-    ps = _palavras(frase, ini)
+    ps = _palavras(frase, ini, passo=0.8)   # palavras espaçadas: cada entrada fica isolada na medida
     return {"ini": ps[0]["ini"], "fim": round(ps[-1]["fim"] + 0.9, 3), "palavras": ps, "preset": preset, "pont": pont,
             "caixa": [60, 1270, 960, 450]}
 
@@ -66,7 +66,7 @@ def cenarios() -> dict[str, dict]:
     for p in PRESETS_LEGENDA:
         frase, pont = FRASES.get(p, ("sobre uma nova [lei] trabalhista", ""))
         g = _grupo(frase, 0.4, p, pont)
-        cs[p] = {"categoria": "legenda", "duracao": 3.2, "grupos": [g], "cenas": [], "palavras": g["palavras"]}
+        cs[p] = {"categoria": "legenda", "duracao": 5.6, "grupos": [g], "cenas": [], "palavras": g["palavras"]}
     cenas = {
         "destaque": {"tipo": "destaque", "texto": "o que muda na prática"},
         "numero": {"tipo": "numero", "valor": 75, "sufixo": " mi", "texto": "pessoas afetadas"},
@@ -115,8 +115,10 @@ def _quadros(arq: Path) -> np.ndarray:
 def medir(arq: Path, fundo: Path) -> dict:
     q = _quadros(arq)
     f = _quadros(fundo)[0]
-    masc = np.abs(q - f) > 18                      # o que a animação desenhou
-    area = masc.mean(axis=(1, 2))
+    dif = np.abs(q - f)
+    masc = dif > 18                                # o que a animação desenhou (para o centro)
+    # intensidade (não só área): capta a palavra indo de cinza a branco, o desfoque e a opacidade
+    area = (np.clip(dif, 0, 200) / 200.0).mean(axis=(1, 2))
     n = len(area)
     if area.max() < 1e-4:
         return {"vazio": True}
@@ -125,13 +127,12 @@ def medir(arq: Path, fundo: Path) -> dict:
     a0, a1 = int(vivo[0]), int(vivo[-1])
     cheio = np.nonzero(area >= 0.95 * pico)[0]
     c0, c1 = int(cheio[0]), int(cheio[-1])
-    # entrada do 1º elemento: do 1º quadro visível até o 1º patamar (crescimento < 1,5% do pico por 2 quadros)
-    cresc = np.diff(area) / max(pico, 1e-6)
-    e1 = a0
-    for k in range(a0, min(a0 + 60, len(cresc) - 1)):
-        if cresc[k] < 0.015 and cresc[k + 1] < 0.015 and area[k + 1] > 0.08 * pico:
-            e1 = k + 1
-            break
+    # entrada do 1º elemento: do 1º quadro visível até 90% do nível que ele tem 0,7 s depois
+    nivel = area[min(a0 + int(0.7 * FPS), n - 1)]
+    e1 = next((k for k in range(a0, n) if area[k] >= 0.9 * nivel), a0)
+    # saída: do último quadro com 90% do nível de 0,6 s antes do fim até sumir
+    nivel_s = area[max(a1 - int(0.6 * FPS), 0)]
+    s1 = next((k for k in range(a1, a0, -1) if area[k] >= 0.9 * nivel_s), a1)
     ys, xs = np.mgrid[0:480, 0:270]
     centros = []
     for k in range(n):
@@ -147,11 +148,11 @@ def medir(arq: Path, fundo: Path) -> dict:
     return {
         "entrada_s": round((e1 - a0) / FPS, 3),
         "montagem_s": round((c0 - a0) / FPS, 3),   # até o bloco inteiro estar na tela
-        "saida_s": round((a1 - c1) / FPS, 3),
+        "saida_s": round((a1 - s1) / FPS, 3),
         "salto": round(float(np.nanmax(da)) if len(da) else 0.0, 3),
         "tremor": round(float(np.nanmean(acc)) if len(acc) else 0.0, 3),
         "deriva_px": round(float(deriva), 1),
-        "cobertura": round(float(area.max()), 3),
+        "cobertura": round(float(masc.mean(axis=(1, 2)).max()), 3),
     }
 
 

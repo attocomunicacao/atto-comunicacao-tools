@@ -123,29 +123,38 @@ function porPalavra(palco: HTMLElement, t: T, g: Grupo, prox: Grupo | undefined,
 
 const O = { immediateRender: false }
 
+/** Opacidade em tween próprio: a palavra vai de cinza a branco em ~8 quadros, sem "estalar" (referência). */
+const acende = (t: T, w: HTMLElement, quando: number, dur = 0.26) =>
+  t.fromTo(w, { opacity: 0 }, { opacity: 1, duration: dur, ease: 'power1.out', ...O }, quando)
+
 /** Desliza pra cima: sobe ~0,4 da altura da letra, de 0 a 100% de opacidade, desfoque de movimento curto. */
 const sobe: Entrada = (t, w, p, _o, tam) => {
-  t.fromTo(w, { opacity: 0, y: tam * 0.42, filter: 'blur(6px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.32, ease: 'expo.out', ...O }, p.ini)
+  acende(t, w, p.ini)
+  t.fromTo(w, { y: tam * 0.42, filter: 'blur(6px)' }, { y: 0, filter: 'blur(0px)', duration: 0.42, ease: 'expo.out', ...O }, p.ini)
 }
 /** Desliza pra baixo: vem de cima com rastro vertical (scaleY) que assenta. */
 const desce: Entrada = (t, w, p, _o, tam) => {
-  t.fromTo(w, { opacity: 0, y: -tam * 0.42, scaleY: 1.18, filter: 'blur(7px)', transformOrigin: '50% 0%' },
-    { opacity: 1, y: 0, scaleY: 1, filter: 'blur(0px)', duration: 0.34, ease: 'expo.out', ...O }, p.ini)
+  acende(t, w, p.ini)
+  t.fromTo(w, { y: -tam * 0.42, scaleY: 1.18, filter: 'blur(7px)', transformOrigin: '50% 0%' },
+    { y: 0, scaleY: 1, filter: 'blur(0px)', duration: 0.42, ease: 'expo.out', ...O }, p.ini)
 }
 /** Desliza pra esquerda: entra pela direita com rastro horizontal. */
 const esquerda: Entrada = (t, w, p, _o, tam) => {
-  t.fromTo(w, { opacity: 0, x: tam * 0.6, scaleX: 1.12, filter: 'blur(8px)', transformOrigin: '0% 50%' },
-    { opacity: 1, x: 0, scaleX: 1, filter: 'blur(0px)', duration: 0.34, ease: 'expo.out', ...O }, p.ini)
+  acende(t, w, p.ini)
+  t.fromTo(w, { x: tam * 0.6, scaleX: 1.12, filter: 'blur(8px)', transformOrigin: '0% 50%' },
+    { x: 0, scaleX: 1, filter: 'blur(0px)', duration: 0.42, ease: 'expo.out', ...O }, p.ini)
 }
 /** Desliza pra direita: espelho. */
 const direita: Entrada = (t, w, p, _o, tam) => {
-  t.fromTo(w, { opacity: 0, x: -tam * 0.6, scaleX: 1.12, filter: 'blur(8px)', transformOrigin: '100% 50%' },
-    { opacity: 1, x: 0, scaleX: 1, filter: 'blur(0px)', duration: 0.34, ease: 'expo.out', ...O }, p.ini)
+  acende(t, w, p.ini)
+  t.fromTo(w, { x: -tam * 0.6, scaleX: 1.12, filter: 'blur(8px)', transformOrigin: '100% 50%' },
+    { x: 0, scaleX: 1, filter: 'blur(0px)', duration: 0.42, ease: 'expo.out', ...O }, p.ini)
 }
 /** Entrada com desfoque/deslocamento: chega muito desfocada, levemente maior e de lado, e assenta. */
 const comDesfoque: Entrada = (t, w, p, o, tam) => {
-  t.fromTo(w, { opacity: 0, x: (o % 2 ? -1 : 1) * tam * 0.35, y: tam * 0.18, scale: 1.1, filter: 'blur(16px)' },
-    { opacity: 1, x: 0, y: 0, scale: 1, filter: 'blur(0px)', duration: 0.42, ease: 'power3.out', ...O }, p.ini)
+  acende(t, w, p.ini)
+  t.fromTo(w, { x: (o % 2 ? -1 : 1) * tam * 0.35, y: tam * 0.18, scale: 1.1, filter: 'blur(16px)' },
+    { x: 0, y: 0, scale: 1, filter: 'blur(0px)', duration: 0.44, ease: 'power3.out', ...O }, p.ini)
 }
 /** Cinemático (minimal premium): pequenas surgem em fade suave; a chave abre o espaçamento e foca. */
 const cinematicoE: Entrada = (t, w, p, _o, tam, chave) => {
