@@ -55,7 +55,7 @@ def _grupo(frase: str, ini: float, preset: str, pont: str = "") -> dict:
 
 
 PRESETS_LEGENDA = ["cinematico", "maquina", "sobe", "desce", "esquerda", "direita", "elastico", "deslocamento",
-                   "impacto", "revelacao", "glitch"]
+                   "impacto", "revelacao", "glitch", "marca"]
 FRASES = {"maquina": ("qual foi a tua [percepção]", "?"), "elastico": ("são [75] milhões", ""),
           "esquerda": ("mas ele [nunca] começa", ""), "direita": ("porém a [política] tem tempo", "")}
 

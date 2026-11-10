@@ -246,9 +246,23 @@ function glitch(palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) {
   }, -1, { maiusc: false })
 }
 
+/** Marca-texto (lab ciclo 22, tendência "word highlight" em versão toda branca): a chave ganha uma faixa branca que
+ *  passa da esquerda para a direita (0,32 s) e o texto dela fica escuro; as demais palavras sobem como no "sobe". */
+function marca(palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) {
+  porPalavra(palco, t, g, prox, (tl, w, p, o, tam, chave) => {
+    if (!chave) return sobe(tl, w, p, o, tam, chave)
+    w.classList.add('leg-marca')
+    const fundo = el('span', 'leg-marca-fundo')
+    w.prepend(fundo)
+    acende(tl, w, p.ini)
+    tl.fromTo(fundo, { scaleX: 0 }, { scaleX: 1, duration: 0.32, ease: 'power3.inOut', ...O }, p.ini + 0.06)
+    tl.fromTo(w, { color: '#ffffff' }, { color: '#111111', duration: 0.12, ease: 'none', ...O }, p.ini + 0.2)
+  }, 1)
+}
+
 const PRESETS: Record<string, (palco: HTMLElement, t: T, g: Grupo, prox?: Grupo) => void> = {
   cinematico, maquina, sobe: sobeP, desce: desceP, esquerda: esquerdaP, direita: direitaP, elastico, deslocamento,
-  impacto, revelacao, glitch
+  impacto, revelacao, glitch, marca
 }
 
 export function legenda(palco: HTMLElement, job: JobMotion, t: T) {

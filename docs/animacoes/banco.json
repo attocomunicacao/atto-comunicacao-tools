@@ -91,17 +91,21 @@
     {
      "rodada": "20261110-003130",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261110-005433",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261110-003130",
+    "rodada": "20261110-005433",
     "nota": 10.0,
     "metricas": {
      "entrada_s": 0.2,
      "montagem_s": 3.367,
      "saida_s": 0.1,
      "salto": 0.021,
-     "tremor": 0.377,
+     "tremor": 0.392,
      "deriva_px": 8.0,
      "cobertura": 0.017
     },
@@ -1434,6 +1438,29 @@
     },
     "fora": []
    }
+  },
+  "marca": {
+   "categoria": "legenda",
+   "historico": [
+    {
+     "rodada": "20261110-005433",
+     "nota": 10.0
+    }
+   ],
+   "ultima": {
+    "rodada": "20261110-005433",
+    "nota": 10.0,
+    "metricas": {
+     "entrada_s": 0.2,
+     "montagem_s": 3.367,
+     "saida_s": 0.1,
+     "salto": 0.018,
+     "tremor": 0.237,
+     "deriva_px": 8.0,
+     "cobertura": 0.026
+    },
+    "fora": []
+   }
   }
  },
  "rodadas": [
@@ -1628,6 +1655,12 @@
    "media": 8.87,
    "nota": "ciclo 21: maquina sem tremor (efeito); esquerda 0,42 s",
    "cenarios": 3
+  },
+  {
+   "rodada": "20261110-005433",
+   "media": 10.0,
+   "nota": "ciclo 22: preset marca-texto",
+   "cenarios": 2
   }
  ],
  "ideias": [
@@ -1672,6 +1705,13 @@
    "fonte": "https://www.clipspeed.ai/blog/11-caption-styles-ranked-viral-performance-2026.html",
    "como": "escala 0,96 → 1 junto do fade na entrada",
    "status": "testada (ciclo 12): neutra, revertida"
+  },
+  {
+   "nome": "marca-texto (word highlight)",
+   "categoria": "texto",
+   "fonte": "https://www.clipspeed.ai/blog/11-caption-styles-ranked-viral-performance-2026.html",
+   "como": "faixa branca 0,32 s power3.inOut atrás da chave; texto da chave escurece",
+   "status": "aplicada (ciclo 22): preset 'marca' no rodízio"
   }
  ]
 }

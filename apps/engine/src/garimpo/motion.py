@@ -676,10 +676,10 @@ def documentos_por_regras(palavras: list[Palavra], origem: float) -> list[dict]:
 
 # ---------------------------------------------------------------- motor de presets da legenda
 
-PRESETS = ("cinematico", "maquina", "sobe", "desce", "esquerda", "direita", "elastico", "deslocamento")
+PRESETS = ("cinematico", "maquina", "sobe", "desce", "esquerda", "direita", "elastico", "deslocamento", "marca")
 GANCHOS = ("impacto", "revelacao", "glitch")
 CONTRASTE = ("mas", "porem", "so que", "nao", "entretanto", "contudo", "ao contrario")
-RODIZIO = ("cinematico", "deslocamento", "sobe", "cinematico", "desce", "deslocamento")
+RODIZIO = ("cinematico", "deslocamento", "sobe", "marca", "desce", "deslocamento")
 
 
 def escolher_presets(grupos: list[dict], fim_gancho: float = 4.5) -> None:

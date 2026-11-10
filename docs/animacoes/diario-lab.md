@@ -113,3 +113,7 @@ Instalador do Launcher não gerado (NSIS bloqueado pelo Windows); segue o da v0.
 ## Ciclo 21 (00:43)
 "latest" já serve o manifest 0.7.0. maquina: tremor tirado da avaliação (letras surgindo movem o centro — é o efeito da
 referência) → 6,7 → 8,3. esquerda com 0,42 s: neutro → revertido.
+
+## Ciclo 22 — preset novo "marca" (00:54)
+Da pesquisa (word highlight, tendência 2026) em versão toda branca: faixa branca passa atrás da palavra-chave e ela
+fica escura em serifa. Nota 10 no laboratório; entrou no rodízio do motor (`motion.RODIZIO`).

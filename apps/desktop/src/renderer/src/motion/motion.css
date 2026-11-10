@@ -180,3 +180,8 @@ html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; backgro
   filter: drop-shadow(0 0 14px rgba(255, 255, 255, 0.5)); }
 .conceito-chave { font-family: "Playfair Display", serif; font-style: italic; font-weight: 700; font-size: 128px; line-height: 1;
   text-shadow: 0 0 40px rgba(255, 255, 255, 0.35); }
+
+/* marca-texto (lab ciclo 22) */
+.leg-marca { position: relative; isolation: isolate; padding: 0 0.12em; text-shadow: none !important; }
+.leg-marca-fundo { position: absolute; inset: 8% 0 4% 0; background: #fff; border-radius: 0.08em; z-index: -1;
+  transform-origin: left center; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35); }
