@@ -128,3 +128,6 @@ Hipótese para o próximo: amarrar o acender ao avanço do wipe (opacidade segue
 ## Ciclo 25 — revelacao (01:50)
 Hipótese do ciclo 24 confirmada: o acender com a mesma duração do wipe → revelacao 8,3 → 10.
 Restam só maquina e esquerda a 1 quadro do alvo.
+
+## Ciclo 26 — esquerda (02:11)
+`acende` 0,45 s só na entrada pela direita (a palavra percorre mais tela): esquerda 8,3 → 10.

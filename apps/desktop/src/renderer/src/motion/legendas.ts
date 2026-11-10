@@ -140,7 +140,7 @@ const desce: Entrada = (t, w, p, _o, tam) => {
 }
 /** Desliza pra esquerda: entra pela direita com rastro horizontal. */
 const esquerda: Entrada = (t, w, p, _o, tam) => {
-  acende(t, w, p.ini)
+  acende(t, w, p.ini, 0.45)
   t.fromTo(w, { x: tam * 0.6, scaleX: 1.12, filter: 'blur(8px)', transformOrigin: '0% 50%' },
     { x: 0, scaleX: 1, filter: 'blur(0px)', duration: 0.34, ease: 'expo.out', ...O }, p.ini)
 }
