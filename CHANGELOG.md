@@ -2,6 +2,17 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões seguem `x.y.z`.
 
+## [0.7.1] - 2026-11-10
+
+### Alterado (teste real com o cliente)
+- **Flash cut curto**: 3 quadros de silhueta na troca de locutor (antes 9 em 24 quadros), sem voltar ao plano anterior.
+- **Ícone sem texto próprio**: a cena de ícone/conceito não escreve frase nem palavra-chave; o único texto é a legenda, que passa por cima.
+- **Card de informação externa**: além de lei/decisão, frase de autor ("como dizia Sócrates…") vira recorte de papel com o nome no chapéu; pode entrar nos 5 s do gancho.
+- Laboratório de animação: preset de legenda "marca-texto", entradas mais suaves (revelação, esquerda, máquina de escrever), tela cheia com margens, legenda escondida sob citação.
+
+### Corrigido
+- Barra branca fixa na tela: o cursor da máquina de escrever ficava aceso o vídeo inteiro; agora só aparece durante a linha.
+
 ## [0.7.0] - 2026-11-10
 
 ### Adicionado
