@@ -117,3 +117,6 @@ referência) → 6,7 → 8,3. esquerda com 0,42 s: neutro → revertido.
 ## Ciclo 22 — preset novo "marca" (00:54)
 Da pesquisa (word highlight, tendência 2026) em versão toda branca: faixa branca passa atrás da palavra-chave e ela
 fica escura em serifa. Nota 10 no laboratório; entrou no rodízio do motor (`motion.RODIZIO`).
+
+### Rodada completa 01:06 — média 9,77 (19 de 22 em 10)
+Restantes (maquina, esquerda, revelacao) a 1 quadro do alvo (0,133 vs 0,15 s). Sem regressão do preset "marca".
