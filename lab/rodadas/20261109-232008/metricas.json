@@ -1,0 +1,182 @@
+{
+ "cinematico": {
+  "nota": 5.0,
+  "entrada_s": 0.5,
+  "montagem_s": 3.733,
+  "saida_s": 0.467,
+  "salto": 0.018,
+  "tremor": 0.495,
+  "deriva_px": 2.1,
+  "cobertura": 0.016
+ },
+ "maquina": {
+  "nota": 6.7,
+  "entrada_s": 0.4,
+  "montagem_s": 3.933,
+  "saida_s": 0.467,
+  "salto": 0.049,
+  "tremor": 3.358,
+  "deriva_px": 24.5,
+  "cobertura": 0.025
+ },
+ "sobe": {
+  "nota": 6.7,
+  "entrada_s": 0.467,
+  "montagem_s": 3.7,
+  "saida_s": 0.467,
+  "salto": 0.03,
+  "tremor": 0.575,
+  "deriva_px": 3.1,
+  "cobertura": 0.016
+ },
+ "desce": {
+  "nota": 5.0,
+  "entrada_s": 0.467,
+  "montagem_s": 3.7,
+  "saida_s": 0.467,
+  "salto": 0.031,
+  "tremor": 0.423,
+  "deriva_px": 2.5,
+  "cobertura": 0.016
+ },
+ "esquerda": {
+  "nota": 6.7,
+  "entrada_s": 0.467,
+  "montagem_s": 2.9,
+  "saida_s": 0.0,
+  "salto": 0.014,
+  "tremor": 0.414,
+  "deriva_px": 4.0,
+  "cobertura": 0.018
+ },
+ "direita": {
+  "nota": 5.0,
+  "entrada_s": 0.5,
+  "montagem_s": 3.7,
+  "saida_s": 0.467,
+  "salto": 0.011,
+  "tremor": 0.338,
+  "deriva_px": 1.8,
+  "cobertura": 0.024
+ },
+ "elastico": {
+  "nota": 5.0,
+  "entrada_s": 0.467,
+  "montagem_s": 2.1,
+  "saida_s": 0.0,
+  "salto": 0.024,
+  "tremor": 0.479,
+  "deriva_px": 2.9,
+  "cobertura": 0.012
+ },
+ "deslocamento": {
+  "nota": 6.7,
+  "entrada_s": 0.533,
+  "montagem_s": 3.767,
+  "saida_s": 0.467,
+  "salto": 0.025,
+  "tremor": 0.546,
+  "deriva_px": 3.3,
+  "cobertura": 0.016
+ },
+ "impacto": {
+  "nota": 5.0,
+  "entrada_s": 0.467,
+  "montagem_s": 3.7,
+  "saida_s": 0.467,
+  "salto": 0.03,
+  "tremor": 0.467,
+  "deriva_px": 2.6,
+  "cobertura": 0.016
+ },
+ "revelacao": {
+  "nota": 6.7,
+  "entrada_s": 0.6,
+  "montagem_s": 3.833,
+  "saida_s": 0.467,
+  "salto": 0.017,
+  "tremor": 0.526,
+  "deriva_px": 6.1,
+  "cobertura": 0.016
+ },
+ "glitch": {
+  "nota": 8.3,
+  "entrada_s": 0.367,
+  "montagem_s": 3.6,
+  "saida_s": 0.467,
+  "salto": 0.041,
+  "tremor": 0.834,
+  "deriva_px": 10.7,
+  "cobertura": 0.017
+ },
+ "destaque": {
+  "nota": 8.3,
+  "entrada_s": 0.6,
+  "montagem_s": 0.667,
+  "saida_s": 0.567,
+  "salto": 0.064,
+  "tremor": 0.807,
+  "deriva_px": 11.3,
+  "cobertura": 0.084
+ },
+ "numero": {
+  "nota": 8.3,
+  "entrada_s": 0.633,
+  "montagem_s": 0.8,
+  "saida_s": 0.567,
+  "salto": 0.028,
+  "tremor": 1.968,
+  "deriva_px": 19.8,
+  "cobertura": 0.098
+ },
+ "comparacao": {
+  "nota": 8.3,
+  "entrada_s": 0.6,
+  "montagem_s": 0.767,
+  "saida_s": 0.567,
+  "salto": 0.057,
+  "tremor": 1.335,
+  "deriva_px": 12.2,
+  "cobertura": 0.097
+ },
+ "icone": {
+  "nota": 8.3,
+  "entrada_s": 0.6,
+  "montagem_s": 0.8,
+  "saida_s": 0.567,
+  "salto": 0.019,
+  "tremor": 0.946,
+  "deriva_px": 10.1,
+  "cobertura": 0.087
+ },
+ "documento": {
+  "nota": 8.3,
+  "entrada_s": 0.667,
+  "montagem_s": 1.967,
+  "saida_s": 0.567,
+  "salto": 0.033,
+  "tremor": 0.549,
+  "deriva_px": 7.5,
+  "cobertura": 0.251
+ },
+ "citacao": {
+  "nota": 8.3,
+  "entrada_s": 0.467,
+  "montagem_s": 0.567,
+  "saida_s": 0.533,
+  "salto": 0.043,
+  "tremor": 0.222,
+  "deriva_px": 2.6,
+  "cobertura": 0.984
+ },
+ "conceito": {
+  "nota": 10.0,
+  "entrada_s": 0.467,
+  "montagem_s": 0.633,
+  "saida_s": 0.467,
+  "salto": 0.047,
+  "tremor": 0.377,
+  "deriva_px": 3.0,
+  "cobertura": 0.988
+ }
+}

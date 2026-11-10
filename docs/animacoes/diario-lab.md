@@ -14,3 +14,9 @@ Mudança: opacidade em tween próprio (`acende`, 0,26 s power1.out) + movimento 
 A métrica binária (área > limiar) não enxergava a mudança: com 30% de opacidade o texto já "contava".
 **Métrica v2**: intensidade (não área), palavras de teste espaçadas 0,8 s, entrada = até 90% do nível da 1ª palavra,
 saída = idem no fim. Nova base: média 7,32 (entradas ~0,5 s; alvo ≤ 0,45). Decisão: manter.
+
+## Ciclo 3 — métrica v4 + acender 0,3 s (23:19-23:24)
+Folha a 30 fps de "sobe" mostrou a palavra indo de cinza a branco em ~5 quadros (igual à referência), mas a métrica
+dava 0,5 s: o ruído de compressão fazia o "início" cair no quadro 0. Métrica v4 desconta esse ruído.
+Com v4: entradas 0,1 s (referência 0,17-0,2) → `acende` 0,2 → 0,3 s → entradas 0,13 s. Média 7,12 → **8,33**.
+Próximo: deriva do bloco 1-3 px (referência 5-15 px) e "elastico" com entrada 0,7 s.

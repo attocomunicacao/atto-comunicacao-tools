@@ -1,0 +1,62 @@
+{
+ "cinematico": {
+  "nota": 5.0,
+  "entrada_s": 0.5,
+  "montagem_s": 3.733,
+  "saida_s": 0.467,
+  "salto": 0.018,
+  "tremor": 0.452,
+  "deriva_px": 1.7,
+  "cobertura": 0.016
+ },
+ "sobe": {
+  "nota": 6.7,
+  "entrada_s": 0.467,
+  "montagem_s": 3.7,
+  "saida_s": 0.467,
+  "salto": 0.03,
+  "tremor": 0.575,
+  "deriva_px": 3.1,
+  "cobertura": 0.016
+ },
+ "desce": {
+  "nota": 5.0,
+  "entrada_s": 0.467,
+  "montagem_s": 3.7,
+  "saida_s": 0.467,
+  "salto": 0.031,
+  "tremor": 0.457,
+  "deriva_px": 2.7,
+  "cobertura": 0.016
+ },
+ "esquerda": {
+  "nota": 6.7,
+  "entrada_s": 0.467,
+  "montagem_s": 2.9,
+  "saida_s": 0.0,
+  "salto": 0.014,
+  "tremor": 0.414,
+  "deriva_px": 4.0,
+  "cobertura": 0.018
+ },
+ "direita": {
+  "nota": 5.0,
+  "entrada_s": 0.5,
+  "montagem_s": 3.7,
+  "saida_s": 0.467,
+  "salto": 0.011,
+  "tremor": 0.297,
+  "deriva_px": 2.0,
+  "cobertura": 0.024
+ },
+ "impacto": {
+  "nota": 6.7,
+  "entrada_s": 0.467,
+  "montagem_s": 3.7,
+  "saida_s": 0.467,
+  "salto": 0.03,
+  "tremor": 0.53,
+  "deriva_px": 3.1,
+  "cobertura": 0.016
+ }
+}

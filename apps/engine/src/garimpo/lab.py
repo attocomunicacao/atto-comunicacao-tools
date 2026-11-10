@@ -119,11 +119,13 @@ def medir(arq: Path, fundo: Path) -> dict:
     masc = dif > 18                                # o que a animação desenhou (para o centro)
     # intensidade (não só área): capta a palavra indo de cinza a branco, o desfoque e a opacidade
     area = (np.clip(dif, 0, 200) / 200.0).mean(axis=(1, 2))
+    area = np.maximum(area - area[:4].max(), 0.0)  # tira o ruído de compressão (os cenários começam vazios)
     n = len(area)
     if area.max() < 1e-4:
         return {"vazio": True}
     pico = float(np.percentile(area[area > 0], 90))
-    vivo = np.nonzero(area > 0.05 * pico)[0]
+    # limiar absoluto: uma palavra pequena sozinha pode ficar abaixo de 5% do pico do bloco inteiro
+    vivo = np.nonzero(area > max(2e-4, 0.002 * pico))[0]
     a0, a1 = int(vivo[0]), int(vivo[-1])
     cheio = np.nonzero(area >= 0.95 * pico)[0]
     c0, c1 = int(cheio[0]), int(cheio[-1])
