@@ -18,8 +18,18 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). 
 - **Legenda**: quebra ótima das linhas (sem "nova | lei"), bloco compacto em escada com hierarquia crescente, entradas curtas e suaves, deriva contínua e saída em desfoque — medido na referência de 7 presets.
 - **Transições**: zoom in no início de todo corte; flash cut em toda troca de locutor, com silhueta quadro a quadro.
 
+- **Narração ilustrada só de motion** (pedido do cliente): sem fotos nem efeito 3D; cena **conceito** em tela cheia (ícone desenhado + palavras da própria frase); citação sempre literal e uma por corte; nenhuma ilustração nos 5 s do gancho.
+- **Laboratório automatizado de animação** (`garimpo.lab`, banco `docs/animacoes/banco.json`, agentes orquestrador/pesquisador/animador/avaliador): 20 ciclos medindo fluidez quadro a quadro contra as referências — média 8,49 → 9,68.
+- Legenda na **zona segura** do Reels/TikTok; palavras acendem em 0,36 s; bloco deriva sem parar; Inter 600 nas palavras pequenas.
+- Flash cut com **silhueta só da pessoa** (MediaPipe Selfie Multiclass, Apache-2.0): mesa e objetos ficam de fora.
+- Zoom inicial curto e limpo (145% → 100% em 0,7 s, sem quadros fantasmas).
+- Cena que não cabe ao lado do rosto vira tela cheia legível (com margens), em vez de cartão minúsculo.
+
 ### Corrigido
 - Preset "máquina de escrever" nunca era usado em perguntas.
+- Juiz LLM respondia `{}` (gramática JSON) e dava nota padrão 5 a todos os cortes.
+- Gancho cold open pela metade (terminando em vírgula); cortes começando no meio de uma frase.
+- Legenda aparecia por baixo de citações em tela cheia.
 
 ## [0.6.0] - 2026-11-09
 
