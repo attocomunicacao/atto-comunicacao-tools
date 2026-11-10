@@ -345,7 +345,8 @@ function cenaConceito(t: gsap.core.Timeline, c: Cena) {
   t.fromTo(chave, { opacity: 0, letterSpacing: '0.08em', filter: 'blur(14px)' },
     { opacity: 1, letterSpacing: '0em', filter: 'blur(0px)', duration: 0.6, ease: 'power2.out', immediateRender: false }, c.ini + 0.55)
   t.fromTo(caixa, { y: 0 }, { y: -18, duration: d, ease: 'none', immediateRender: false }, c.ini)
-  t.to([fundo, caixa], { opacity: 0, filter: 'blur(16px)', duration: 0.3, ease: 'power2.in' }, c.fim - 0.3)
+  // saída suave (o fundo escuro some aos poucos, sem corte seco)
+  t.to([fundo, caixa], { opacity: 0, filter: 'blur(16px)', duration: 0.4, ease: 'power1.inOut' }, c.fim - 0.4)
 }
 
 async function cenas(job: JobMotion, t: gsap.core.Timeline) {

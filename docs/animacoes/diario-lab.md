@@ -35,3 +35,7 @@ Prompt: lab/prompts/20261109-2333-maquina-cursor.md. 5a: cursor com pulso senoid
 Métrica v6: janela de entrada 0,6 s (a chave do elástico entrava na janela) → elastico 0,7 → 0,13 s. Deriva desligada
 nas cenas (traços desenhados mudam o topo). revelacao 0,07 → 0,1 s e glitch 0 → 0,1 s com `acende` em vez de degrau.
 Média do subconjunto 9,32. Próximo: conceito (saída 0,07 s) e entradas de 0,13 → 0,17 s.
+
+## Ciclo 7 — conceito (23:40)
+Saída 0,3 s power2.in → 0,4 s power1.inOut: conceito 8,3 → 10, citacao mantém 10.
+Próximo: incluir as transições (zoom inicial e flash cut) nos cenários do laboratório e medi-las contra a referência.

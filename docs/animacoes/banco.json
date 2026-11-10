@@ -122,23 +122,25 @@
     {
      "rodada": "20261109-233510",
      "nota": 8.3
+    },
+    {
+     "rodada": "20261109-234011",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261109-233510",
-    "nota": 8.3,
+    "rodada": "20261109-234011",
+    "nota": 10.0,
     "metricas": {
      "entrada_s": 0.067,
      "montagem_s": 0.233,
-     "saida_s": 0.067,
+     "saida_s": 0.233,
      "salto": 0.049,
-     "tremor": 0.344,
+     "tremor": 0.428,
      "deriva_px": 0.0,
      "cobertura": 0.988
     },
-    "fora": [
-     "saida_s=0.067 (alvo 0.1-0.5)"
-    ]
+    "fora": []
    }
   },
   "cinematico": {
@@ -1061,17 +1063,21 @@
     {
      "rodada": "20261109-233510",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261109-234011",
+     "nota": 10.0
     }
    ],
    "ultima": {
-    "rodada": "20261109-233510",
+    "rodada": "20261109-234011",
     "nota": 10.0,
     "metricas": {
-     "entrada_s": 0.2,
+     "entrada_s": 0.167,
      "montagem_s": 0.267,
      "saida_s": 0.1,
-     "salto": 0.058,
-     "tremor": 0.217,
+     "salto": 0.045,
+     "tremor": 0.218,
      "deriva_px": 0.0,
      "cobertura": 0.984
     },
@@ -1181,6 +1187,12 @@
    "media": 9.32,
    "nota": "ciclo 6: gancho revelacao/glitch acendem suave",
    "cenarios": 5
+  },
+  {
+   "rodada": "20261109-234011",
+   "media": 10.0,
+   "nota": "ciclo 7: conceito sai em 0,4 s power1.inOut",
+   "cenarios": 2
   }
  ]
 }
