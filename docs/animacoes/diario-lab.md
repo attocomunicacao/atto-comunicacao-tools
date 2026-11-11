@@ -179,3 +179,24 @@ Imprevisto: o Windows passou a bloquear `node_modules/electron/dist/electron.exe
 renderizam nesta máquina até liberarem o executável — isso NÃO é configuração que o laboratório deva mexer. O lab
 agora não sobrescreve o banco quando um cenário dá erro (antes gravava nota 0).
 Observação na folha do flash: a silhueta vaza sobre o notebook e a mesa perto das mãos (classe "roupa"/brilho da borda).
+
+## Ciclo 30 — flash cut: silhueta só da pessoa (03:40)
+Alvo: o vazamento visto na folha do ciclo 29. Mapa de classes do multiclasse no plano B: a tampa do notebook sai como
+"roupa" e um pedaço da mesa como "pele" (53% + 20% dos pixels branqueados são dessas classes; entrada 256x256 com o
+quadro 9:16 esmagado). Letterbox e 2 ladrilhos não resolvem (média de pessoa no notebook 0,34 → 0,22/0,17); o binário
+antigo dá 0,03 ali, mas engole o microfone. Prompt: `lab/prompts/20261111-0345-flash-silhueta-intersecao.md`.
+Mudança: `transicoes.mascara_pessoa` = interseção dos dois modelos. A 1ª versão (média geométrica) tirou o notebook mas
+deixou o microfone branco (0,3 × 1,0 → 0,55 passa do limiar 0,35): rodada 20261111-033724 descartada. Versão final:
+mínimo dos dois (E lógico). Rodada 20261111-033817: flash 10, brancura máx 0,287 → 0,262, padrão A A Aw | Bw Bw B igual;
+recorte 2x dos quadros de silhueta: notebook e mesa limpos, microfone escuro como antes. zoom_inicial igual (10,
+passo 0,092). Testes do motor ok. Mantido (commit). Custo: 2ª inferência 256x256 só nos 3 quadros de silhueta.
+
+### Resumo para a próxima execução
+- Transições agora têm medida no `garimpo.lab` (`flash_cut`, `zoom_inicial`), rodam em ~20 s sem o Electron.
+- BLOQUEIO: o Windows (Application Control) está barrando `node_modules/electron/dist/electron.exe` → os 22 cenários de
+  legenda/cena não renderizam nesta máquina. Não é para o laboratório mexer nisso; precisa do cliente liberar o executável
+  (ou empacotar o renderizador de outro jeito). Enquanto durar, só as transições e o motor Python podem ser validados.
+- Próximos alvos: (1) medir o vazamento da silhueta de forma independente (hoje a conferência é visual); (2) flash em
+  troca de locutor com dois planos muito diferentes (enquadramento largo x fechado); (3) quando o Electron voltar: rodada
+  completa das 24 animações, whip pan para mudança de assunto, medição automática da composição.
+- Mudanças desde a v0.7.1 (ciclos 29-30) fora de release; não publicar sem pedido do cliente.

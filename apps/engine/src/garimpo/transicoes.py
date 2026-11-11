@@ -2,7 +2,8 @@
 
 - **flash cut**: na virada (gancho → corpo, ou troca de locutor) o vídeo "gagueja" entre o plano que sai (A) e o que
   entra (B) quadro a quadro, com quadros em que a pessoa vira uma **silhueta branca** sobre o fundo.
-  Recorte da pessoa: MediaPipe Selfie Segmentation (ONNX, Apache-2.0).
+  Recorte da pessoa: interseção (mínimo, E lógico) de dois modelos MediaPipe Selfie Segmentation (ONNX, Apache-2.0) —
+  o multiclasse (pessoa = cabelo+pele+rosto+roupa) e o binário; só fica branco o que os dois chamam de pessoa.
 - **zoom**: o plano que entra começa ampliado (~230%) e com desfoque de movimento e assenta em 100% com
   desaceleração forte (curva de velocidade "ease out" + obturador 360°). Feito no filtro do trecho
   (`enquadramento.filtro`, `expr_zoom_entrada`).
@@ -21,6 +22,9 @@ from . import recursos
 # lab ciclo 10: o modelo multiclasse separa pessoa (cabelo, pele, rosto, roupa) de objetos — o binário punha mesa e
 # notebook dentro da silhueta. MediaPipe Selfie Multiclass 256x256 (Apache-2.0), conversão ONNX.
 SEGMENTACAO = ("FreeHugsForRobots/ps-skin-seg", "selfie_multiclass_256x256.onnx")
+# lab ciclo 30: interseção dos dois — o multiclasse confunde notebook com roupa (e mesa com pele), o binário confunde
+# microfone com pessoa; o que só um deles vê não entra na silhueta.
+SEGMENTACAO_BIN = ("onnx-community/mediapipe_selfie_segmentation", "onnx/model.onnx")
 CLASSES_PESSOA = (1, 2, 3, 4)  # 0 fundo · 1 cabelo · 2 pele do corpo · 3 rosto · 4 roupa · 5 outros
 FLASH_ANTES = 0.1    # s antes do corte (3 quadros a 30 fps)
 FLASH_DEPOIS = 0.1   # s depois do corte
@@ -39,6 +43,7 @@ PADRAO_ANTES = ["A", "A", "Aw"]
 PADRAO_DEPOIS = ["Bw", "Bw", "B"]
 
 _sessao = None
+_sessao_bin = None
 
 
 def _segmentador():
@@ -52,11 +57,21 @@ def _segmentador():
     return _sessao
 
 
-def mascara_pessoa(quadro: np.ndarray) -> np.ndarray:
-    """Máscara 0..1 da(s) pessoa(s) no quadro BGR (mesmo tamanho do quadro)."""
+def _segmentador_bin():
+    global _sessao_bin
+    if _sessao_bin is None:
+        import onnxruntime as ort
+        repo, arquivo = SEGMENTACAO_BIN
+        modelo = recursos.pasta_cache() / "segmentacao" / "mediapipe_selfie.onnx"
+        recursos.baixar(repo, arquivo, modelo)
+        _sessao_bin = ort.InferenceSession(str(modelo), providers=["CPUExecutionProvider"])
+    return _sessao_bin
+
+
+def _entrada_rgb(sessao, quadro: np.ndarray):
+    """Prepara o quadro BGR para a sessão (NCHW ou NHWC, RGB/255 float32); devolve (nome da entrada, tensor)."""
     import cv2
-    s = _segmentador()
-    entrada = s.get_inputs()[0]
+    entrada = sessao.get_inputs()[0]
     forma = entrada.shape  # ex.: [1, 3, 256, 256] ou [1, 256, 256, 3]
     nchw = len(forma) == 4 and forma[1] == 3
     h_in = forma[2] if nchw else forma[1]
@@ -65,13 +80,29 @@ def mascara_pessoa(quadro: np.ndarray) -> np.ndarray:
     w_in = w_in if isinstance(w_in, int) else 256
     x = cv2.resize(cv2.cvtColor(quadro, cv2.COLOR_BGR2RGB), (w_in, h_in)).astype(np.float32) / 255.0
     x = x.transpose(2, 0, 1)[None] if nchw else x[None]
-    y = np.squeeze(s.run(None, {entrada.name: x})[0])
+    return entrada.name, x
+
+
+def mascara_pessoa(quadro: np.ndarray) -> np.ndarray:
+    """Máscara 0..1 da(s) pessoa(s) no quadro BGR (mesmo tamanho do quadro)."""
+    import cv2
+    s = _segmentador()
+    nome, x = _entrada_rgb(s, quadro)
+    y = np.squeeze(s.run(None, {nome: x})[0])
     if y.ndim == 3:  # multiclasse (H, W, 6): probabilidade de "pessoa" = soma das classes de pessoa (softmax)
         if y.shape[-1] != 6 and y.shape[0] == 6:
             y = np.moveaxis(y, 0, -1)
         e = np.exp(y - y.max(-1, keepdims=True))
         pr = e / e.sum(-1, keepdims=True) if (y.min() < 0 or y.max() > 1.001) else y
         y = pr[..., list(CLASSES_PESSOA)].sum(-1)
+    # lab ciclo 30: interseção com o binário (mínimo) — tira notebook/mesa que o multiclasse chama de roupa/pele.
+    sb = _segmentador_bin()
+    nome_b, xb = _entrada_rgb(sb, quadro)
+    yb = np.squeeze(sb.run(None, {nome_b: xb})[0])  # saída "alphas" [1, 1, 256, 256] → (256, 256), já 0..1
+    if yb.ndim == 3:  # (H, W, 1) ou (H, W, 2): medido no modelo em cache, o canal 0 é a pessoa
+        yb = yb[..., 0] if yb.shape[-1] in (1, 2) else yb[0]
+    yb = cv2.resize(yb.astype(np.float32), (y.shape[1], y.shape[0]), interpolation=cv2.INTER_LINEAR)
+    y = np.minimum(np.clip(y, 0, 1), np.clip(yb, 0, 1))  # mínimo = E lógico; a média geométrica deixava o microfone branco
     m = cv2.resize(y.astype(np.float32), (quadro.shape[1], quadro.shape[0]), interpolation=cv2.INTER_LINEAR)
     m = np.clip((m - 0.35) / 0.3, 0, 1)
     return cv2.GaussianBlur(m, (0, 0), 2.5)

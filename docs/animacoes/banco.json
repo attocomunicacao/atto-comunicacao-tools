@@ -1569,13 +1569,13 @@
   "flash_cut": {
    "categoria": "transicao",
    "ultima": {
-    "rodada": "20261111-033040",
+    "rodada": "20261111-033817",
     "nota": 10.0,
     "metricas": {
      "quadros_silhueta": 3,
      "vai_e_volta": 0,
-     "brancura_max": 0.287,
-     "brancura_min": 0.254,
+     "brancura_max": 0.262,
+     "brancura_min": 0.25,
      "duracao_s": 0.2,
      "padrao": "A A Aw Bw Bw B"
     },
@@ -1593,13 +1593,21 @@
     {
      "rodada": "20261111-033040",
      "nota": 10.0
+    },
+    {
+     "rodada": "20261111-033724",
+     "nota": 10.0
+    },
+    {
+     "rodada": "20261111-033817",
+     "nota": 10.0
     }
    ]
   },
   "zoom_inicial": {
    "categoria": "transicao",
    "ultima": {
-    "rodada": "20261111-033040",
+    "rodada": "20261111-033817",
     "nota": 10.0,
     "metricas": {
      "escala_inicial": 1.402,
@@ -1647,6 +1655,14 @@
     },
     {
      "rodada": "20261111-033040",
+     "nota": 10.0
+    },
+    {
+     "rodada": "20261111-033724",
+     "nota": 10.0
+    },
+    {
+     "rodada": "20261111-033817",
      "nota": 10.0
     }
    ]
@@ -2082,6 +2098,12 @@
    "media": 10.0,
    "nota": "ciclo 29: zoom inicial com gblur só nos quadros 0-1 (sem tmix) — cinematico e sobe não renderizaram (electron.exe bloqueado pelo Application Control do Windows); só as transições contam",
    "cenarios": 2
+  },
+  {
+   "rodada": "20261111-033817",
+   "media": 10.0,
+   "nota": "ciclo 30: silhueta do flash = mínimo entre multiclasse e binário",
+   "cenarios": 2
   }
  ],
  "ideias": [
@@ -2185,7 +2207,7 @@
     "shutter": "180° (metade do deslocamento por quadro)"
    },
    "por_que": "o desfoque limitado a 2 quadros reforça a velocidade sem rastro visível (o tmix do v0.7 deixava fantasmas)",
-   "status": "escolhida para o ciclo 29"
+   "status": "aplicada (ciclo 29): gblur 2,4/1,1 nos quadros 0-1, passo máx 0,148 → 0,092"
   },
   {
    "nome": "zoom em wrapper interno; legenda e ícones fora dele",
@@ -2204,6 +2226,15 @@
    "como": "flash: luminância por quadro com 1 pico só e queda monotônica; zoom: escala monotônica, sem overshoot, quadro de assentamento (< 1 px na borda), maior |Δ²s| no quadro 0",
    "por_que": "critério objetivo em vez de 'ficou suave?'",
    "status": "aplicada (ciclo 29): medidas flash_cut e zoom_inicial no garimpo.lab"
+  },
+  {
+   "nome": "silhueta do flash = interseção multiclasse ∧ binário",
+   "categoria": "transicao",
+   "ciclo": 30,
+   "fonte": "diagnóstico próprio (mapa de classes do MediaPipe Selfie Multiclass em plano 9:16)",
+   "como": "pessoa = min(p_multiclasse(cabelo+pele+rosto+roupa), p_binário); o multiclasse confunde notebook com roupa e mesa com pele, o binário confunde microfone/notebook com pessoa — cada um corrige o outro",
+   "por_que": "regra do cliente: a silhueta é só a pessoa; letterbox e ladrilhos não resolvem",
+   "status": "aplicada (ciclo 30): mínimo dos dois modelos (a média geométrica deixava o microfone branco)"
   }
  ]
 }
