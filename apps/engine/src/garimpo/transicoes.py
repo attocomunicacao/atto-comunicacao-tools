@@ -148,3 +148,17 @@ def expr_zoom_entrada(fps: float) -> str:
     """Escala do zoompan para o início de um plano: ZOOM_INICIAL → 1 em ZOOM_DURACAO s (ease-out exponencial)."""
     p = f"min(1,on/{fps:g}/{ZOOM_DURACAO})"
     return f"1+({ZOOM_INICIAL}-1)*pow(2,-7*{p})*(1-{p})"
+
+
+def cadeia_zoom_entrada(fps: float) -> str:
+    """Cadeia de filtros inteira do zoom de início de plano (entrada 1080x1920 → saída 1080x1920).
+
+    Supersampling 2x antes do zoompan (enquadramento anda em meio pixel) e, depois dele, desfoque gaussiano só nos
+    quadros 0 e 1 — o motion blur do punch-in, proporcional ao deslocamento daquele quadro, como na referência
+    (videoplayback (2).mp4): o 1º quadro é um borrão, o 3º já é nítido. Sem tmix: a mistura de quadros do v0.7
+    deixava fantasmas e o cliente rejeitou. A vírgula dentro de eq(n, 0) vai escapada com barra invertida porque
+    a cadeia vive dentro de um filtergraph."""
+    return (f"scale=2160:3840:flags=bicubic,"
+            f"zoompan=z='{expr_zoom_entrada(fps)}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=1080x1920:fps={fps:g},"
+            "gblur=sigma=2.4:enable='eq(n\\,0)',gblur=sigma=1.1:enable='eq(n\\,1)',"
+            "setsar=1,format=yuv420p")

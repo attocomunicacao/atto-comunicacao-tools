@@ -1569,24 +1569,87 @@
   "flash_cut": {
    "categoria": "transicao",
    "ultima": {
-    "rodada": "ciclo 10",
-    "nota": 9.5,
+    "rodada": "20261111-033040",
+    "nota": 10.0,
     "metricas": {
-     "padrao": "quadro a quadro",
-     "silhueta": "só a pessoa (multiclasse)"
+     "quadros_silhueta": 3,
+     "vai_e_volta": 0,
+     "brancura_max": 0.287,
+     "brancura_min": 0.254,
+     "duracao_s": 0.2,
+     "padrao": "A A Aw Bw Bw B"
+    },
+    "fora": []
+   },
+   "historico": [
+    {
+     "rodada": "20261111-032555",
+     "nota": 0.0
+    },
+    {
+     "rodada": "20261111-032610",
+     "nota": 10.0
+    },
+    {
+     "rodada": "20261111-033040",
+     "nota": 10.0
     }
-   }
+   ]
   },
   "zoom_inicial": {
    "categoria": "transicao",
    "ultima": {
-    "rodada": "ciclo 9",
-    "nota": 9.0,
+    "rodada": "20261111-033040",
+    "nota": 10.0,
     "metricas": {
-     "escala_inicial": 1.43,
-     "assenta_s": 0.37
+     "escala_inicial": 1.402,
+     "assenta_s": 0.333,
+     "subida_max": 0.011,
+     "passo_max": 0.092,
+     "quadros_invalidos": 0,
+     "curva": [
+      1.402,
+      1.342,
+      1.255,
+      1.163,
+      1.136,
+      1.106,
+      1.082,
+      1.061,
+      1.046,
+      1.033,
+      1.025,
+      1.017,
+      1.011,
+      1.006,
+      1.004,
+      0.996,
+      1.002,
+      0.994,
+      0.987,
+      0.998,
+      0.989,
+      0.999,
+      0.998,
+      0.996
+     ]
+    },
+    "fora": []
+   },
+   "historico": [
+    {
+     "rodada": "20261111-032555",
+     "nota": 0.0
+    },
+    {
+     "rodada": "20261111-032610",
+     "nota": 10.0
+    },
+    {
+     "rodada": "20261111-033040",
+     "nota": 10.0
     }
-   }
+   ]
   },
   "documento_cheio": {
    "categoria": "tela",
@@ -2007,6 +2070,18 @@
    "media": 10.0,
    "nota": "ciclo 28: letra do maquina com fade 0,08 s power1.out",
    "cenarios": 3
+  },
+  {
+   "rodada": "20261111-032610",
+   "media": 10.0,
+   "nota": "ciclo 29: medida das transições (base, sem mudança no motor)",
+   "cenarios": 2
+  },
+  {
+   "rodada": "20261111-033040",
+   "media": 10.0,
+   "nota": "ciclo 29: zoom inicial com gblur só nos quadros 0-1 (sem tmix) — cinematico e sobe não renderizaram (electron.exe bloqueado pelo Application Control do Windows); só as transições contam",
+   "cenarios": 2
   }
  ],
  "ideias": [
@@ -2043,7 +2118,7 @@
    "categoria": "transicao",
    "fonte": "https://spliceapp.com/blog/what-video-editors-enhance-transition-smoothness",
    "como": "transição longa deixa o corte lento: manter ≤ 0,4 s de cada lado",
-   "status": "respeitado (flash 0,4+0,4)"
+   "status": "respeitado (flash 0,1+0,1 s = 6 quadros, 3 de silhueta, desde bd5fbab)"
   },
   {
    "nome": "subtle scale na palavra",
@@ -2074,6 +2149,61 @@
    "como": "barra branca fina (2-3 px, altura da Inter) colada à última letra visível, sem piscar enquanto digita; ao fim da linha pisca 1 ciclo (steps, 0,5 s) e sai com fade 0,2 s; pausa extra de ~1 stagger entre palavras; palavra-chave Playfair digitada 1,3x mais lenta",
    "por_que": "cursor fixo fica descolado do texto; cursor que acompanha dá ritmo e o fade de saída evita sobra na tela; a pausa por palavra imita digitação humana sem quique",
    "status": "nova"
+  },
+  {
+   "nome": "flash assimétrico tipo flashbulb (1 quadro cheio + decaimento)",
+   "categoria": "transicao",
+   "ciclo": 29,
+   "fonte": "https://www.dvinfo.net/forum/final-cut-suite/123393-white-flash-transition.html",
+   "como": "subida de 0-1 quadro antes do corte, branco no quadro do corte e decaimento de 3-5 quadros (expo.out) só sobre o plano B; A nunca desvanece",
+   "parametros": {
+    "subida_quadros": 1,
+    "decaimento_quadros": "3-5",
+    "total_s": "0,13-0,20"
+   },
+   "por_que": "o olho lê um único evento; a parte lenta fica do lado do plano novo",
+   "status": "nova (fórum de editores, opinião)"
+  },
+  {
+   "nome": "flash de um lado só (sem dip duplo) para matar o vai-e-volta",
+   "categoria": "transicao",
+   "ciclo": 29,
+   "fonte": "https://community.adobe.com/questions-729/dip-to-white-option-to-start-mid-transition-is-missing-1340573",
+   "como": "A cortado seco; branco e silhueta só sobre B, com a máscara do 1º quadro de B congelada durante o decaimento",
+   "por_que": "a direção do tempo é sempre para a frente (A → branco → B)",
+   "status": "nova; o padrão atual (A A Aw | Bw Bw B) já não volta a A"
+  },
+  {
+   "nome": "punch-in: motion blur só nos quadros 0-1, proporcional ao deslocamento",
+   "categoria": "transicao",
+   "ciclo": 29,
+   "fonte": "https://blog.videobolt.net/post/how-to-create-super-zoom-effect-in-premiere-pro",
+   "como": "expo.out, salto grande nos 3 primeiros quadros; desfoque apenas nos quadros 0-1 (proporcional ao deslocamento daquele quadro na borda), 0 depois; nunca duplicar camadas com opacidade (fantasmas)",
+   "parametros": {
+    "ease": "expo.out",
+    "motion_blur": "só quadros 0-1",
+    "shutter": "180° (metade do deslocamento por quadro)"
+   },
+   "por_que": "o desfoque limitado a 2 quadros reforça a velocidade sem rastro visível (o tmix do v0.7 deixava fantasmas)",
+   "status": "escolhida para o ciclo 29"
+  },
+  {
+   "nome": "zoom em wrapper interno; legenda e ícones fora dele",
+   "categoria": "transicao",
+   "ciclo": 29,
+   "fonte": "https://dev.to/vein05/part-2-replacing-a-34mb-video-with-40kb-of-scripted-gsap-animations-adding-a-camera-1ak2",
+   "como": "a câmera anima só a camada do vídeo; texto e ícones fora do wrapper não escalam nem desfocam",
+   "por_que": "a legenda não 'respira' junto com o punch-in",
+   "status": "já é assim no Garimpo (zoom no FFmpeg, motion por cima)"
+  },
+  {
+   "nome": "checagem automática da transição: unimodal, monotônica, sem overshoot, N quadros para assentar",
+   "categoria": "transicao",
+   "ciclo": 29,
+   "fonte": "https://pow-rs.pages.dev/blog/animation-easings",
+   "como": "flash: luminância por quadro com 1 pico só e queda monotônica; zoom: escala monotônica, sem overshoot, quadro de assentamento (< 1 px na borda), maior |Δ²s| no quadro 0",
+   "por_que": "critério objetivo em vez de 'ficou suave?'",
+   "status": "aplicada (ciclo 29): medidas flash_cut e zoom_inicial no garimpo.lab"
   }
  ]
 }

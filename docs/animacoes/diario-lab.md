@@ -157,3 +157,25 @@ cinematico e sobe 10 (rodada 20261110-032407). Mantido.
 - Próximo alvo: as transições, que não passam pela métrica automática — zoom_inicial (9,0) e flash_cut (9,5). Antes de mexer
   nelas, criar uma medida para elas no `garimpo.lab`. Depois: whip pan para mudança de assunto, medição automática da composição.
 - Mudanças desde a v0.7.0 continuam fora de release (não publicar sem o pedido do cliente).
+
+## Ciclo 29 — medida das transições + zoom inicial com motion blur (11/11 03:25, tarefa agendada)
+Alvo: as transições (zoom_inicial 9,0 e flash_cut 9,5 eram notas "a olho", sem medida). Primeiro a medida, como pedia o
+resumo do ciclo 28: `garimpo.lab` ganhou os cenários `flash_cut` e `zoom_inicial`, gerados pelo próprio motor
+(`transicoes.flash_cut` e a cadeia do zoom de `enquadramento.filtro`) sobre dois planos reais do bruto do Pastore
+(recortes 1080x1920 em `lab/rodadas/fixtures`, fora do git; `ATTO_LAB_FONTE` troca a fonte).
+- flash: quadros de silhueta (alvo 2-4), vai e volta (0), brancura máx/mín da silhueta (só a pessoa: 0,04-0,6), duração.
+- zoom: escala inicial (1,3-1,6), assenta em (0,25-0,8 s), subida máx (sem overshoot), passo máx entre quadros (≤ 0,15),
+  quadros inválidos do ORB. Folhas: flash com 1 quadro por coluna, zoom a 15 q/s.
+Base (rodada 20261111-032610): flash 10 (A A Aw | Bw Bw B, 0,2 s, brancura 0,29); zoom 10, mas passo máximo 0,148, na
+borda do alvo (1º quadro 1,444 → 1,296 seco, ~80 px na borda).
+Varredura (flash cut, punch-in, medição): 5 ideias no banco — flashbulb assimétrico, flash só do lado B, motion blur só nos
+quadros 0-1, zoom num wrapper separado do texto (já é assim), checagem unimodal/monotônica (virou a medida acima).
+Prompt: `lab/prompts/20261111-0330-zoom-desfoque-q0.md`. Mudança: `transicoes.cadeia_zoom_entrada(fps)` (cadeia única,
+usada pelo enquadramento e pelo lab) com `gblur` σ 2,4 no quadro 0 e 1,1 no quadro 1, nada depois; sem tmix.
+Resultado (rodada 20261111-033040): zoom passo máx 0,148 → 0,092, assenta 0,333 s, 0 quadros inválidos, nota 10; flash
+igual. Testes do motor 17 ok. Mantido (commit).
+Imprevisto: o Windows passou a bloquear `node_modules/electron/dist/electron.exe` por política de Application Control
+(WinError 4551; `uv run pytest` direto também, `uv run python -m pytest` funciona). Os cenários de legenda/cena não
+renderizam nesta máquina até liberarem o executável — isso NÃO é configuração que o laboratório deva mexer. O lab
+agora não sobrescreve o banco quando um cenário dá erro (antes gravava nota 0).
+Observação na folha do flash: a silhueta vaza sobre o notebook e a mesa perto das mãos (classe "roupa"/brilho da borda).

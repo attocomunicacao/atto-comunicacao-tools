@@ -9,3 +9,4 @@ models/
 
 # laboratório de animação: vídeos das rodadas (relatórios ficam)
 lab/rodadas/**/*.mp4
+lab/rodadas/**/*.mkv

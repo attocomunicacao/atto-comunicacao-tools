@@ -39,6 +39,14 @@ ALVO = {
              "cobertura": (0.03, 0.6)},  # deriva não vale nas cenas: traços desenhados mudam o topo
     "tela": {"entrada_s": (0.0, 0.8), "saida_s": (0.1, 0.5), "salto": (0.0, 0.25), "tremor": (0.0, 4.0),
              "cobertura": (0.5, 1.0)},
+    # transições (lab ciclo 29). flash: videoplayback (1).mp4 + pedido do cliente (10/11): 2-4 quadros de silhueta,
+    # nunca volta ao plano que saiu depois de entrar no novo; a silhueta é só a pessoa (nem tela toda, nem invisível).
+    "flash_cut": {"quadros_silhueta": (2, 4), "vai_e_volta": (0, 0), "brancura_max": (0.04, 0.6),
+                  "brancura_min": (0.02, 1.0), "duracao_s": (0.1, 0.3)},
+    # zoom: videoplayback (2).mp4 (ease-out puxado, assenta < 1 s) com a escala que o cliente aceitou (1,45; 2,5 deu
+    # fantasmas); sem overshoot (a escala nunca volta a subir) e sem salto maior que o 1º quadro da referência.
+    "zoom_inicial": {"escala_inicial": (1.3, 1.6), "assenta_s": (0.25, 0.8), "subida_max": (0.0, 0.02),
+                     "passo_max": (0.0, 0.15), "quadros_invalidos": (0, 2)},
 }
 
 
@@ -86,6 +94,9 @@ def cenarios() -> dict[str, dict]:
     for nome in ("documento", "icone", "numero"):
         cena = {**cenas[nome], "ini": 0.3, "fim": 3.0, "caixa": [110, 300, 860, 860], "telaCheia": True}
         cs[nome + "_cheio"] = {"categoria": "tela", "duracao": 3.4, "grupos": [], "cenas": [cena], "palavras": []}
+    # transições (lab ciclo 29): geradas pelo próprio motor (transicoes.py) sobre dois planos reais de uma pessoa
+    for nome in ("flash_cut", "zoom_inicial"):
+        cs[nome] = {"categoria": "transicao", "alvo": nome, "duracao": 0, "grupos": [], "cenas": [], "palavras": []}
     return cs
 
 
@@ -204,17 +215,27 @@ def rodar(nomes: list[str] | None = None, nota: str = "") -> Path:
     resumo = {}
     for nome, cen in alvo.items():
         try:
-            mp4 = renderizar(nome, cen, pasta)
-            m = medir(mp4, pasta / f"fundo-{cen['duracao']}.mp4")
-            folha(mp4, pasta / f"{nome}.png")
+            if cen["categoria"] == "transicao":
+                m = medir_transicao(nome, pasta)
+            else:
+                mp4 = renderizar(nome, cen, pasta)
+                m = medir(mp4, pasta / f"fundo-{cen['duracao']}.mp4")
+                folha(mp4, pasta / f"{nome}.png")
         except Exception as e:  # um cenário quebrado não para a rodada
             m = {"vazio": True, "erro": str(e)[:200]}
         if nome == "maquina":   # letras surgindo uma a uma movem o centro: é o efeito (igual à referência), não tremor
             m.pop("tremor", None)
-        n, fora = avaliar(cen["categoria"], m)
+        n, fora = avaliar(cen.get("alvo", cen["categoria"]), m)
         resumo[nome] = {"nota": n, **m}
-        linhas.append(f"| {nome} | {cen['categoria']} | {n} | {m.get('entrada_s', '-')} | {m.get('saida_s', '-')} | "
-                      f"{m.get('salto', '-')} | {m.get('tremor', '-')} | {m.get('deriva_px', '-')} | {'; '.join(fora) or 'ok'} |")
+        if cen["categoria"] == "transicao":
+            medidas = ", ".join(f"{k} {v}" for k, v in m.items() if k not in ("curva", "vazio", "erro"))
+            linhas.append(f"| {nome} | {cen['categoria']} | {n} | {medidas} | | | | | {'; '.join(fora) or 'ok'} |")
+        else:
+            linhas.append(f"| {nome} | {cen['categoria']} | {n} | {m.get('entrada_s', '-')} | {m.get('saida_s', '-')} | "
+                          f"{m.get('salto', '-')} | {m.get('tremor', '-')} | {m.get('deriva_px', '-')} | {'; '.join(fora) or 'ok'} |")
+        if m.get("erro"):   # render/medida quebrou (ex.: renderizador bloqueado): não apaga a última medida boa
+            print(f"{nome:14s} ERRO  {m['erro']}", flush=True)
+            continue
         item = banco["animacoes"].setdefault(nome, {"categoria": cen["categoria"], "historico": []})
         item["ultima"] = {"rodada": pasta.name, "nota": n, "metricas": m, "fora": fora}
         item["historico"] = (item.get("historico", []) + [{"rodada": pasta.name, "nota": n}])[-30:]
@@ -250,8 +271,6 @@ def main() -> None:
     rodar(args or None, nota)
 
 
-if __name__ == "__main__":
-    main()
 
 
 # ---------------------------------------------------------------- transições (zoom inicial)
@@ -288,3 +307,110 @@ def medir_zoom(video: str, ini: float, dur: float) -> dict:
     validos = [x for x in c if x == x]
     t = next((k for k, x in enumerate(c) if x == x and x < 1.03), len(c)) / FPS
     return {"escala_inicial": validos[0] if validos else None, "assenta_s": round(t, 3), "curva": c[:30]}
+
+
+# ---------------------------------------------------------------- transições (cenários do laboratório, ciclo 29)
+
+# Planos reais de uma pessoa falando (o flash precisa da silhueta; o zoom precisa de textura para o ORB).
+# ATTO_LAB_FONTE aponta para outro vídeo; os recortes ficam em lab/rodadas/fixtures (mp4 fora do git).
+FONTES_PESSOA = [Path(p) for p in ([os.environ["ATTO_LAB_FONTE"]] if os.environ.get("ATTO_LAB_FONTE") else [])] + [
+    Path.home() / "Downloads" / "Eduardo Pastore" / "2026-11-03 16-27-18-002.mp4",
+    Path.home() / "Downloads" / "videoplayback (1).mp4",
+]
+PLANOS = {"a": 61.0, "b": 125.0}   # instantes (s) de onde saem os dois planos (locutor em posições diferentes)
+PLANO_DUR = 2.0
+
+
+def _fonte_pessoa() -> Path:
+    for f in FONTES_PESSOA:
+        if f.exists():
+            return f
+    raise RuntimeError("sem vídeo de pessoa para as transições (ATTO_LAB_FONTE)")
+
+
+def plano(nome: str) -> Path:
+    """Plano 1080x1920 a 30 fps, recorte central vertical da fonte (cache)."""
+    fonte = _fonte_pessoa()
+    pasta = RODADAS / "fixtures"
+    pasta.mkdir(parents=True, exist_ok=True)
+    arq = pasta / f"plano-{nome}-{fonte.stem[:12].replace(' ', '_')}.mp4"
+    if not arq.exists():
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{PLANOS[nome]:.3f}", "-t", f"{PLANO_DUR:.3f}", "-i", str(fonte),
+                        "-vf", f"crop='min(iw,ih*9/16)':'min(ih,iw*16/9)',scale=1080:1920,fps={FPS:g},format=yuv420p",
+                        "-c:v", "libx264", "-crf", "12", "-preset", "faster", "-c:a", "aac", "-ar", "48000", str(arq)], check=True)
+    return arq
+
+
+def _bgr(arq: Path, ini: float = 0.0, dur: float = 10.0) -> list[np.ndarray]:
+    from .transicoes import _quadros as q
+    return q(arq, ini, dur)
+
+
+def _branqueado(q: np.ndarray, orig: np.ndarray) -> float:
+    """Fração da tela que ficou branca no quadro e não era branca no original (a silhueta)."""
+    branco = (q.min(axis=2) >= 235)
+    era = (orig.min(axis=2) >= 215)
+    return float((branco & ~era).mean())
+
+
+def medir_flash(pasta: Path) -> dict:
+    """Gera o flash cut do motor entre o plano A (corte em 1,0 s) e o B (entra em 0,5 s) e lê quadro a quadro."""
+    from . import transicoes as tr
+    a, b = plano("a"), plano("b")
+    ta, tb = 1.0, 0.5
+    saida = pasta / "flash_cut.mkv"
+    tr.flash_cut(a, ta, b, tb, saida, FPS)
+    qs = _bgr(saida)
+    qa = _bgr(a, ta - tr.FLASH_ANTES, tr.FLASH_ANTES)   # janela de A que o flash substitui
+    qb = _bgr(b, tb, tr.FLASH_DEPOIS)
+    orig = qa + qb
+    lados, brancura = [], []
+    for i, q in enumerate(qs):
+        pequeno = q[::8, ::8].astype(np.int16)
+        cand_a = qa[min(i, len(qa) - 1)][::8, ::8].astype(np.int16)
+        cand_b = qb[max(0, min(i - len(qa), len(qb) - 1))][::8, ::8].astype(np.int16)
+        # compara só onde o quadro não é branco (a silhueta esconde a pessoa, não o fundo)
+        nb = pequeno.min(axis=2) < 235
+        da = np.abs(pequeno - cand_a).mean(axis=2)[nb].mean() if nb.any() else 0
+        db = np.abs(pequeno - cand_b).mean(axis=2)[nb].mean() if nb.any() else 0
+        lados.append("A" if da <= db else "B")
+        o = orig[i] if i < len(orig) else orig[-1]
+        brancura.append(_branqueado(q, o))
+    primeiro_b = lados.index("B") if "B" in lados else len(lados)
+    vai_e_volta = sum(1 for l in lados[primeiro_b:] if l == "A")
+    com_sil = [x for x in brancura if x > 0.01]
+    # folha: todos os quadros lado a lado (1 por quadro)
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(saida), "-vf", f"scale=180:320,tile={len(qs)}x1",
+                    "-frames:v", "1", str(pasta / "flash_cut.png")], check=False)
+    return {"quadros_silhueta": len(com_sil), "vai_e_volta": vai_e_volta,
+            "brancura_max": round(max(brancura), 3), "brancura_min": round(min(com_sil), 3) if com_sil else 0.0,
+            "duracao_s": round(len(qs) / FPS, 3), "padrao": "".join(l + ("w" if w > 0.01 else "") + " " for l, w in zip(lados, brancura)).strip()}
+
+
+def medir_zoom_inicial(pasta: Path) -> dict:
+    """Aplica o zoom de início de plano do motor (o mesmo filtro de enquadramento.filtro) ao plano A e mede a escala."""
+    from .transicoes import ZOOM_DURACAO, cadeia_zoom_entrada
+    a = plano("a")
+    saida = pasta / "zoom_inicial.mp4"
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(a), "-t", f"{min(PLANO_DUR, ZOOM_DURACAO + 0.6):.3f}",
+                    "-vf", cadeia_zoom_entrada(FPS),
+                    "-an", "-c:v", "libx264", "-crf", "12", "-preset", "faster", str(saida)], check=True)
+    c = curva_zoom(str(saida), 0.0, ZOOM_DURACAO + 0.5, FPS)
+    validos = [(k, x) for k, x in enumerate(c) if x == x]
+    xs = [x for _, x in validos]
+    passos = [xs[i] - xs[i + 1] for i in range(len(xs) - 1)]
+    assenta = next((k for k, x in validos if x < 1.03), len(c)) / FPS
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(saida), "-vf", "fps=15,scale=180:320,tile=8x2",
+                    "-frames:v", "1", str(pasta / "zoom_inicial.png")], check=False)
+    return {"escala_inicial": xs[0] if xs else None, "assenta_s": round(assenta, 3),
+            "subida_max": round(max([-p for p in passos if p < 0] or [0.0]), 3),
+            "passo_max": round(max(passos) if passos else 0.0, 3),
+            "quadros_invalidos": len(c) - len(validos), "curva": c[:int(ZOOM_DURACAO * FPS) + 3]}
+
+
+def medir_transicao(nome: str, pasta: Path) -> dict:
+    return medir_flash(pasta) if nome == "flash_cut" else medir_zoom_inicial(pasta)
+
+
+if __name__ == "__main__":
+    main()

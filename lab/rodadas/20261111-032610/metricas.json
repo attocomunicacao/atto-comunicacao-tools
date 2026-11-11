@@ -1,0 +1,45 @@
+{
+ "flash_cut": {
+  "nota": 10.0,
+  "quadros_silhueta": 3,
+  "vai_e_volta": 0,
+  "brancura_max": 0.287,
+  "brancura_min": 0.254,
+  "duracao_s": 0.2,
+  "padrao": "A A Aw Bw Bw B"
+ },
+ "zoom_inicial": {
+  "nota": 10.0,
+  "escala_inicial": 1.444,
+  "assenta_s": 0.3,
+  "subida_max": 0.009,
+  "passo_max": 0.148,
+  "quadros_invalidos": 0,
+  "curva": [
+   1.444,
+   1.296,
+   1.222,
+   1.191,
+   1.142,
+   1.103,
+   1.077,
+   1.06,
+   1.038,
+   1.028,
+   1.027,
+   1.014,
+   1.014,
+   1.007,
+   1.0,
+   1.002,
+   1.002,
+   1.001,
+   0.996,
+   0.989,
+   0.996,
+   0.987,
+   0.996,
+   0.997
+  ]
+ }
+}

@@ -247,7 +247,7 @@ def filtro(segmentos: list[Segmento], largura: int, altura: int, fps: float = 30
     Sem `estilos`: dissolução (xfade), comportamento antigo. A duração total nunca muda."""
     cw_u, cw_m = geometria(largura, altura)
     if estilos is not None and (len(segmentos) > 1 or zoom_inicio):
-        from .transicoes import ZOOM_DURACAO, expr_zoom_entrada
+        from .transicoes import ZOOM_DURACAO, cadeia_zoom_entrada
         partes = [_layout(s, i, cw_u, cw_m, largura, altura, fps, s.fim) for i, s in enumerate(segmentos)]
         rotulos = []
         for i in range(len(segmentos)):
@@ -256,9 +256,7 @@ def filtro(segmentos: list[Segmento], largura: int, altura: int, fps: float = 30
                 d = ZOOM_DURACAO
                 partes.append(
                     f"[s{i}]split=2[h{i}][r{i}];"
-                    f"[h{i}]trim=end={d:.3f},setpts=PTS-STARTPTS,scale=2160:3840:flags=bicubic,"
-                    f"zoompan=z='{expr_zoom_entrada(fps)}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s={LARG}x{ALT}:fps={fps:g},"
-                    f"setsar=1,format=yuv420p[hz{i}];"
+                    f"[h{i}]trim=end={d:.3f},setpts=PTS-STARTPTS,{cadeia_zoom_entrada(fps)}[hz{i}];"
                     f"[r{i}]trim=start={d:.3f},setpts=PTS-STARTPTS[rr{i}];"
                     f"[hz{i}][rr{i}]concat=n=2:v=1:a=0[z{i}]")
                 rotulos.append(f"[z{i}]")
