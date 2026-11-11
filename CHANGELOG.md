@@ -2,6 +2,12 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões seguem `x.y.z`.
 
+## [Não publicado]
+
+### Corrigido
+- **Transcrição 3,7x mais lenta com termos no dicionário**: os termos iam como dica (hotwords) para o Whisper, que passava a refazer trechos (medido em 3 min: 131 s sem dica contra 486 s com um termo). Agora a grafia dos termos é corrigida só depois, nas dúvidas de escrita.
+- **Cadastrar um termo no dicionário fazia o vídeo ser transcrito de novo**: o dicionário saiu da chave do cache; transcrições guardadas pela versão anterior continuam sendo achadas.
+
 ## [0.7.2] - 2026-11-11
 
 ### Adicionado

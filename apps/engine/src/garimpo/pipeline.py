@@ -76,8 +76,12 @@ def transcrever(video: Path, pasta: Path, modelo: str, refazer: bool = False) ->
         _log(f"Áudio extraído ({wav.stat().st_size / 1e6:.0f} MB)")
     json_tr = pasta / "transcricao.json"
     termos = list(Dicionario.carregar().termos.keys())
-    k = cache.chave_transcricao(video, modelo, termos)
+    k = cache.chave_transcricao(video, modelo)
     guardada = None if refazer else cache.ler_json("transcricoes", k)
+    if guardada is None and not refazer and termos:  # transcrição de versão anterior, com o dicionário na chave
+        guardada = cache.ler_json("transcricoes", cache.chave_transcricao(video, modelo, termos))
+        if guardada is not None:
+            cache.gravar_json("transcricoes", k, guardada)
     if guardada and not json_tr.exists():
         _etapa(2, 3, "Transcrição reaproveitada")
         json_tr.write_text(json.dumps(guardada, ensure_ascii=False), encoding="utf-8")
@@ -97,9 +101,9 @@ def transcrever(video: Path, pasta: Path, modelo: str, refazer: bool = False) ->
                 ultimo[0] = t
                 _log(f"{int(t // 60)}:{int(t % 60):02d} de {int(total // 60)}:{int(total % 60):02d}  “{texto[:90]}”")
 
-        if termos:
-            _log(f"Termos do seu dicionário como dica para o Whisper: {', '.join(termos[:12])}")
-        palavras = transcricao.transcrever(wav, fps, modelo, progresso, hotwords=termos, log=_log)
+        # o dicionário não vai como dica (hotwords): medido em 3 min de podcast: 1,37x o tempo real sem dica, 0,37x com um termo só (3,7x mais lento);
+        # a grafia dos termos é corrigida depois, nas dúvidas de escrita (corretor.sugerir)
+        palavras = transcricao.transcrever(wav, fps, modelo, progresso, log=_log)
         transcricao.salvar(palavras, json_tr, fps)
         cache.gravar_json("transcricoes", k, json.loads(json_tr.read_text(encoding="utf-8")))
         _log(f"Transcrição pronta: {len(palavras)} palavras (guardada no cache para os próximos testes)")

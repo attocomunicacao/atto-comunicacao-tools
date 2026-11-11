@@ -5,7 +5,7 @@ pasta do projeto não bastava (falha relatada na v0.6). Aqui a chave é o **cont
 tamanho + data de modificação + SHA-1 de 3 amostras de 4 MB (começo, meio, fim) — rápido mesmo em vídeos de 10 GB.
 
 Pastas (em `ATTO_DADOS`, que o app aponta para `%APPDATA%/ATTO Tools/cache`):
-- `transcricoes/<chave>.json`  — palavras com tempo (chave inclui modelo, versão do motor e termos do dicionário);
+- `transcricoes/<chave>.json`  — palavras com tempo (chave inclui modelo e versão do motor; o dicionário não);
 - `vetores/<chave>.npy`        — vetores de sentido das frases (estruturação);
 - `juiz/<chave>.json`          — notas do juiz LLM por trecho (mesmo prompt = mesma nota).
 Mudar `VERSAO_TRANSCRICAO`/`VERSAO_ESTRUTURA` invalida o que foi gerado por versões antigas do motor.
@@ -49,8 +49,11 @@ def chave(*partes) -> str:
     return hashlib.sha1(json.dumps(partes, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()[:24]
 
 
-def chave_transcricao(video: Path, modelo: str, termos: list[str]) -> str:
-    return chave(impressao(video), modelo, VERSAO_TRANSCRICAO, sorted(termos))
+def chave_transcricao(video: Path, modelo: str, termos: list[str] | None = None) -> str:
+    """Desde a 0.7.3 o dicionário não entra na chave (cadastrar um termo não força transcrever de novo).
+    `termos` só serve para achar transcrições antigas, gravadas com os termos na chave; sem termos a chave é a
+    mesma de antes (lista vazia), então as transcrições feitas com o dicionário vazio continuam valendo."""
+    return chave(impressao(video), modelo, VERSAO_TRANSCRICAO, sorted(termos or []))
 
 
 def ler_json(sub: str, k: str):

@@ -63,6 +63,13 @@ def test_cache_da_transcricao_reaproveita(tmp_path, monkeypatch):
     assert cache.chave_transcricao(video, "small", ["Sindeprestem"]) != k
 
 
+def test_chave_sem_dicionario_igual_a_antiga_vazia(tmp_path):
+    # 0.7.3: a chave nova (sem termos) é a mesma das transcrições antigas feitas com o dicionário vazio
+    video = tmp_path / "v.mp4"
+    video.write_bytes(b"y" * 5000)
+    assert cache.chave_transcricao(video, "large-v3-turbo") == cache.chave_transcricao(video, "large-v3-turbo", [])
+
+
 def test_pipeline_pula_transcricao_com_cache(tmp_path, monkeypatch):
     from garimpo import midia, pipeline
     monkeypatch.setenv("ATTO_DADOS", str(tmp_path / "dados"))
