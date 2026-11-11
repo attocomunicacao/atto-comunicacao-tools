@@ -181,7 +181,7 @@ export function Garimpo() {
                   <div>
                     <h3>Corte {String(c.n).padStart(2, '0')} · {Math.round(c.duracao)} s</h3>
                     <p className="meta">{tempo(c.ini)} a {tempo(c.fim)} · tema: {c.tema}</p>
-                    <p className="texto">{c.texto}</p>
+                    <TextoCorte pasta={pasta} corte={c} aoSalvar={(texto) => setCortes((cs) => cs.map((x) => x.n === c.n ? { ...x, texto } : x))} />
                     <Previa pasta={pasta} nome={`corte-${String(c.n).padStart(2, '0')}.wav`} />
                   </div>
                 </div>
@@ -221,6 +221,33 @@ export function Garimpo() {
 
         {erro && <p className="erro" role="alert">{erro}</p>}
       </section>
+    </>
+  )
+}
+
+/** Texto do corte editável: o que for corrigido aqui (nomes, grafia, pontuação) entra na legenda do vídeo. */
+function TextoCorte({ pasta, corte, aoSalvar }: { pasta: string; corte: Corte; aoSalvar: (t: string) => void }) {
+  const [texto, setTexto] = useState(corte.texto)
+  const [estado, setEstado] = useState<'' | 'salvando' | 'salvo' | 'erro'>('')
+  const mudou = texto.trim() !== corte.texto.trim()
+  const salvar = async () => {
+    setEstado('salvando')
+    const r = await window.atto.motor('editar-texto', ['--pasta', pasta, '--corte', String(corte.n), `--texto=${texto}`])
+    if (r.codigo === 0) { aoSalvar(texto.trim()); setEstado('salvo') } else setEstado('erro')
+  }
+  return (
+    <>
+      <textarea className="texto texto-editavel" rows={6} value={texto} spellCheck lang="pt-BR"
+        onChange={(e) => { setTexto(e.target.value); setEstado('') }} aria-label={`Texto do corte ${corte.n}`} />
+      {(mudou || estado) && (
+        <div className="acoes-texto">
+          {mudou && <button className="btn" onClick={salvar} disabled={estado === 'salvando'}>Salvar texto</button>}
+          {mudou && <button className="btn sec" onClick={() => setTexto(corte.texto)}>Desfazer</button>}
+          {estado === 'salvando' && <span className="meta">Salvando…</span>}
+          {estado === 'salvo' && !mudou && <span className="meta">Texto salvo. A legenda vai usar esta versão.</span>}
+          {estado === 'erro' && <span className="erro">Não foi possível salvar o texto.</span>}
+        </div>
+      )}
     </>
   )
 }

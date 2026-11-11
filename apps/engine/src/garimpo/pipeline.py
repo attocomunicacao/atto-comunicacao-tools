@@ -329,6 +329,64 @@ def dicionario(acao: str, termo: str | None) -> None:
     print("DICIONARIO " + json.dumps(dic.termos, ensure_ascii=False), flush=True)
 
 
+def _chave(t: str) -> str:
+    return "".join(ch for ch in t.lower() if ch.isalnum())
+
+
+def realinhar(palavras: list[dict], novo: str) -> list[dict]:
+    """Troca o texto das palavras pelo texto editado mantendo os tempos da fala.
+
+    Palavras iguais ficam com o próprio tempo; trechos trocados dividem o tempo do trecho original entre as
+    palavras novas; palavras acrescentadas dividem o tempo da palavra vizinha; palavras apagadas saem da legenda."""
+    import difflib
+    tokens = novo.split()
+    if not palavras or not tokens:
+        return palavras if not tokens else []
+    velhas = [_chave(p["texto"]) for p in palavras]
+    novas = [_chave(t) for t in tokens]
+    saida: list[dict] = []
+
+    def dividir(ini: float, fim: float, textos: list[str]) -> list[dict]:
+        passo = (fim - ini) / len(textos)
+        return [{"texto": t, "ini": round(ini + i * passo, 3), "fim": round(ini + (i + 1) * passo, 3)}
+                for i, t in enumerate(textos)]
+
+    for op, i1, i2, j1, j2 in difflib.SequenceMatcher(None, velhas, novas, autojunk=False).get_opcodes():
+        if op == "equal":
+            saida += [{**palavras[i], "texto": tokens[j1 + (i - i1)]} for i in range(i1, i2)]
+        elif op == "replace":
+            saida += dividir(palavras[i1]["ini"], palavras[i2 - 1]["fim"], tokens[j1:j2])
+        elif op == "insert":
+            if saida:  # divide a palavra anterior com as novas
+                ant = saida.pop()
+                saida += dividir(ant["ini"], ant["fim"], [ant["texto"], *tokens[j1:j2]])
+            else:
+                seg = palavras[i1]
+                novos = dividir(seg["ini"], seg["fim"], [*tokens[j1:j2], "\0"])
+                saida += novos[:-1]
+                palavras = [*palavras[:i1], {**seg, "ini": novos[-1]["ini"]}, *palavras[i1 + 1:]]
+    return saida
+
+
+def editar_texto(pasta: Path, n: int, texto: str) -> None:
+    """Grava o texto revisado pelo editor em cortes.json; a legenda do corte passa a usar esse texto."""
+    arq = pasta / "cortes.json"
+    dados = json.loads(arq.read_text(encoding="utf-8"))
+    d = next(x for x in dados if x["n"] == n)
+    texto = " ".join(texto.split())
+    corpo = texto
+    if d.get("teaser") and texto.startswith("[gancho]") and " … " in texto:
+        gancho, corpo = texto[len("[gancho]"):].split(" … ", 1)
+        d["teaser"]["palavras"] = realinhar(d["teaser"]["palavras"], gancho)
+        d["teaser"]["texto"] = gancho.strip()
+    elif d.get("teaser"):  # o editor apagou a marca do gancho: o texto inteiro vai para o corpo
+        _log("Marca [gancho] … não encontrada; o texto inteiro foi aplicado ao corpo do corte")
+    d["palavras"] = realinhar(d["palavras"], corpo)
+    d["texto"] = texto
+    arq.write_text(json.dumps(dados, ensure_ascii=False), encoding="utf-8")
+    print(f"RESULTADO corte {n:02d} editado", flush=True)
+
+
 def main() -> None:
     for fluxo in (sys.stdout, sys.stderr):
         fluxo.reconfigure(encoding="utf-8")
@@ -355,6 +413,10 @@ def main() -> None:
     e = com_video("exportar", "corta e legenda os aprovados")
     e.add_argument("--aprovados", required=True)
     e.add_argument("--logo", type=Path, default=None, help="imagem para o fim de cada corte")
+    tx = sub.add_parser("editar-texto", help="aplica o texto revisado de um corte")
+    tx.add_argument("--pasta", type=Path, required=True)
+    tx.add_argument("--corte", type=int, required=True)
+    tx.add_argument("--texto", required=True)
     d = sub.add_parser("dicionario", help="gerencia o dicionário pessoal")
     d.add_argument("acao", choices=["listar", "adicionar", "remover"])
     d.add_argument("termo", nargs="?")
@@ -369,6 +431,8 @@ def main() -> None:
         analisar(args.video, args.pasta, args.modelo, args.aceitar_todas, args.descricao, args.refazer)
     elif args.cmd == "exportar":
         exportar(args.video, args.pasta, ids(args.aprovados), args.logo)
+    elif args.cmd == "editar-texto":
+        editar_texto(args.pasta, args.corte, args.texto)
     else:
         dicionario(args.acao, args.termo)
 

@@ -15,7 +15,7 @@ if (jobMotion) {
   }).finally(() => app.quit())
 }
 
-const COMANDOS = new Set(['transcrever', 'estruturar', 'exportar', 'dicionario'])
+const COMANDOS = new Set(['transcrever', 'estruturar', 'exportar', 'dicionario', 'editar-texto'])
 let janela: BrowserWindow | null = null
 
 const pastaProjetos = () => join(app.getPath('userData'), 'projetos')

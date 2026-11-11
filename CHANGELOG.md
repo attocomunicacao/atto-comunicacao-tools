@@ -2,6 +2,11 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões seguem `x.y.z`.
 
+## [0.7.2] - 2026-11-11
+
+### Adicionado
+- **Texto do corte editável** na aba Cortes: corrija nomes, grafia e pontuação e clique em "Salvar texto"; a legenda do vídeo usa o texto corrigido, mantendo o tempo de cada palavra na fala.
+
 ## [0.7.1] - 2026-11-10
 
 ### Alterado (teste real com o cliente)
